@@ -21,6 +21,11 @@ var weapon_stats: Dictionary = {
 	"axe": {"damage": 55, "speed": 0.9, "range": 2.5},
 	"staff": {"damage": 20, "speed": 0.5, "range": 3.0, "mana_bonus": 30},
 	"bow": {"damage": 30, "speed": 0.7, "range": 50.0, "ranged": true},
+	"flail": {"damage": 48, "speed": 0.7, "range": 3.2},
+	"crossbow": {"damage": 50, "speed": 1.2, "range": 50.0, "ranged": true, "pierce": true},
+	"daggers": {"damage": 15, "speed": 0.2, "range": 30.0, "ranged": true, "burst": 3},
+	"warhammer": {"damage": 70, "speed": 1.3, "range": 2.3, "stun": 1.0},
+	"spear": {"damage": 28, "speed": 0.45, "range": 4.0},
 }
 
 var spell_stats: Dictionary = {

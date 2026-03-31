@@ -74,12 +74,53 @@ func _show_shop() -> void:
 
 	vbox.add_child(HSeparator.new())
 
+	# Weapons
+	if "sword" not in Inventory.owned_weapons:
+		_add_shop_item(vbox, gold_label, "Sword", 50, func():
+			Inventory.add_weapon("sword")
+		)
+	if "bow" not in Inventory.owned_weapons:
+		_add_shop_item(vbox, gold_label, "Bow", 70, func():
+			Inventory.add_weapon("bow")
+		)
+	if "axe" not in Inventory.owned_weapons:
+		_add_shop_item(vbox, gold_label, "Axe", 90, func():
+			Inventory.add_weapon("axe")
+		)
+	if "staff" not in Inventory.owned_weapons:
+		_add_shop_item(vbox, gold_label, "Staff", 110, func():
+			Inventory.add_weapon("staff")
+		)
+	if "flail" not in Inventory.owned_weapons:
+		_add_shop_item(vbox, gold_label, "Flail", 100, func():
+			Inventory.add_weapon("flail")
+		)
+	if "crossbow" not in Inventory.owned_weapons:
+		_add_shop_item(vbox, gold_label, "Crossbow", 120, func():
+			Inventory.add_weapon("crossbow")
+		)
+	if "daggers" not in Inventory.owned_weapons:
+		_add_shop_item(vbox, gold_label, "Throwing Daggers", 80, func():
+			Inventory.add_weapon("daggers")
+		)
+	if "warhammer" not in Inventory.owned_weapons:
+		_add_shop_item(vbox, gold_label, "Warhammer", 140, func():
+			Inventory.add_weapon("warhammer")
+		)
+	if "spear" not in Inventory.owned_weapons:
+		_add_shop_item(vbox, gold_label, "Spear", 90, func():
+			Inventory.add_weapon("spear")
+		)
+
+	vbox.add_child(HSeparator.new())
+
 	var close_btn := Button.new()
 	close_btn.text = "Close Shop"
 	close_btn.pressed.connect(func():
 		shop.queue_free()
 		shop_open = false
-		Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		if not GameManager.use_touch_controls:
+			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	)
 	vbox.add_child(close_btn)
 

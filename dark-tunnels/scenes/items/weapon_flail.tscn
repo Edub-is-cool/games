@@ -1,0 +1,89 @@
+[gd_scene format=3 uid="uid://weapflail001"]
+
+[ext_resource type="Script" path="res://scripts/items/weapon_pickup.gd" id="1_weapon"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_flail"]
+radius = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_handle"]
+albedo_color = Color(0.35, 0.2, 0.08, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_chain"]
+albedo_color = Color(0.45, 0.43, 0.4, 1)
+metallic = 0.6
+roughness = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_head"]
+albedo_color = Color(0.4, 0.4, 0.45, 1)
+metallic = 0.7
+roughness = 0.3
+
+[node name="WeaponFlail" type="StaticBody3D"]
+script = ExtResource("1_weapon")
+weapon_name = "flail"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("SphereShape3D_flail")
+
+[node name="Handle" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+radius = 0.03
+height = 0.3
+sides = 6
+material = SubResource("StandardMaterial3D_handle")
+
+[node name="Chain1" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.54, 0)
+radius = 0.02
+material = SubResource("StandardMaterial3D_chain")
+
+[node name="Chain2" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+radius = 0.02
+material = SubResource("StandardMaterial3D_chain")
+
+[node name="Chain3" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.66, 0)
+radius = 0.02
+material = SubResource("StandardMaterial3D_chain")
+
+[node name="Head" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.76, 0)
+radius = 0.08
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_head")
+
+[node name="Spike1" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.87, 0)
+radius = 0.02
+height = 0.06
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_head")
+
+[node name="Spike2" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.09, 0.76, 0)
+radius = 0.02
+height = 0.06
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_head")
+
+[node name="Spike3" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -0.09, 0.76, 0)
+radius = 0.02
+height = 0.06
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_head")
+
+[node name="Spike4" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 0.76, 0.09)
+radius = 0.02
+height = 0.06
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_head")

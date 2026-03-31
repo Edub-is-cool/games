@@ -29,9 +29,9 @@ func _build_ui() -> void:
 	joystick_bg.anchor_right = 0.0
 	joystick_bg.anchor_bottom = 1.0
 	joystick_bg.offset_left = 30.0
-	joystick_bg.offset_top = -230.0
+	joystick_bg.offset_top = -330.0
 	joystick_bg.offset_right = 210.0
-	joystick_bg.offset_bottom = -50.0
+	joystick_bg.offset_bottom = -150.0
 	joystick_bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(joystick_bg)
 
@@ -74,42 +74,79 @@ func _build_ui() -> void:
 
 	look_area.gui_input.connect(_on_look_input)
 
-	# === ACTION BUTTONS (right side, bottom) ===
-	var btn_size := Vector2(70, 70)
-	var btn_font_size := 14
+	# === ACTION BUTTONS (left side, above joystick, bigger) ===
+	var btn_size := Vector2(85, 85)
+	var btn_font_size := 16
+	# Buttons positioned from the left edge, above joystick area
+	var left_base := 30.0
 
-	# Attack button
-	_add_button("AttackBtn", "ATK", Color(0.9, 0.2, 0.2, 0.5),
-		Vector2(-170.0, -140.0), btn_size, btn_font_size, "attack")
+	# Row 1 (top): ATK, SPELL
+	_add_button_left("AttackBtn", "ATK", Color(0.9, 0.2, 0.2, 0.5),
+		Vector2(left_base, -520.0), btn_size, btn_font_size, "attack")
 
-	# Spell button
-	_add_button("SpellBtn", "SPELL", Color(0.3, 0.4, 0.9, 0.5),
-		Vector2(-85.0, -140.0), btn_size, btn_font_size, "cast_spell")
+	_add_button_left("SpellBtn", "SPELL", Color(0.3, 0.4, 0.9, 0.5),
+		Vector2(left_base + 95.0, -520.0), btn_size, btn_font_size, "cast_spell")
 
-	# Jump button
-	_add_button("JumpBtn", "JUMP", Color(0.3, 0.8, 0.3, 0.5),
-		Vector2(-170.0, -60.0), btn_size, btn_font_size, "jump")
+	# Row 2: JUMP, INTERACT
+	_add_button_left("JumpBtn", "JUMP", Color(0.3, 0.8, 0.3, 0.5),
+		Vector2(left_base, -425.0), btn_size, btn_font_size, "jump")
 
-	# Interact button
-	_add_button("InteractBtn", "USE", Color(0.9, 0.8, 0.2, 0.5),
-		Vector2(-85.0, -60.0), btn_size, btn_font_size, "interact")
+	_add_button_left("InteractBtn", "TALK", Color(0.9, 0.8, 0.2, 0.5),
+		Vector2(left_base + 95.0, -425.0), btn_size, btn_font_size, "interact")
 
-	# HP Potion button (smaller, top row)
-	var sm_size := Vector2(60, 45)
+	# Right side utility buttons (smaller, stacked)
+	var sm_size := Vector2(70, 50)
+	var right_x := -85.0  # from right edge
+
 	_add_button("HPPotBtn", "HP POT", Color(0.9, 0.3, 0.3, 0.4),
-		Vector2(-250.0, -185.0), sm_size, 11, "use_health_potion")
+		Vector2(right_x, -340.0), sm_size, 12, "use_health_potion")
 
-	# MP Potion button
 	_add_button("MPPotBtn", "MP POT", Color(0.3, 0.4, 0.9, 0.4),
-		Vector2(-250.0, -135.0), sm_size, 11, "use_mana_potion")
+		Vector2(right_x, -280.0), sm_size, 12, "use_mana_potion")
 
-	# Cycle weapon
 	_add_button("CycWeapBtn", "WEAP", Color(0.8, 0.6, 0.2, 0.4),
-		Vector2(-250.0, -80.0), sm_size, 11, "cycle_weapon")
+		Vector2(right_x, -220.0), sm_size, 12, "cycle_weapon")
 
-	# Cycle spell
 	_add_button("CycSpellBtn", "CYCL", Color(0.5, 0.5, 0.9, 0.4),
-		Vector2(-250.0, -30.0), sm_size, 11, "cycle_spell")
+		Vector2(right_x, -160.0), sm_size, 12, "cycle_spell")
+
+func _add_button_left(btn_name: String, text: String, color: Color,
+		offset: Vector2, btn_size: Vector2, font_size: int, action: String) -> void:
+	var btn := Button.new()
+	btn.name = btn_name
+	btn.text = text
+	btn.anchor_left = 0.0
+	btn.anchor_top = 1.0
+	btn.anchor_right = 0.0
+	btn.anchor_bottom = 1.0
+	btn.offset_left = offset.x
+	btn.offset_top = offset.y
+	btn.offset_right = offset.x + btn_size.x
+	btn.offset_bottom = offset.y + btn_size.y
+	btn.add_theme_font_size_override("font_size", font_size)
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	style.border_color = Color(1, 1, 1, 0.2)
+	style.border_width_top = 1
+	style.border_width_bottom = 1
+	style.border_width_left = 1
+	style.border_width_right = 1
+	btn.add_theme_stylebox_override("normal", style)
+
+	var pressed_style := style.duplicate()
+	pressed_style.bg_color = Color(color.r + 0.2, color.g + 0.2, color.b + 0.2, 0.7)
+	btn.add_theme_stylebox_override("pressed", pressed_style)
+	btn.add_theme_stylebox_override("hover", style)
+
+	btn.button_down.connect(func(): Input.action_press(action))
+	btn.button_up.connect(func(): Input.action_release(action))
+
+	add_child(btn)
 
 func _add_button(btn_name: String, text: String, color: Color,
 		offset: Vector2, btn_size: Vector2, font_size: int, action: String) -> void:

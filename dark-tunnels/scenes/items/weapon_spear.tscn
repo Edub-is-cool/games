@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://weapspear001"]
+
+[ext_resource type="Script" path="res://scripts/items/weapon_pickup.gd" id="1_weapon"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_spear"]
+radius = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shaft"]
+albedo_color = Color(0.35, 0.22, 0.1, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tip"]
+albedo_color = Color(0.65, 0.65, 0.7, 1)
+metallic = 0.85
+roughness = 0.15
+
+[node name="WeaponSpear" type="StaticBody3D"]
+script = ExtResource("1_weapon")
+weapon_name = "spear"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("SphereShape3D_spear")
+
+[node name="Shaft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+radius = 0.02
+height = 0.9
+sides = 6
+material = SubResource("StandardMaterial3D_shaft")
+
+[node name="Tip" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+radius = 0.035
+height = 0.12
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_tip")
+
+[node name="Guard" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.93, 0)
+size = Vector3(0.08, 0.02, 0.03)
+material = SubResource("StandardMaterial3D_tip")
+
+[node name="ButCap" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, 0)
+radius = 0.025
+material = SubResource("StandardMaterial3D_tip")

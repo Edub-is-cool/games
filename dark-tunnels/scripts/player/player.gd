@@ -153,27 +153,37 @@ func _do_attack() -> void:
 
 	var stats: Dictionary = Inventory.weapon_stats[weapon]
 	if stats.has("ranged") and stats["ranged"]:
-		# Bow: shoot an arrow
+		# Ranged weapons: shoot projectiles
 		SoundManager.play_sound("sword")
 		var tween := create_tween()
 		tween.tween_property(camera, "rotation:x", camera.rotation.x - 0.05, 0.1)
 		tween.tween_property(camera, "rotation:x", camera.rotation.x, 0.1)
 		var arrow_scene: PackedScene = preload("res://scenes/magic/arrow.tscn")
-		var arrow: Node3D = arrow_scene.instantiate()
-		get_tree().current_scene.add_child(arrow)
-		arrow.global_position = camera.global_position + -camera.global_basis.z * 1.0
-		arrow.direction = -camera.global_basis.z
-		arrow.damage = int(Inventory.get_weapon_damage() * GameManager.get_player_damage_mult())
+		var shot_count := stats.get("burst", 1) as int
+		for shot_i in range(shot_count):
+			var arrow: Node3D = arrow_scene.instantiate()
+			get_tree().current_scene.add_child(arrow)
+			arrow.global_position = camera.global_position + -camera.global_basis.z * 1.0
+			var spread := 0.0
+			if shot_count > 1:
+				spread = (float(shot_i) - float(shot_count - 1) / 2.0) * 0.08
+			arrow.direction = (-camera.global_basis.z + camera.global_basis.x * spread).normalized()
+			arrow.damage = int(Inventory.get_weapon_damage() * GameManager.get_player_damage_mult())
+			if shot_count > 1 and shot_i < shot_count - 1:
+				await get_tree().create_timer(0.1).timeout
 	else:
 		# Melee swing
+		var swing_strength := 0.15
+		if weapon == "warhammer":
+			swing_strength = 0.25
 		var tween := create_tween()
-		tween.tween_property(camera, "rotation:x", camera.rotation.x - 0.15, 0.1)
+		tween.tween_property(camera, "rotation:x", camera.rotation.x - swing_strength, 0.1)
 		tween.tween_property(camera, "rotation:x", camera.rotation.x, 0.15)
 
 		match weapon:
-			"sword":
+			"sword", "spear":
 				SoundManager.play_sound("sword")
-			"axe":
+			"axe", "flail", "warhammer":
 				SoundManager.play_sound("axe")
 			_:
 				SoundManager.play_sound("hit")
@@ -186,6 +196,9 @@ func _do_attack() -> void:
 				var dmg := int(Inventory.get_weapon_damage() * GameManager.get_player_damage_mult())
 				target.take_damage(dmg)
 				_spawn_damage_number(target.global_position, dmg)
+				# Warhammer stun
+				if stats.has("stun") and target.has_method("apply_slow"):
+					target.apply_slow(stats["stun"])
 
 	await attack_cooldown.timeout
 	is_attacking = false

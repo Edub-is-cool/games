@@ -203,7 +203,7 @@ material = SubResource("StandardMaterial3D_skin")
 
 ; === SWORD (held in right hand, hidden by default) ===
 [node name="SwordHeld" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.28, -0.05)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.42, 0.15, -0.08)
 
 [node name="Grip" type="CSGCylinder3D" parent="SwordHeld"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)

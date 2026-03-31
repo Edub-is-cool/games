@@ -53,6 +53,11 @@ var weapon_scenes: Array[PackedScene] = [
 	preload("res://scenes/items/weapon_bow.tscn"),
 	preload("res://scenes/items/weapon_axe.tscn"),
 	preload("res://scenes/items/weapon_staff.tscn"),
+	preload("res://scenes/items/weapon_flail.tscn"),
+	preload("res://scenes/items/weapon_crossbow.tscn"),
+	preload("res://scenes/items/weapon_daggers.tscn"),
+	preload("res://scenes/items/weapon_warhammer.tscn"),
+	preload("res://scenes/items/weapon_spear.tscn"),
 ]
 
 func _init() -> void:
@@ -841,11 +846,10 @@ func _place_traps() -> void:
 		get_parent().call_deferred("add_child", trap)
 
 func _place_weapons() -> void:
-	# Place one weapon in rooms 3, 6, 11, and 15 (only if not already owned)
-	var weapon_rooms := [3, 6, 11, 15]
-	var weapon_names := ["sword", "bow", "axe", "staff"]
+	# Place weapons across rooms, spread evenly
+	var weapon_rooms := [2, 4, 7, 9, 11, 13, 15, 17, 18]
+	var weapon_names := ["sword", "bow", "axe", "staff", "flail", "crossbow", "daggers", "warhammer", "spear"]
 	for idx in range(mini(weapon_rooms.size(), weapon_scenes.size())):
-		# Skip if player already owns this weapon
 		if idx < weapon_names.size() and weapon_names[idx] in Inventory.owned_weapons:
 			continue
 		var room_idx: int = weapon_rooms[idx]

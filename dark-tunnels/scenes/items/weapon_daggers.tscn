@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://weapdaggers001"]
+
+[ext_resource type="Script" path="res://scripts/items/weapon_pickup.gd" id="1_weapon"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_dag"]
+radius = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_blade"]
+albedo_color = Color(0.7, 0.7, 0.75, 1)
+metallic = 0.85
+roughness = 0.15
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_grip"]
+albedo_color = Color(0.3, 0.18, 0.06, 1)
+roughness = 0.8
+
+[node name="WeaponDaggers" type="StaticBody3D"]
+script = ExtResource("1_weapon")
+weapon_name = "daggers"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, 0)
+shape = SubResource("SphereShape3D_dag")
+
+; Dagger 1 (center)
+[node name="Blade1" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+size = Vector3(0.02, 0.14, 0.01)
+material = SubResource("StandardMaterial3D_blade")
+
+[node name="Grip1" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+size = Vector3(0.018, 0.06, 0.012)
+material = SubResource("StandardMaterial3D_grip")
+
+; Dagger 2 (left, angled)
+[node name="Blade2" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, 0.26, 0, -0.26, 0.97, 0, 0, 0, 1, -0.06, 0.54, 0)
+size = Vector3(0.02, 0.13, 0.01)
+material = SubResource("StandardMaterial3D_blade")
+
+[node name="Grip2" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, 0.26, 0, -0.26, 0.97, 0, 0, 0, 1, -0.06, 0.41, 0)
+size = Vector3(0.018, 0.06, 0.012)
+material = SubResource("StandardMaterial3D_grip")
+
+; Dagger 3 (right, angled)
+[node name="Blade3" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, -0.26, 0, 0.26, 0.97, 0, 0, 0, 1, 0.06, 0.54, 0)
+size = Vector3(0.02, 0.13, 0.01)
+material = SubResource("StandardMaterial3D_blade")
+
+[node name="Grip3" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, -0.26, 0, 0.26, 0.97, 0, 0, 0, 1, 0.06, 0.41, 0)
+size = Vector3(0.018, 0.06, 0.012)
+material = SubResource("StandardMaterial3D_grip")

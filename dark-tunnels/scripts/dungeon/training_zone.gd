@@ -107,8 +107,23 @@ func _build_arena() -> void:
 		torch.position = tp
 		add_child(torch)
 
+	# Place a merchant in the corner
+	var merchant_scene := preload("res://scenes/dungeon/merchant.tscn")
+	var merchant := merchant_scene.instantiate()
+	merchant.position = Vector3(half - 3, 0, half - 3)
+	add_child(merchant)
+
+	# Give starting gold for training purchases
+	if Inventory.gold < 200:
+		Inventory.gold = 200
+		Inventory.gold_changed.emit(Inventory.gold)
 
 func _start_next_wave() -> void:
+	# 10 second delay between waves
+	var wave_label := hud.get_node_or_null("FloorLabel")
+	if wave_label:
+		wave_label.text = "Next wave in 10s..."
+	await get_tree().create_timer(10.0).timeout
 	current_wave += 1
 	wave_active = true
 	SoundManager.play_sound("level_up")

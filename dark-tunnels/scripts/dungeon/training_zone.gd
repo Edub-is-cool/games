@@ -12,13 +12,24 @@ var arena_size := 30.0
 var enemy_scenes: Array[PackedScene] = [
 	preload("res://scenes/enemies/slime.tscn"),
 	preload("res://scenes/enemies/enemy.tscn"),
+	preload("res://scenes/enemies/rat_swarm.tscn"),
+	preload("res://scenes/enemies/cave_spider.tscn"),
+	preload("res://scenes/enemies/mushroom_spore.tscn"),
 	preload("res://scenes/enemies/skeleton.tscn"),
+	preload("res://scenes/enemies/shadow_wraith.tscn"),
 	preload("res://scenes/enemies/orc.tscn"),
+	preload("res://scenes/enemies/rock_golem.tscn"),
+	preload("res://scenes/enemies/crystal_sentinel.tscn"),
+	preload("res://scenes/enemies/bone_rattler.tscn"),
 ]
 var boss_scenes: Array[PackedScene] = [
 	preload("res://scenes/enemies/boss_witch.tscn"),
 	preload("res://scenes/enemies/boss_werewolf.tscn"),
 	preload("res://scenes/enemies/boss.tscn"),
+	preload("res://scenes/enemies/boss_colossus.tscn"),
+	preload("res://scenes/enemies/boss_eye.tscn"),
+	preload("res://scenes/enemies/boss_warden.tscn"),
+	preload("res://scenes/enemies/boss_hollow_king.tscn"),
 ]
 
 func _ready() -> void:
@@ -35,7 +46,6 @@ func _bake_and_start() -> void:
 	var nav_region := $NavigationRegion3D
 	if nav_region:
 		nav_region.bake_navigation_mesh()
-	# Wait for nav bake
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_start_next_wave()
@@ -114,24 +124,23 @@ func _build_arena() -> void:
 	add_child(merchant)
 
 	# Give starting gold for training purchases
-	if Inventory.gold < 200:
-		Inventory.gold = 200
+	if Inventory.gold < 500:
+		Inventory.gold = 500
 		Inventory.gold_changed.emit(Inventory.gold)
 
 func _start_next_wave() -> void:
 	# 10 second delay between waves
-	var wave_label := hud.get_node_or_null("FloorLabel")
-	if wave_label:
-		wave_label.text = "Next wave in 10s..."
+	var label := hud.get_node_or_null("FloorLabel")
+	if label:
+		label.text = "Next wave in 10s..."
 	await get_tree().create_timer(10.0).timeout
 	current_wave += 1
 	wave_active = true
 	SoundManager.play_sound("level_up")
 
 	# Update wave display
-	var wave_label := hud.get_node_or_null("FloorLabel")
-	if wave_label:
-		wave_label.text = "Wave " + str(current_wave)
+	if label:
+		label.text = "Wave " + str(current_wave)
 
 	var is_boss_wave := current_wave % 5 == 0
 

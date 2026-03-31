@@ -19,21 +19,25 @@ func _show_shop() -> void:
 	var panel := Panel.new()
 	panel.name = "Panel"
 	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.custom_minimum_size = Vector2(400, 350)
-	panel.offset_left = -200
-	panel.offset_top = -175
-	panel.offset_right = 200
-	panel.offset_bottom = 175
+	panel.custom_minimum_size = Vector2(420, 500)
+	panel.offset_left = -210
+	panel.offset_top = -250
+	panel.offset_right = 210
+	panel.offset_bottom = 250
 	shop.add_child(panel)
+
+	var scroll := ScrollContainer.new()
+	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	scroll.offset_left = 10
+	scroll.offset_top = 10
+	scroll.offset_right = -10
+	scroll.offset_bottom = -10
+	panel.add_child(scroll)
 
 	var vbox := VBoxContainer.new()
 	vbox.name = "VBox"
-	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
-	vbox.offset_left = 20
-	vbox.offset_top = 20
-	vbox.offset_right = -20
-	vbox.offset_bottom = -20
-	panel.add_child(vbox)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(vbox)
 
 	var title := Label.new()
 	title.text = "~ MERCHANT ~"

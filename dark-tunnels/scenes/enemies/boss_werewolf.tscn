@@ -1,0 +1,158 @@
+[gd_scene format=3 uid="uid://bosswolf001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/boss_werewolf.gd" id="1_wolf"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wolf"]
+radius = 0.6
+height = 2.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fur"]
+albedo_color = Color(0.3, 0.25, 0.2, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark_fur"]
+albedo_color = Color(0.15, 0.12, 0.1, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(1, 0.7, 0.0, 1)
+emission_enabled = true
+emission = Color(1, 0.6, 0, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_claw"]
+albedo_color = Color(0.9, 0.85, 0.7, 1)
+roughness = 0.3
+
+[node name="BossWerewolf" type="CharacterBody3D"]
+script = ExtResource("1_wolf")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+shape = SubResource("CapsuleShape3D_wolf")
+
+; === BODY (hunched, muscular) ===
+[node name="Body" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.3, 0)
+size = Vector3(1.2, 1.6, 0.9)
+material = SubResource("StandardMaterial3D_fur")
+
+; === CHEST ===
+[node name="Chest" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.25)
+size = Vector3(1.0, 1.0, 0.5)
+material = SubResource("StandardMaterial3D_dark_fur")
+
+; === HEAD (wolf snout) ===
+[node name="Head" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, 0)
+size = Vector3(0.7, 0.6, 0.7)
+material = SubResource("StandardMaterial3D_fur")
+
+; === SNOUT ===
+[node name="Snout" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, -0.5)
+size = Vector3(0.4, 0.3, 0.4)
+material = SubResource("StandardMaterial3D_dark_fur")
+
+; === EYES ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 2.4, -0.3)
+radius = 0.08
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 2.4, -0.3)
+radius = 0.08
+material = SubResource("StandardMaterial3D_eye")
+
+; === EARS (pointed up) ===
+[node name="EarLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 2.7, 0)
+radius = 0.08
+height = 0.25
+cone = true
+material = SubResource("StandardMaterial3D_dark_fur")
+
+[node name="EarRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, 2.7, 0)
+radius = 0.08
+height = 0.25
+cone = true
+material = SubResource("StandardMaterial3D_dark_fur")
+
+; === ARMS (long, muscular, with claws) ===
+[node name="ArmLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 1.4, 0)
+size = Vector3(0.3, 1.2, 0.3)
+material = SubResource("StandardMaterial3D_fur")
+
+[node name="ArmRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 1.4, 0)
+size = Vector3(0.3, 1.2, 0.3)
+material = SubResource("StandardMaterial3D_fur")
+
+; === CLAWS ===
+[node name="ClawLeft1" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, -0.85, 0.75, -0.1)
+radius = 0.02
+height = 0.15
+cone = true
+material = SubResource("StandardMaterial3D_claw")
+
+[node name="ClawLeft2" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, -0.8, 0.75, -0.15)
+radius = 0.02
+height = 0.15
+cone = true
+material = SubResource("StandardMaterial3D_claw")
+
+[node name="ClawRight1" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, 0.85, 0.75, -0.1)
+radius = 0.02
+height = 0.15
+cone = true
+material = SubResource("StandardMaterial3D_claw")
+
+[node name="ClawRight2" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, 0.8, 0.75, -0.15)
+radius = 0.02
+height = 0.15
+cone = true
+material = SubResource("StandardMaterial3D_claw")
+
+; === LEGS ===
+[node name="LegLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0.3, 0)
+size = Vector3(0.3, 0.6, 0.35)
+material = SubResource("StandardMaterial3D_fur")
+
+[node name="LegRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 0.3, 0)
+size = Vector3(0.3, 0.6, 0.35)
+material = SubResource("StandardMaterial3D_fur")
+
+; === TAIL ===
+[node name="Tail" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.95, 0.3, 0, -0.3, 0.95, 0, 1.0, 0.8)
+size = Vector3(0.2, 0.15, 0.7)
+material = SubResource("StandardMaterial3D_dark_fur")
+
+; === EYE GLOW ===
+[node name="BossLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.3, -0.3)
+light_color = Color(1, 0.6, 0, 1)
+light_energy = 2.0
+omni_range = 6.0
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 0.6
+one_shot = true
+
+[node name="SpecialAttackTimer" type="Timer" parent="."]
+wait_time = 4.0
+autostart = true
+
+[connection signal="timeout" from="SpecialAttackTimer" to="." method="_on_special_attack_timer_timeout"]

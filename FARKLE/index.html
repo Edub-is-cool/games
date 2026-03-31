@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Farkle</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Setup Screen -->
+  <div id="setup-screen" class="screen">
+    <h1>Farkle</h1>
+    <p class="subtitle">The Classic Dice Game</p>
+    <div class="setup-form">
+      <label for="player-count">Number of Players</label>
+      <div class="player-count-selector">
+        <button class="count-btn" data-count="2">2</button>
+        <button class="count-btn active" data-count="3">3</button>
+        <button class="count-btn" data-count="4">4</button>
+      </div>
+      <div id="player-names"></div>
+
+      <div class="house-rules">
+        <h3>House Rules — Scoring</h3>
+        <label class="toggle-row">
+          <input type="checkbox" id="rule-four-pair" checked>
+          <span>Four of a kind + a pair = 1,500</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="rule-two-triplets" checked>
+          <span>Two triplets = 2,500</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="rule-partial-straight">
+          <span>Partial straight (1-5 or 2-6) = 500</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="rule-six-instant-win">
+          <span>Six of a kind = instant win</span>
+        </label>
+      </div>
+
+      <div class="house-rules">
+        <h3>House Rules — Gameplay</h3>
+        <label class="toggle-row">
+          <input type="checkbox" id="rule-opening-threshold">
+          <span>Must score 500+ to get on the board</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="rule-three-farkle-penalty" checked>
+          <span>Three farkles in a row = -1,000</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="rule-forced-hot-dice">
+          <span>Forced hot dice (must re-roll, can't bank)</span>
+        </label>
+        <label class="toggle-row">
+          <input type="checkbox" id="rule-exact-win">
+          <span>Must hit exactly 10,000 (going over loses turn)</span>
+        </label>
+      </div>
+
+      <div class="house-rules">
+        <h3>Theme</h3>
+        <div id="setup-theme-list" class="theme-list"></div>
+        <button id="custom-theme-toggle" class="btn btn-small" style="margin-top:12px;width:100%;">Create Custom Theme</button>
+        <div id="custom-theme-editor" class="custom-theme-editor hidden">
+          <input type="text" id="custom-theme-name" placeholder="Theme name" maxlength="20">
+          <div class="color-grid">
+            <label class="color-field">
+              <span>Background</span>
+              <input type="color" data-var="--bg" value="#1a1a2e">
+            </label>
+            <label class="color-field">
+              <span>Surface</span>
+              <input type="color" data-var="--surface" value="#16213e">
+            </label>
+            <label class="color-field">
+              <span>Primary</span>
+              <input type="color" data-var="--primary" value="#e94560">
+            </label>
+            <label class="color-field">
+              <span>Text</span>
+              <input type="color" data-var="--text" value="#eeeeee">
+            </label>
+            <label class="color-field">
+              <span>Accent</span>
+              <input type="color" data-var="--accent" value="#f5c518">
+            </label>
+            <label class="color-field">
+              <span>Dice</span>
+              <input type="color" data-var="--dice-bg" value="#ffffff">
+            </label>
+          </div>
+          <div class="custom-theme-actions">
+            <button id="custom-theme-save" class="btn btn-primary">Save Theme</button>
+            <button id="custom-theme-delete" class="btn btn-danger hidden">Delete</button>
+          </div>
+        </div>
+      </div>
+
+      <button id="start-btn" class="btn btn-primary">Start Game</button>
+    </div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen hidden">
+    <header class="game-header">
+      <h1>Farkle</h1>
+      <div class="header-buttons">
+        <button id="combos-btn" class="btn btn-small">Combos</button>
+        <button id="settings-btn" class="btn btn-small">Theme</button>
+        <button id="menu-btn" class="btn btn-small">Menu</button>
+      </div>
+    </header>
+
+    <!-- Settings Overlay -->
+    <div id="settings-overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <h2>Theme</h2>
+        <div id="theme-list" class="theme-list"></div>
+        <button id="settings-close" class="btn btn-primary" style="margin-top:16px;">Done</button>
+      </div>
+    </div>
+
+    <!-- Combos Overlay -->
+    <div id="combos-overlay" class="overlay hidden">
+      <div class="overlay-content">
+        <h2>Scoring Combos</h2>
+        <table class="combos-table">
+          <tr><td>Single 1</td><td class="pts">100</td></tr>
+          <tr><td>Single 5</td><td class="pts">50</td></tr>
+          <tr class="separator"><td colspan="2"></td></tr>
+          <tr><td>Three 1s</td><td class="pts">1,000</td></tr>
+          <tr><td>Three 2s</td><td class="pts">200</td></tr>
+          <tr><td>Three 3s</td><td class="pts">300</td></tr>
+          <tr><td>Three 4s</td><td class="pts">400</td></tr>
+          <tr><td>Three 5s</td><td class="pts">500</td></tr>
+          <tr><td>Three 6s</td><td class="pts">600</td></tr>
+          <tr class="separator"><td colspan="2"></td></tr>
+          <tr><td>Four of a kind</td><td class="pts">2x three-of-a-kind</td></tr>
+          <tr><td>Five of a kind</td><td class="pts">4x three-of-a-kind</td></tr>
+          <tr><td>Six of a kind</td><td class="pts">8x three-of-a-kind</td></tr>
+          <tr class="separator"><td colspan="2"></td></tr>
+          <tr><td>Straight (1–6)</td><td class="pts">1,500</td></tr>
+          <tr><td>Three Pairs</td><td class="pts">1,500</td></tr>
+          <tr class="separator"><td colspan="2"></td></tr>
+          <tr id="combo-four-pair" class="house-rule-row"><td>Four of a kind + Pair</td><td class="pts">1,500</td></tr>
+          <tr id="combo-two-triplets" class="house-rule-row"><td>Two Triplets</td><td class="pts">2,500</td></tr>
+          <tr id="combo-partial-straight" class="house-rule-row"><td>Partial Straight (1-5 or 2-6)</td><td class="pts">500</td></tr>
+          <tr id="combo-six-instant-win" class="house-rule-row"><td>Six of a kind</td><td class="pts">Instant Win</td></tr>
+        </table>
+        <button id="combos-close" class="btn btn-primary" style="margin-top:16px;">Got it</button>
+      </div>
+    </div>
+
+    <div class="scoreboard" id="scoreboard"></div>
+
+    <div class="turn-info">
+      <span id="current-player-name" class="current-player-name"></span>
+      <span class="turn-score">Turn Score: <strong id="turn-score">0</strong></span>
+    </div>
+
+    <div class="dice-area" id="dice-area"></div>
+
+    <div id="message" class="message"></div>
+
+    <div class="actions">
+      <button id="roll-btn" class="btn btn-primary">Roll Dice</button>
+      <button id="bank-btn" class="btn btn-secondary" disabled>Bank Points</button>
+      <button id="farkle-btn" class="btn btn-danger hidden">Farkle!</button>
+    </div>
+
+    <div class="selection-score" id="selection-score"></div>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="gameover-screen" class="screen hidden">
+    <h1 id="winner-text"></h1>
+    <div id="final-scores"></div>
+    <button id="play-again-btn" class="btn btn-primary">Play Again</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://wbow001"]
+
+[ext_resource type="Script" path="res://scripts/items/weapon_pickup.gd" id="1_weapon"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_bow"]
+size = Vector3(0.15, 1.0, 0.15)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
+albedo_color = Color(0.4, 0.25, 0.1, 1)
+roughness = 0.7
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_string"]
+albedo_color = Color(0.8, 0.8, 0.75, 1)
+
+[node name="WeaponBow" type="StaticBody3D"]
+script = ExtResource("1_weapon")
+weapon_name = "bow"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("BoxShape3D_bow")
+
+[node name="BowTop" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.97, 0.26, 0, -0.26, 0.97, 0, 0, 0, 1, -0.05, 1.0, 0)
+radius = 0.025
+height = 0.5
+material = SubResource("StandardMaterial3D_wood")
+
+[node name="BowBottom" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.97, -0.26, 0, 0.26, 0.97, 0, 0, 0, 1, -0.05, 0.4, 0)
+radius = 0.025
+height = 0.5
+material = SubResource("StandardMaterial3D_wood")
+
+[node name="String" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+radius = 0.008
+height = 0.7
+material = SubResource("StandardMaterial3D_string")

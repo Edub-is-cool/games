@@ -1,0 +1,275 @@
+[gd_scene format=3 uid="uid://orc001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/orc.gd" id="1_enemy"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_orc"]
+radius = 0.5
+height = 2.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skin"]
+albedo_color = Color(0.32, 0.42, 0.18, 1)
+roughness = 0.75
+metallic_specular = 0.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skin_dark"]
+albedo_color = Color(0.22, 0.3, 0.12, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(1, 0.3, 0.1, 1)
+emission_enabled = true
+emission = Color(1, 0.2, 0.0, 1)
+emission_energy_multiplier = 2.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pupil"]
+albedo_color = Color(0.05, 0.02, 0.0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_armor"]
+albedo_color = Color(0.22, 0.18, 0.13, 1)
+metallic = 0.55
+roughness = 0.45
+metallic_specular = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_armor_trim"]
+albedo_color = Color(0.3, 0.25, 0.15, 1)
+metallic = 0.7
+roughness = 0.35
+metallic_specular = 0.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tusk"]
+albedo_color = Color(0.88, 0.83, 0.68, 1)
+roughness = 0.35
+metallic_specular = 0.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_scar"]
+albedo_color = Color(0.4, 0.3, 0.18, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_axe_head"]
+albedo_color = Color(0.45, 0.43, 0.48, 1)
+metallic = 0.75
+roughness = 0.3
+metallic_specular = 0.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_axe_handle"]
+albedo_color = Color(0.3, 0.18, 0.06, 1)
+roughness = 0.8
+
+[node name="Orc" type="CharacterBody3D"]
+script = ExtResource("1_enemy")
+max_health = 80
+damage = 20
+speed = 2.5
+attack_range = 2.5
+detection_range = 14.0
+
+; === BODY (big barrel chest with armor) ===
+[node name="Torso" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+size = Vector3(0.9, 0.9, 0.6)
+material = SubResource("StandardMaterial3D_armor")
+
+; Armor chest plate detail
+[node name="ChestPlate" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, -0.31)
+size = Vector3(0.6, 0.5, 0.04)
+material = SubResource("StandardMaterial3D_armor_trim")
+
+; Armor belt
+[node name="ArmorBelt" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+size = Vector3(0.92, 0.1, 0.62)
+material = SubResource("StandardMaterial3D_armor_trim")
+
+; === BELLY ===
+[node name="Belly" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, -0.1)
+radius = 0.35
+radial_segments = 12
+rings = 6
+material = SubResource("StandardMaterial3D_skin")
+
+; === HEAD (big, brutish, more detail) ===
+[node name="Head" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+size = Vector3(0.55, 0.5, 0.5)
+material = SubResource("StandardMaterial3D_skin")
+
+; Jaw (wider lower face)
+[node name="Jaw" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.52, -0.05)
+size = Vector3(0.58, 0.15, 0.45)
+material = SubResource("StandardMaterial3D_skin")
+
+; === BROW (heavy brow ridge) ===
+[node name="Brow" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.85, -0.2)
+size = Vector3(0.6, 0.1, 0.2)
+material = SubResource("StandardMaterial3D_skin_dark")
+
+; Nose bridge
+[node name="Nose" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.68, -0.28)
+size = Vector3(0.12, 0.15, 0.08)
+material = SubResource("StandardMaterial3D_skin")
+
+; Facial scar
+[node name="Scar" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, 0.26, 0, -0.26, 0.97, 0, 0, 0, 1, 0.12, 1.72, -0.26)
+size = Vector3(0.02, 0.18, 0.02)
+material = SubResource("StandardMaterial3D_scar")
+
+; === EYES ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14, 1.75, -0.22)
+radius = 0.06
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="PupilLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14, 1.75, -0.275)
+radius = 0.025
+material = SubResource("StandardMaterial3D_pupil")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14, 1.75, -0.22)
+radius = 0.06
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="PupilRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14, 1.75, -0.275)
+radius = 0.025
+material = SubResource("StandardMaterial3D_pupil")
+
+; === TUSKS (jutting from lower jaw, bigger) ===
+[node name="TuskLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14, 1.6, -0.25)
+radius = 0.035
+height = 0.18
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_tusk")
+
+[node name="TuskRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14, 1.6, -0.25)
+radius = 0.035
+height = 0.18
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_tusk")
+
+; === ARMS (thick, muscular with wrist wraps) ===
+[node name="ArmLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 1.0, 0)
+size = Vector3(0.22, 0.7, 0.22)
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="WristLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 0.7, 0)
+size = Vector3(0.24, 0.08, 0.24)
+material = SubResource("StandardMaterial3D_armor_trim")
+
+[node name="FistLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 0.62, 0)
+radius = 0.1
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="ArmRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 1.0, 0)
+size = Vector3(0.22, 0.7, 0.22)
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="WristRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 0.7, 0)
+size = Vector3(0.24, 0.08, 0.24)
+material = SubResource("StandardMaterial3D_armor_trim")
+
+[node name="FistRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 0.62, 0)
+radius = 0.1
+material = SubResource("StandardMaterial3D_skin")
+
+; === LEGS (with boots) ===
+[node name="LegLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.3, 0)
+size = Vector3(0.25, 0.6, 0.25)
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="BootLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.08, -0.03)
+size = Vector3(0.26, 0.16, 0.32)
+material = SubResource("StandardMaterial3D_armor")
+
+[node name="LegRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.3, 0)
+size = Vector3(0.25, 0.6, 0.25)
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="BootRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.08, -0.03)
+size = Vector3(0.26, 0.16, 0.32)
+material = SubResource("StandardMaterial3D_armor")
+
+; === SHOULDER PADS (with spikes) ===
+[node name="PadLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 1.45, 0)
+size = Vector3(0.28, 0.15, 0.32)
+material = SubResource("StandardMaterial3D_armor")
+
+[node name="SpikeLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55, 1.58, 0)
+radius = 0.03
+height = 0.12
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_armor_trim")
+
+[node name="PadRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.45, 0)
+size = Vector3(0.28, 0.15, 0.32)
+material = SubResource("StandardMaterial3D_armor")
+
+[node name="SpikeRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.55, 1.58, 0)
+radius = 0.03
+height = 0.12
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_armor_trim")
+
+; === AXE (held in right hand, hidden by default) ===
+[node name="AxeHeld" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 0.55, -0.1)
+
+[node name="Handle" type="CSGCylinder3D" parent="AxeHeld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+radius = 0.03
+height = 0.7
+sides = 6
+material = SubResource("StandardMaterial3D_axe_handle")
+
+[node name="AxeHead" type="CSGBox3D" parent="AxeHeld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 0.3, 0)
+size = Vector3(0.18, 0.2, 0.04)
+material = SubResource("StandardMaterial3D_axe_head")
+
+[node name="AxeBlade" type="CSGCylinder3D" parent="AxeHeld"]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.18, 0.3, 0)
+radius = 0.1
+height = 0.04
+cone = true
+sides = 8
+material = SubResource("StandardMaterial3D_axe_head")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+shape = SubResource("CapsuleShape3D_orc")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 1.3
+one_shot = true

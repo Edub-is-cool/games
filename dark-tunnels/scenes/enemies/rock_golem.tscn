@@ -1,0 +1,206 @@
+[gd_scene format=3 uid="uid://golem001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/rock_golem.gd" id="1_golem"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_golem"]
+radius = 0.6
+height = 2.4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rock"]
+albedo_color = Color(0.4, 0.38, 0.35, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rock_dark"]
+albedo_color = Color(0.3, 0.28, 0.25, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rock_light"]
+albedo_color = Color(0.48, 0.45, 0.4, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_head"]
+albedo_color = Color(0.42, 0.4, 0.37, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(0.9, 0.5, 0.1, 1)
+emission_enabled = true
+emission = Color(0.9, 0.5, 0.1, 1)
+emission_energy_multiplier = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_crack"]
+albedo_color = Color(0.25, 0.22, 0.18, 1)
+roughness = 0.95
+
+[node name="RockGolem" type="CharacterBody3D"]
+script = ExtResource("1_golem")
+max_health = 120
+damage = 25
+speed = 1.8
+attack_range = 2.5
+detection_range = 8.0
+loot_gold_min = 15
+loot_gold_max = 30
+
+; === TORSO (big blocky box) ===
+[node name="Torso" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+size = Vector3(0.9, 1.0, 0.7)
+material = SubResource("StandardMaterial3D_rock")
+
+; Chest boulder detail
+[node name="ChestBoulder" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8, 0, 0, 0, 1, 0.1, 1.2, -0.32)
+radius = 0.15
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_rock_light")
+
+; Back ridge
+[node name="BackRidge" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0.3)
+size = Vector3(0.5, 0.15, 0.15)
+material = SubResource("StandardMaterial3D_rock_dark")
+
+; === HEAD (rough sphere) ===
+[node name="Head" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9, 0, 0, 0, 1, 0, 1.8, -0.05)
+radius = 0.25
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_head")
+
+; Brow ridge
+[node name="Brow" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.88, -0.2)
+size = Vector3(0.4, 0.08, 0.12)
+material = SubResource("StandardMaterial3D_rock_dark")
+
+; Jaw
+[node name="Jaw" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, -0.15)
+size = Vector3(0.3, 0.1, 0.2)
+material = SubResource("StandardMaterial3D_rock_dark")
+
+; === EYES (small orange emissive) ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 1.84, -0.22)
+radius = 0.04
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 1.84, -0.22)
+radius = 0.04
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+; === ARMS (oversized, hanging low) ===
+[node name="ArmLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.62, 0.9, 0)
+size = Vector3(0.3, 0.8, 0.3)
+material = SubResource("StandardMaterial3D_rock")
+
+; Left shoulder boulder
+[node name="ShoulderLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8, 0, 0, 0, 1, -0.55, 1.38, 0)
+radius = 0.18
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_rock_light")
+
+; Left fist
+[node name="FistLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.62, 0.42, 0)
+size = Vector3(0.34, 0.2, 0.34)
+material = SubResource("StandardMaterial3D_rock_dark")
+
+[node name="ArmRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.62, 0.9, 0)
+size = Vector3(0.3, 0.8, 0.3)
+material = SubResource("StandardMaterial3D_rock")
+
+; Right shoulder boulder
+[node name="ShoulderRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8, 0, 0, 0, 1, 0.55, 1.38, 0)
+radius = 0.18
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_rock_light")
+
+; Right fist
+[node name="FistRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.62, 0.42, 0)
+size = Vector3(0.34, 0.2, 0.34)
+material = SubResource("StandardMaterial3D_rock_dark")
+
+; === LEGS (thick short boxes) ===
+[node name="LegLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.22, 0.25, 0)
+size = Vector3(0.35, 0.5, 0.35)
+material = SubResource("StandardMaterial3D_rock")
+
+; Left knee cap
+[node name="KneeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8, 0, 0, 0, 1, -0.22, 0.38, -0.18)
+radius = 0.08
+radial_segments = 6
+rings = 3
+material = SubResource("StandardMaterial3D_rock_light")
+
+[node name="LegRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.25, 0)
+size = Vector3(0.35, 0.5, 0.35)
+material = SubResource("StandardMaterial3D_rock")
+
+; Right knee cap
+[node name="KneeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8, 0, 0, 0, 1, 0.22, 0.38, -0.18)
+radius = 0.08
+radial_segments = 6
+rings = 3
+material = SubResource("StandardMaterial3D_rock_light")
+
+; === FEET (wide flat boxes) ===
+[node name="FootLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.22, 0.04, -0.04)
+size = Vector3(0.38, 0.08, 0.42)
+material = SubResource("StandardMaterial3D_rock_dark")
+
+[node name="FootRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.04, -0.04)
+size = Vector3(0.38, 0.08, 0.42)
+material = SubResource("StandardMaterial3D_rock_dark")
+
+; === CRACK PROTRUSIONS (small boxes at odd angles) ===
+[node name="Crack1" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, 0.26, 0, -0.26, 0.97, 0, 0, 0, 1, 0.35, 1.3, -0.25)
+size = Vector3(0.08, 0.15, 0.06)
+material = SubResource("StandardMaterial3D_crack")
+
+[node name="Crack2" type="CSGBox3D" parent="."]
+transform = Transform3D(0.87, 0, 0.5, 0, 1, 0, -0.5, 0, 0.87, -0.3, 0.95, 0.28)
+size = Vector3(0.06, 0.12, 0.05)
+material = SubResource("StandardMaterial3D_crack")
+
+[node name="Crack3" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, -0.26, 0, 0.26, 0.97, 0, 0, 0, 1, 0.15, 1.5, 0.3)
+size = Vector3(0.07, 0.1, 0.06)
+material = SubResource("StandardMaterial3D_crack")
+
+[node name="Crack4" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.97, 0.26, 0, -0.26, 0.97, -0.38, 1.15, -0.1)
+size = Vector3(0.05, 0.13, 0.05)
+material = SubResource("StandardMaterial3D_crack")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("CapsuleShape3D_golem")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 3.0
+one_shot = true

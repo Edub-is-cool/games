@@ -1,0 +1,59 @@
+[gd_scene load_steps=5 format=3 uid="uid://icebolt001"]
+
+[ext_resource type="Script" path="res://scripts/magic/icebolt.gd" id="1_icebolt"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ice"]
+radius = 0.15
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ice"]
+albedo_color = Color(0.25, 0.65, 1.0, 0.85)
+emission_enabled = true
+emission = Color(0.2, 0.55, 1, 1)
+emission_energy_multiplier = 5.0
+transparency = 1
+metallic = 0.3
+roughness = 0.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_core"]
+albedo_color = Color(0.7, 0.9, 1.0, 0.95)
+emission_enabled = true
+emission = Color(0.6, 0.85, 1, 1)
+emission_energy_multiplier = 8.0
+transparency = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glow"]
+albedo_color = Color(0.15, 0.4, 0.8, 0.2)
+emission_enabled = true
+emission = Color(0.1, 0.3, 0.8, 1)
+emission_energy_multiplier = 2.0
+transparency = 1
+blend_mode = 1
+
+[node name="IceBolt" type="Area3D"]
+script = ExtResource("1_icebolt")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_ice")
+
+[node name="Glow" type="CSGSphere3D" parent="."]
+radius = 0.18
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_glow")
+
+[node name="CSGSphere3D" type="CSGSphere3D" parent="."]
+radius = 0.11
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_ice")
+
+[node name="Core" type="CSGSphere3D" parent="."]
+radius = 0.05
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_core")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(0.3, 0.6, 1, 1)
+light_energy = 2.0
+omni_range = 4.0

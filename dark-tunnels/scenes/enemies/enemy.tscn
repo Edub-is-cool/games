@@ -1,0 +1,237 @@
+[gd_scene load_steps=9 format=3 uid="uid://enemy001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/goblin.gd" id="1_enemy"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_enemy"]
+radius = 0.3
+height = 1.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skin"]
+albedo_color = Color(0.28, 0.5, 0.18, 1)
+roughness = 0.75
+metallic_specular = 0.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skin_dark"]
+albedo_color = Color(0.2, 0.38, 0.12, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(1, 0.9, 0.1, 1)
+emission_enabled = true
+emission = Color(1, 0.8, 0, 1)
+emission_energy_multiplier = 2.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pupil"]
+albedo_color = Color(0.05, 0.05, 0.02, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cloth"]
+albedo_color = Color(0.3, 0.17, 0.08, 1)
+roughness = 0.92
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_teeth"]
+albedo_color = Color(0.85, 0.82, 0.7, 1)
+roughness = 0.5
+metallic_specular = 0.3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_belt"]
+albedo_color = Color(0.2, 0.12, 0.05, 1)
+roughness = 0.7
+metallic = 0.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_blade"]
+albedo_color = Color(0.7, 0.7, 0.75, 1)
+metallic = 0.85
+roughness = 0.2
+metallic_specular = 0.7
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hilt"]
+albedo_color = Color(0.35, 0.2, 0.08, 1)
+roughness = 0.75
+
+[node name="Enemy" type="CharacterBody3D"]
+script = ExtResource("1_enemy")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+shape = SubResource("CapsuleShape3D_enemy")
+
+; === BODY (short torso) ===
+[node name="Torso" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+size = Vector3(0.5, 0.6, 0.35)
+material = SubResource("StandardMaterial3D_cloth")
+
+; Belt
+[node name="Belt" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+size = Vector3(0.52, 0.08, 0.37)
+material = SubResource("StandardMaterial3D_belt")
+
+; Belt buckle
+[node name="Buckle" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, -0.19)
+size = Vector3(0.06, 0.06, 0.02)
+material = SubResource("StandardMaterial3D_teeth")
+
+; === HEAD (big round head with bumps) ===
+[node name="Head" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+radius = 0.25
+radial_segments = 16
+rings = 8
+material = SubResource("StandardMaterial3D_skin")
+
+; Brow ridge
+[node name="BrowRidge" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -0.18)
+size = Vector3(0.28, 0.05, 0.08)
+material = SubResource("StandardMaterial3D_skin_dark")
+
+; === EYES (big yellow with pupils) ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 1.15, -0.2)
+radius = 0.06
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="PupilLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 1.15, -0.255)
+radius = 0.025
+material = SubResource("StandardMaterial3D_pupil")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 1.15, -0.2)
+radius = 0.06
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="PupilRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 1.15, -0.255)
+radius = 0.025
+material = SubResource("StandardMaterial3D_pupil")
+
+; === NOSE (big pointy) ===
+[node name="Nose" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 1.08, -0.25)
+radius = 0.04
+height = 0.15
+sides = 6
+material = SubResource("StandardMaterial3D_skin")
+
+; === MOUTH (wide with teeth) ===
+[node name="Mouth" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.98, -0.22)
+size = Vector3(0.15, 0.03, 0.04)
+material = SubResource("StandardMaterial3D_skin_dark")
+
+[node name="ToothL" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.04, 0.96, -0.22)
+radius = 0.012
+height = 0.03
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_teeth")
+
+[node name="ToothR" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.04, 0.96, -0.22)
+radius = 0.012
+height = 0.03
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_teeth")
+
+; === EARS (pointy, sticking out) ===
+[node name="EarLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -0.3, 1.15, 0)
+radius = 0.06
+height = 0.2
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="EarRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0.3, 1.15, 0)
+radius = 0.06
+height = 0.2
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_skin")
+
+; === LEGS (short stubby with feet) ===
+[node name="LegLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12, 0.15, 0)
+size = Vector3(0.14, 0.3, 0.16)
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="FootLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12, 0.02, -0.04)
+size = Vector3(0.14, 0.04, 0.22)
+material = SubResource("StandardMaterial3D_skin_dark")
+
+[node name="LegRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, 0.15, 0)
+size = Vector3(0.14, 0.3, 0.16)
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="FootRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, 0.02, -0.04)
+size = Vector3(0.14, 0.04, 0.22)
+material = SubResource("StandardMaterial3D_skin_dark")
+
+; === ARMS (with hands) ===
+[node name="ArmLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 0.55, 0)
+size = Vector3(0.12, 0.38, 0.12)
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="HandLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 0.34, 0)
+radius = 0.06
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="ArmRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.55, 0)
+size = Vector3(0.12, 0.38, 0.12)
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="HandRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.34, 0)
+radius = 0.06
+material = SubResource("StandardMaterial3D_skin")
+
+; === SWORD (held in right hand, hidden by default) ===
+[node name="SwordHeld" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 0.28, -0.05)
+
+[node name="Grip" type="CSGCylinder3D" parent="SwordHeld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+radius = 0.02
+height = 0.15
+sides = 6
+material = SubResource("StandardMaterial3D_hilt")
+
+[node name="Guard" type="CSGBox3D" parent="SwordHeld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
+size = Vector3(0.1, 0.02, 0.03)
+material = SubResource("StandardMaterial3D_hilt")
+
+[node name="Blade" type="CSGBox3D" parent="SwordHeld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28, 0)
+size = Vector3(0.04, 0.35, 0.015)
+material = SubResource("StandardMaterial3D_blade")
+
+[node name="Tip" type="CSGCylinder3D" parent="SwordHeld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.47, 0)
+radius = 0.02
+height = 0.05
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_blade")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 1.0
+one_shot = true

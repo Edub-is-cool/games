@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://bosswitch001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/boss_witch.gd" id="1_witch"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_witch"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe"]
+albedo_color = Color(0.15, 0.05, 0.25, 1)
+emission_enabled = true
+emission = Color(0.2, 0.05, 0.3, 1)
+emission_energy_multiplier = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skin"]
+albedo_color = Color(0.45, 0.7, 0.35, 1)
+roughness = 0.7
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(1, 0.2, 1, 1)
+emission_enabled = true
+emission = Color(1, 0.2, 1, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hat"]
+albedo_color = Color(0.1, 0.02, 0.18, 1)
+
+[node name="BossWitch" type="CharacterBody3D"]
+script = ExtResource("1_witch")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_witch")
+
+; === ROBE ===
+[node name="Robe" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
+size = Vector3(0.7, 1.1, 0.5)
+material = SubResource("StandardMaterial3D_robe")
+
+; === ROBE SKIRT (wider at bottom) ===
+[node name="Skirt" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.5
+height = 0.3
+material = SubResource("StandardMaterial3D_robe")
+
+; === HEAD ===
+[node name="Head" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, 0)
+radius = 0.22
+material = SubResource("StandardMaterial3D_skin")
+
+; === EYES ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.09, 1.5, -0.18)
+radius = 0.05
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.09, 1.5, -0.18)
+radius = 0.05
+material = SubResource("StandardMaterial3D_eye")
+
+; === POINTY NOSE ===
+[node name="Nose" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, 1, 0, -1, 0, 0, 1.42, -0.22)
+radius = 0.03
+height = 0.12
+cone = true
+material = SubResource("StandardMaterial3D_skin")
+
+; === WITCH HAT ===
+[node name="HatBrim" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0)
+radius = 0.35
+height = 0.04
+material = SubResource("StandardMaterial3D_hat")
+
+[node name="HatCone" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+radius = 0.2
+height = 0.7
+cone = true
+material = SubResource("StandardMaterial3D_hat")
+
+; === MAGIC AURA ===
+[node name="AuraLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+light_color = Color(0.6, 0.1, 1, 1)
+light_energy = 2.5
+omni_range = 8.0
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 1.2
+one_shot = true
+
+[node name="SpecialAttackTimer" type="Timer" parent="."]
+wait_time = 6.0
+autostart = true
+
+[connection signal="timeout" from="SpecialAttackTimer" to="." method="_on_special_attack_timer_timeout"]

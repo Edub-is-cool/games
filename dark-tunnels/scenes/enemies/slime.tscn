@@ -1,0 +1,126 @@
+[gd_scene format=3 uid="uid://slime001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/slime.gd" id="1_slime"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_slime"]
+radius = 0.45
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_slime"]
+albedo_color = Color(0.15, 0.6, 0.25, 0.8)
+emission_enabled = true
+emission = Color(0.08, 0.35, 0.12, 1)
+emission_energy_multiplier = 0.6
+roughness = 0.15
+metallic = 0.35
+metallic_specular = 0.7
+transparency = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_slime_core"]
+albedo_color = Color(0.1, 0.4, 0.15, 0.6)
+emission_enabled = true
+emission = Color(0.05, 0.25, 0.08, 1)
+emission_energy_multiplier = 0.8
+roughness = 0.1
+metallic = 0.4
+transparency = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(1, 1, 1, 1)
+emission_enabled = true
+emission = Color(1, 1, 1, 1)
+emission_energy_multiplier = 1.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pupil"]
+albedo_color = Color(0.05, 0.05, 0.05, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bubble"]
+albedo_color = Color(0.4, 0.9, 0.5, 0.3)
+emission_enabled = true
+emission = Color(0.3, 0.7, 0.4, 1)
+emission_energy_multiplier = 0.3
+roughness = 0.05
+metallic = 0.5
+transparency = 1
+
+[node name="Slime" type="CharacterBody3D"]
+script = ExtResource("1_slime")
+max_health = 30
+damage = 8
+speed = 2.0
+attack_range = 1.5
+detection_range = 10.0
+
+; === BODY (blobby sphere, slightly squished) ===
+[node name="Body" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.1, 0, 0, 0, 0.8, 0, 0, 0, 1.1, 0, 0.35, 0)
+radius = 0.4
+radial_segments = 16
+rings = 8
+material = SubResource("StandardMaterial3D_slime")
+
+; Inner darker core visible through transparency
+[node name="Core" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.7, 0, 0, 0, 0.6, 0, 0, 0, 0.7, 0, 0.3, 0)
+radius = 0.3
+radial_segments = 12
+rings = 6
+material = SubResource("StandardMaterial3D_slime_core")
+
+; Surface bubbles
+[node name="Bubble1" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.55, -0.1)
+radius = 0.05
+material = SubResource("StandardMaterial3D_bubble")
+
+[node name="Bubble2" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 0.45, 0.2)
+radius = 0.04
+material = SubResource("StandardMaterial3D_bubble")
+
+[node name="Bubble3" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.58, 0.15)
+radius = 0.035
+material = SubResource("StandardMaterial3D_bubble")
+
+; Drip at bottom
+[node name="Drip" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.6, 0, 0, 0, 0.3, 0, 0, 0, 0.6, 0.15, 0.02, 0.1)
+radius = 0.15
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_slime")
+
+; === EYES ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 0.5, -0.3)
+radius = 0.08
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, 0.5, -0.3)
+radius = 0.08
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="PupilLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 0.5, -0.37)
+radius = 0.04
+material = SubResource("StandardMaterial3D_pupil")
+
+[node name="PupilRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, 0.5, -0.37)
+radius = 0.04
+material = SubResource("StandardMaterial3D_pupil")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+shape = SubResource("SphereShape3D_slime")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 1.2
+one_shot = true

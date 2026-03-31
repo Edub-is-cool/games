@@ -1,0 +1,208 @@
+[gd_scene format=3 uid="uid://crystal001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/crystal_sentinel.gd" id="1_crystal"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_crystal"]
+radius = 0.4
+height = 2.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_crystal"]
+albedo_color = Color(0.3, 0.7, 0.9, 0.85)
+emission_enabled = true
+emission = Color(0.2, 0.5, 0.8, 1)
+emission_energy_multiplier = 2.0
+metallic = 0.6
+roughness = 0.1
+metallic_specular = 0.8
+transparency = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_crystal_bright"]
+albedo_color = Color(0.4, 0.8, 1.0, 0.9)
+emission_enabled = true
+emission = Color(0.3, 0.6, 0.9, 1)
+emission_energy_multiplier = 3.0
+metallic = 0.7
+roughness = 0.08
+metallic_specular = 0.9
+transparency = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_crystal_dark"]
+albedo_color = Color(0.15, 0.4, 0.6, 0.8)
+emission_enabled = true
+emission = Color(0.1, 0.3, 0.5, 1)
+emission_energy_multiplier = 1.5
+metallic = 0.5
+roughness = 0.15
+transparency = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(0.9, 0.95, 1, 1)
+emission_enabled = true
+emission = Color(0.5, 0.8, 1, 1)
+emission_energy_multiplier = 5.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_core"]
+albedo_color = Color(0.2, 0.6, 0.9, 0.7)
+emission_enabled = true
+emission = Color(0.3, 0.7, 1.0, 1)
+emission_energy_multiplier = 4.0
+metallic = 0.8
+roughness = 0.05
+transparency = 1
+
+[node name="CrystalSentinel" type="CharacterBody3D"]
+script = ExtResource("1_crystal")
+max_health = 50
+damage = 20
+speed = 1.5
+attack_range = 15.0
+detection_range = 18.0
+loot_gold_min = 15
+loot_gold_max = 25
+
+; === TORSO (diamond-rotated box) ===
+[node name="Body" type="CSGBox3D" parent="."]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 0, 0.9, 0)
+size = Vector3(0.5, 0.8, 0.5)
+material = SubResource("StandardMaterial3D_crystal")
+
+; Inner core glow
+[node name="Core" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+radius = 0.15
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_core")
+
+; === HEAD (smaller diamond) ===
+[node name="Head" type="CSGBox3D" parent="."]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 0, 1.55, 0)
+size = Vector3(0.25, 0.3, 0.25)
+material = SubResource("StandardMaterial3D_crystal_bright")
+
+; Neck crystal shard
+[node name="Neck" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 0)
+radius = 0.08
+height = 0.15
+sides = 6
+material = SubResource("StandardMaterial3D_crystal")
+
+; === EYES (bright white-cyan glow) ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.08, 1.58, -0.14)
+radius = 0.04
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 1.58, -0.14)
+radius = 0.04
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+; === HEAD CREST (crystal spike on top) ===
+[node name="HeadCrest" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.82, 0)
+radius = 0.06
+height = 0.2
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_crystal_bright")
+
+; === LEFT ARM (crystal shard pointing outward) ===
+[node name="ShoulderLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 1.1, 0)
+radius = 0.07
+material = SubResource("StandardMaterial3D_crystal")
+
+[node name="ArmLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -0.55, 0.95, 0)
+radius = 0.06
+height = 0.35
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_crystal_dark")
+
+; Left forearm shard
+[node name="ForearmLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.26, -0.97, 0, 0.97, 0.26, 0, 0, 0, 1, -0.65, 0.7, 0)
+radius = 0.05
+height = 0.3
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_crystal")
+
+; === RIGHT ARM (crystal shard pointing outward) ===
+[node name="ShoulderRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 1.1, 0)
+radius = 0.07
+material = SubResource("StandardMaterial3D_crystal")
+
+[node name="ArmRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0.55, 0.95, 0)
+radius = 0.06
+height = 0.35
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_crystal_dark")
+
+; Right forearm shard
+[node name="ForearmRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.26, 0.97, 0, -0.97, 0.26, 0, 0, 0, 1, 0.65, 0.7, 0)
+radius = 0.05
+height = 0.3
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_crystal")
+
+; === LEFT LEG (crystal shard pointing down) ===
+[node name="HipLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 0.5, 0)
+radius = 0.06
+material = SubResource("StandardMaterial3D_crystal")
+
+[node name="LegLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 0.25, 0)
+radius = 0.07
+height = 0.45
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_crystal_dark")
+
+; === RIGHT LEG (crystal shard pointing down) ===
+[node name="HipRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, 0.5, 0)
+radius = 0.06
+material = SubResource("StandardMaterial3D_crystal")
+
+[node name="LegRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, 0.25, 0)
+radius = 0.07
+height = 0.45
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_crystal_dark")
+
+; === FLOATING CRYSTAL SHARDS (orbiting detail) ===
+[node name="ShardLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(0.707, 0.707, 0, -0.707, 0.707, 0, 0, 0, 1, -0.45, 1.3, -0.15)
+size = Vector3(0.06, 0.12, 0.04)
+material = SubResource("StandardMaterial3D_crystal_bright")
+
+[node name="ShardRight" type="CSGBox3D" parent="."]
+transform = Transform3D(0.707, -0.707, 0, 0.707, 0.707, 0, 0, 0, 1, 0.45, 1.3, -0.15)
+size = Vector3(0.06, 0.12, 0.04)
+material = SubResource("StandardMaterial3D_crystal_bright")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_crystal")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 3.0
+one_shot = true

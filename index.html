@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ephraim's Games</title>
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #14141f;
+      --border: #2a2a3a;
+      --text: #e0e0e8;
+      --text-muted: #8888a0;
+      --accent-1: #ff6b4a;
+      --accent-2: #7c4dff;
+      --accent-3: #00e5a0;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      text-align: center;
+      padding: 4rem 1.5rem 2rem;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+
+    .games {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+    }
+
+    .card:nth-child(1):hover { border-color: var(--accent-1); }
+    .card:nth-child(2):hover { border-color: var(--accent-2); }
+    .card:nth-child(3):hover { border-color: var(--accent-3); }
+
+    .card-banner {
+      height: 180px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card:nth-child(1) .card-banner {
+      background: linear-gradient(135deg, #1a0a00 0%, #2d1200 50%, #1a0a00 100%);
+    }
+    .card:nth-child(2) .card-banner {
+      background: linear-gradient(135deg, #0a0014 0%, #1a0033 50%, #0a0014 100%);
+    }
+    .card:nth-child(3) .card-banner {
+      background: linear-gradient(135deg, #001a0f 0%, #003322 50%, #001a0f 100%);
+    }
+
+    .card-body {
+      padding: 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-body h2 {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .card-body .genre {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+
+    .card:nth-child(1) .genre { color: var(--accent-1); }
+    .card:nth-child(2) .genre { color: var(--accent-2); }
+    .card:nth-child(3) .genre { color: var(--accent-3); }
+
+    .card-body .desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      margin-bottom: 1.25rem;
+      flex: 1;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .tag {
+      background: rgba(255,255,255,0.06);
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .play-btn {
+      display: inline-block;
+      text-align: center;
+      text-decoration: none;
+      padding: 0.7rem 1.5rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #fff;
+      transition: opacity 0.2s;
+    }
+
+    .play-btn:hover { opacity: 0.85; }
+
+    .card:nth-child(1) .play-btn { background: var(--accent-1); }
+    .card:nth-child(2) .play-btn { background: var(--accent-2); }
+    .card:nth-child(3) .play-btn { background: var(--accent-3); color: #0a0a0f; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Ephraim's Games</h1>
+    <p>A collection of browser-playable games</p>
+  </header>
+
+  <section class="games">
+
+    <div class="card">
+      <div class="card-banner">&#9876;</div>
+      <div class="card-body">
+        <div class="genre">Real-Time Strategy</div>
+        <h2>Battle of the Ages</h2>
+        <p class="desc">An Age of Empires-inspired RTS. Gather resources, build a base, train armies, and conquer your AI opponent on a procedurally generated map.</p>
+        <div class="tags">
+          <span class="tag">Phaser 3</span>
+          <span class="tag">TypeScript</span>
+          <span class="tag">Vite</span>
+        </div>
+        <a class="play-btn" href="battle/dist/index.html">Play</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-banner">&#128373;</div>
+      <div class="card-body">
+        <div class="genre">Adventure</div>
+        <h2>Dark Tunnels</h2>
+        <p class="desc">Explore dark, winding tunnels in this atmospheric Godot-powered adventure. Navigate dangers, manage your inventory, and find your way out.</p>
+        <div class="tags">
+          <span class="tag">Godot 4</span>
+          <span class="tag">GDScript</span>
+          <span class="tag">Web Export</span>
+        </div>
+        <a class="play-btn" href="dark-tunnels/export/web/index.html">Play</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-banner">&#127922;</div>
+      <div class="card-body">
+        <div class="genre">Dice / Party</div>
+        <h2>Farkle</h2>
+        <p class="desc">The classic push-your-luck dice game. Roll, score, and decide when to bank — but farkle and you lose it all. Supports 2-4 players in hot-seat mode.</p>
+        <div class="tags">
+          <span class="tag">HTML5</span>
+          <span class="tag">CSS3</span>
+          <span class="tag">Vanilla JS</span>
+        </div>
+        <a class="play-btn" href="FARKLE/index.html">Play</a>
+      </div>
+    </div>
+
+  </section>
+
+  <footer>
+    Built by Ephraim
+  </footer>
+
+</body>
+</html>

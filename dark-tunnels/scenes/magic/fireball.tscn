@@ -1,0 +1,58 @@
+[gd_scene load_steps=6 format=3 uid="uid://fireball001"]
+
+[ext_resource type="Script" path="res://scripts/magic/fireball.gd" id="1_fireball"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_fireball"]
+radius = 0.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fireball"]
+albedo_color = Color(1, 0.45, 0.0, 1)
+emission_enabled = true
+emission = Color(1, 0.35, 0.0, 1)
+emission_energy_multiplier = 6.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_core"]
+albedo_color = Color(1, 0.9, 0.5, 1)
+emission_enabled = true
+emission = Color(1, 0.85, 0.4, 1)
+emission_energy_multiplier = 10.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glow"]
+albedo_color = Color(1, 0.3, 0.0, 0.3)
+emission_enabled = true
+emission = Color(1, 0.2, 0.0, 1)
+emission_energy_multiplier = 3.0
+transparency = 1
+blend_mode = 1
+
+[node name="Fireball" type="Area3D"]
+script = ExtResource("1_fireball")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_fireball")
+
+; Outer glow halo
+[node name="Glow" type="CSGSphere3D" parent="."]
+radius = 0.22
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_glow")
+
+; Main fireball
+[node name="CSGSphere3D" type="CSGSphere3D" parent="."]
+radius = 0.14
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_fireball")
+
+; Hot core
+[node name="Core" type="CSGSphere3D" parent="."]
+radius = 0.06
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_core")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.5, 0, 1)
+light_energy = 3.0
+omni_range = 5.0

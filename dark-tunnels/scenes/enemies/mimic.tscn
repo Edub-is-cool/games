@@ -1,0 +1,244 @@
+[gd_scene format=3 uid="uid://mimic001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/mimic.gd" id="1_mimic"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mimic"]
+size = Vector3(0.8, 0.5, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood"]
+albedo_color = Color(0.45, 0.3, 0.1, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wood_lid"]
+albedo_color = Color(0.5, 0.35, 0.12, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_metal"]
+albedo_color = Color(0.25, 0.22, 0.2, 1)
+metallic = 0.7
+roughness = 0.4
+metallic_specular = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gold_trim"]
+albedo_color = Color(0.75, 0.6, 0.2, 1)
+metallic = 0.85
+roughness = 0.25
+metallic_specular = 0.7
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tooth"]
+albedo_color = Color(0.92, 0.9, 0.82, 1)
+roughness = 0.35
+metallic_specular = 0.3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(1, 0.85, 0.1, 1)
+emission_enabled = true
+emission = Color(1, 0.9, 0.2, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tongue"]
+albedo_color = Color(0.7, 0.15, 0.15, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_leg"]
+albedo_color = Color(0.35, 0.2, 0.08, 1)
+roughness = 0.85
+
+[node name="Mimic" type="CharacterBody3D"]
+script = ExtResource("1_mimic")
+max_health = 55
+damage = 18
+speed = 3.5
+attack_range = 1.8
+detection_range = 2.0
+loot_gold_min = 20
+loot_gold_max = 40
+
+; === CHEST BODY (wooden box) ===
+[node name="Body" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+size = Vector3(0.8, 0.5, 0.6)
+material = SubResource("StandardMaterial3D_wood")
+
+; Metal band front
+[node name="BandFront" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, -0.305)
+size = Vector3(0.82, 0.08, 0.02)
+material = SubResource("StandardMaterial3D_metal")
+
+; Metal band back
+[node name="BandBack" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0.305)
+size = Vector3(0.82, 0.08, 0.02)
+material = SubResource("StandardMaterial3D_metal")
+
+; Metal band middle
+[node name="BandMiddle" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+size = Vector3(0.82, 0.04, 0.62)
+material = SubResource("StandardMaterial3D_metal")
+
+; Gold lock plate on front
+[node name="LockPlate" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, -0.31)
+size = Vector3(0.12, 0.12, 0.02)
+material = SubResource("StandardMaterial3D_gold_trim")
+
+; Corner reinforcements
+[node name="CornerFL" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38, 0.03, -0.28)
+size = Vector3(0.06, 0.06, 0.06)
+material = SubResource("StandardMaterial3D_metal")
+
+[node name="CornerFR" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.38, 0.03, -0.28)
+size = Vector3(0.06, 0.06, 0.06)
+material = SubResource("StandardMaterial3D_metal")
+
+[node name="CornerBL" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38, 0.03, 0.28)
+size = Vector3(0.06, 0.06, 0.06)
+material = SubResource("StandardMaterial3D_metal")
+
+[node name="CornerBR" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.38, 0.03, 0.28)
+size = Vector3(0.06, 0.06, 0.06)
+material = SubResource("StandardMaterial3D_metal")
+
+; === LID (hinges at back, can rotate open) ===
+[node name="Lid" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+size = Vector3(0.8, 0.1, 0.6)
+material = SubResource("StandardMaterial3D_wood_lid")
+
+; Lid metal band
+[node name="LidBand" type="CSGBox3D" parent="Lid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.305)
+size = Vector3(0.82, 0.12, 0.02)
+material = SubResource("StandardMaterial3D_metal")
+
+; === TEETH (hidden row along front rim, shown when active) ===
+[node name="Teeth" type="Node3D" parent="."]
+visible = false
+
+[node name="Tooth1" type="CSGCylinder3D" parent="Teeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0.5, -0.25)
+radius = 0.025
+height = 0.08
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_tooth")
+
+[node name="Tooth2" type="CSGCylinder3D" parent="Teeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.5, -0.25)
+radius = 0.03
+height = 0.1
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_tooth")
+
+[node name="Tooth3" type="CSGCylinder3D" parent="Teeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.5, -0.25)
+radius = 0.025
+height = 0.08
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_tooth")
+
+[node name="Tooth4" type="CSGCylinder3D" parent="Teeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.25)
+radius = 0.03
+height = 0.1
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_tooth")
+
+[node name="Tooth5" type="CSGCylinder3D" parent="Teeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.5, -0.25)
+radius = 0.025
+height = 0.08
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_tooth")
+
+[node name="Tooth6" type="CSGCylinder3D" parent="Teeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, 0.5, -0.25)
+radius = 0.03
+height = 0.1
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_tooth")
+
+[node name="Tooth7" type="CSGCylinder3D" parent="Teeth"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, 0.5, -0.25)
+radius = 0.025
+height = 0.08
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_tooth")
+
+; === MIMIC EYES (on top of lid, hidden until active) ===
+[node name="MimicEyes" type="Node3D" parent="."]
+visible = false
+
+[node name="EyeLeft" type="CSGSphere3D" parent="MimicEyes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 0.66, -0.12)
+radius = 0.06
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="MimicEyes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, 0.66, -0.12)
+radius = 0.06
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_eye")
+
+; === TONGUE (red slab inside mouth, hidden until active) ===
+[node name="Tongue" type="Node3D" parent="."]
+visible = false
+
+[node name="TongueFlesh" type="CSGBox3D" parent="Tongue"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, -0.15)
+size = Vector3(0.2, 0.06, 0.25)
+material = SubResource("StandardMaterial3D_tongue")
+
+[node name="TongueTip" type="CSGSphere3D" parent="Tongue"]
+transform = Transform3D(1.2, 0, 0, 0, 0.4, 0, 0, 0, 1, 0, 0.42, -0.3)
+radius = 0.08
+material = SubResource("StandardMaterial3D_tongue")
+
+; === LEGS (4 stubby legs underneath, hidden until active) ===
+[node name="Legs" type="Node3D" parent="."]
+visible = false
+
+[node name="LegFL" type="CSGBox3D" parent="Legs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, -0.08, -0.18)
+size = Vector3(0.08, 0.16, 0.08)
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="LegFR" type="CSGBox3D" parent="Legs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, -0.08, -0.18)
+size = Vector3(0.08, 0.16, 0.08)
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="LegBL" type="CSGBox3D" parent="Legs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, -0.08, 0.18)
+size = Vector3(0.08, 0.16, 0.08)
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="LegBR" type="CSGBox3D" parent="Legs"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, -0.08, 0.18)
+size = Vector3(0.08, 0.16, 0.08)
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+shape = SubResource("BoxShape3D_mimic")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 1.5
+one_shot = true

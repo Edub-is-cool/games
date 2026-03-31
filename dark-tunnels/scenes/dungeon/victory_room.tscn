@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://victory001"]
+
+[ext_resource type="Script" path="res://scripts/dungeon/victory_room.gd" id="1_victory"]
+[ext_resource type="Environment" uid="uid://env001" path="res://resources/dungeon_environment.tres" id="2_env"]
+
+[node name="VictoryRoom" type="Node3D"]
+script = ExtResource("1_victory")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.95, 0.3, 0, -0.3, 0.95, 0, 3, 6)
+current = true
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("2_env")
+
+[node name="VictoryLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 0)
+pixel_size = 0.02
+text = "VICTORY!"
+font_size = 64
+modulate = Color(1, 0.85, 0.2, 1)
+outline_modulate = Color(0.5, 0.3, 0, 1)
+outline_size = 8
+billboard = 1
+
+[node name="SubLabel" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, 0)
+pixel_size = 0.015
+text = "The dungeon has been conquered!"
+font_size = 32
+modulate = Color(1, 1, 1, 0.9)
+billboard = 1

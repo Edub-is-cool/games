@@ -1,0 +1,236 @@
+[gd_scene format=3 uid="uid://bosshollowking001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/boss_hollow_king.gd" id="1_boss"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_boss"]
+radius = 0.5
+height = 3.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe"]
+albedo_color = Color(0.05, 0.02, 0.08, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe_trim"]
+albedo_color = Color(0.15, 0.08, 0.2, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skull"]
+albedo_color = Color(0.75, 0.7, 0.6, 1)
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(0.6, 0.1, 0.8, 1)
+emission_enabled = true
+emission = Color(0.7, 0.1, 1, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_crown"]
+albedo_color = Color(0.8, 0.7, 0.3, 1)
+metallic = 0.9
+roughness = 0.15
+metallic_specular = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_orb"]
+albedo_color = Color(0.5, 0.1, 0.7, 1)
+emission_enabled = true
+emission = Color(0.6, 0.1, 0.9, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_scepter"]
+albedo_color = Color(0.15, 0.1, 0.05, 1)
+metallic = 0.4
+roughness = 0.5
+
+[node name="BossHollowKing" type="CharacterBody3D"]
+script = ExtResource("1_boss")
+max_health = 1000
+damage = 35
+speed = 2.0
+attack_range = 3.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("CapsuleShape3D_boss")
+
+; === ROBED BODY ===
+[node name="Body" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+radius = 0.4
+height = 2.2
+sides = 8
+material = SubResource("StandardMaterial3D_robe")
+
+; Robe flare at bottom
+[node name="RobeBase" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+radius = 0.55
+height = 0.4
+sides = 8
+material = SubResource("StandardMaterial3D_robe")
+
+; Collar
+[node name="Collar" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4, 0)
+size = Vector3(0.6, 0.2, 0.5)
+material = SubResource("StandardMaterial3D_robe_trim")
+
+; === SKULL FACE ===
+[node name="Head" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1.15, 0, 0, 0, 0.95, 0, 2.8, 0)
+radius = 0.22
+radial_segments = 12
+rings = 6
+material = SubResource("StandardMaterial3D_skull")
+
+; Eye sockets
+[node name="SocketL" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.08, 2.85, -0.16)
+radius = 0.05
+material = SubResource("StandardMaterial3D_robe")
+
+[node name="SocketR" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 2.85, -0.16)
+radius = 0.05
+material = SubResource("StandardMaterial3D_robe")
+
+; Glowing eyes
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.08, 2.85, -0.18)
+radius = 0.035
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 2.85, -0.18)
+radius = 0.035
+material = SubResource("StandardMaterial3D_eye")
+
+; Jaw
+[node name="Jaw" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.62, -0.08)
+size = Vector3(0.15, 0.06, 0.12)
+material = SubResource("StandardMaterial3D_skull")
+
+; === CROWN (gold with points) ===
+[node name="CrownBase" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.05, 0)
+radius = 0.2
+height = 0.1
+sides = 8
+material = SubResource("StandardMaterial3D_crown")
+
+[node name="CrownPoint1" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, -0.17)
+radius = 0.03
+height = 0.2
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_crown")
+
+[node name="CrownPoint2" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 3.18, 0)
+radius = 0.025
+height = 0.18
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_crown")
+
+[node name="CrownPoint3" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.15, 3.18, 0)
+radius = 0.025
+height = 0.18
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_crown")
+
+[node name="CrownPoint4" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.16, 0.15)
+radius = 0.025
+height = 0.15
+cone = true
+sides = 4
+material = SubResource("StandardMaterial3D_crown")
+
+; Crown gem
+[node name="CrownGem" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.12, -0.2)
+radius = 0.03
+material = SubResource("StandardMaterial3D_orb")
+
+; === ORBITING ORBS ===
+[node name="Orb1" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 3.0, 0)
+radius = 0.06
+material = SubResource("StandardMaterial3D_orb")
+
+[node name="Orb2" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 3.1, -0.3)
+radius = 0.05
+material = SubResource("StandardMaterial3D_orb")
+
+[node name="Orb3" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.15, 2.95, 0.3)
+radius = 0.055
+material = SubResource("StandardMaterial3D_orb")
+
+; === ARMS (thin, robed) ===
+[node name="ArmLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 1.8, 0)
+size = Vector3(0.12, 0.8, 0.12)
+material = SubResource("StandardMaterial3D_robe")
+
+[node name="HandL" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 1.35, 0)
+radius = 0.06
+material = SubResource("StandardMaterial3D_skull")
+
+[node name="ArmRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.8, 0)
+size = Vector3(0.12, 0.8, 0.12)
+material = SubResource("StandardMaterial3D_robe")
+
+; === SCEPTER (right hand) ===
+[node name="ScepterShaft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 1.6, -0.1)
+radius = 0.025
+height = 1.2
+sides = 6
+material = SubResource("StandardMaterial3D_scepter")
+
+[node name="ScepterOrb" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 2.25, -0.1)
+radius = 0.08
+material = SubResource("StandardMaterial3D_orb")
+
+; === CAPE PANELS ===
+[node name="CapeL" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, 0, 0.25, 0, 1, 0, -0.25, 0, 0.97, -0.25, 1.2, 0.35)
+size = Vector3(0.3, 1.8, 0.03)
+material = SubResource("StandardMaterial3D_robe")
+
+[node name="CapeR" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, 0, -0.25, 0, 1, 0, 0.25, 0, 0.97, 0.25, 1.2, 0.35)
+size = Vector3(0.3, 1.8, 0.03)
+material = SubResource("StandardMaterial3D_robe")
+
+; Tattered edges
+[node name="Tatter1" type="CSGBox3D" parent="."]
+transform = Transform3D(0.95, 0.3, 0, -0.3, 0.95, 0, 0, 0, 1, -0.3, 0.15, 0.3)
+size = Vector3(0.1, 0.3, 0.02)
+material = SubResource("StandardMaterial3D_robe_trim")
+
+[node name="Tatter2" type="CSGBox3D" parent="."]
+transform = Transform3D(0.95, -0.3, 0, 0.3, 0.95, 0, 0, 0, 1, 0.2, 0.12, 0.32)
+size = Vector3(0.08, 0.25, 0.02)
+material = SubResource("StandardMaterial3D_robe_trim")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 1.5
+one_shot = true
+
+[node name="SpecialAttackTimer" type="Timer" parent="."]
+wait_time = 4.0
+autostart = true
+
+[connection signal="timeout" from="SpecialAttackTimer" to="." method="_on_special_attack_timer_timeout"]

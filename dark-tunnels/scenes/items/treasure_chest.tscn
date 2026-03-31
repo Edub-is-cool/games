@@ -1,0 +1,32 @@
+[gd_scene load_steps=5 format=3 uid="uid://chest001"]
+
+[ext_resource type="Script" path="res://scripts/items/treasure_chest.gd" id="1_chest"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_chest"]
+size = Vector3(0.8, 0.5, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+albedo_color = Color(0.45, 0.3, 0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lid"]
+albedo_color = Color(0.5, 0.35, 0.12, 1)
+
+[node name="TreasureChest" type="StaticBody3D"]
+script = ExtResource("1_chest")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("BoxShape3D_chest")
+
+[node name="Body" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+size = Vector3(0.8, 0.4, 0.6)
+material = SubResource("StandardMaterial3D_body")
+
+[node name="Lid" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4, -0.3)
+
+[node name="LidMesh" type="CSGBox3D" parent="Lid"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.075, 0.3)
+size = Vector3(0.8, 0.15, 0.6)
+material = SubResource("StandardMaterial3D_lid")

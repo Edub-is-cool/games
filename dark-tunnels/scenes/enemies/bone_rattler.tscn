@@ -1,0 +1,290 @@
+[gd_scene format=3 uid="uid://bonerattler001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/bone_rattler.gd" id="1_bonerattler"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_rattler"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bone"]
+albedo_color = Color(0.82, 0.77, 0.65, 1)
+roughness = 0.55
+metallic_specular = 0.35
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bone_dark"]
+albedo_color = Color(0.6, 0.55, 0.45, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe"]
+albedo_color = Color(0.08, 0.12, 0.06, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe_tattered"]
+albedo_color = Color(0.06, 0.1, 0.04, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(0.2, 0.9, 0.2, 1)
+emission_enabled = true
+emission = Color(0.15, 0.8, 0.15, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_antler"]
+albedo_color = Color(0.75, 0.7, 0.55, 1)
+roughness = 0.5
+metallic_specular = 0.3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_staff_wood"]
+albedo_color = Color(0.2, 0.12, 0.05, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_orb"]
+albedo_color = Color(0.15, 0.6, 0.15, 0.85)
+emission_enabled = true
+emission = Color(0.2, 0.8, 0.2, 1)
+emission_energy_multiplier = 3.0
+metallic = 0.3
+roughness = 0.1
+transparency = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_teeth"]
+albedo_color = Color(0.9, 0.87, 0.75, 1)
+roughness = 0.4
+metallic_specular = 0.3
+
+[node name="BoneRattler" type="CharacterBody3D"]
+script = ExtResource("1_bonerattler")
+max_health = 45
+damage = 10
+speed = 2.5
+attack_range = 8.0
+detection_range = 14.0
+loot_gold_min = 12
+loot_gold_max = 25
+
+; === SKULL (with antlers) ===
+[node name="Skull" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1.1, 0, 0, 0, 0.95, 0, 1.35, 0)
+radius = 0.18
+radial_segments = 16
+rings = 8
+material = SubResource("StandardMaterial3D_bone")
+
+; Eye sockets
+[node name="SocketLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.07, 1.38, -0.12)
+radius = 0.05
+material = SubResource("StandardMaterial3D_bone_dark")
+
+[node name="SocketRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07, 1.38, -0.12)
+radius = 0.05
+material = SubResource("StandardMaterial3D_bone_dark")
+
+; Glowing eyes
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.07, 1.38, -0.14)
+radius = 0.035
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07, 1.38, -0.14)
+radius = 0.035
+material = SubResource("StandardMaterial3D_eye")
+
+; Nose hole
+[node name="NoseHole" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.32, -0.17)
+size = Vector3(0.05, 0.04, 0.02)
+material = SubResource("StandardMaterial3D_bone_dark")
+
+; Jaw
+[node name="Jaw" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -0.08)
+size = Vector3(0.15, 0.06, 0.12)
+material = SubResource("StandardMaterial3D_bone")
+
+; Teeth
+[node name="Teeth" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.22, -0.15)
+size = Vector3(0.1, 0.02, 0.02)
+material = SubResource("StandardMaterial3D_teeth")
+
+; === ANTLERS (2 per side, branching upward) ===
+; Left antler main
+[node name="AntlerLeftMain" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.97, 0.26, 0, -0.26, 0.97, 0, 0, 0, 1, -0.12, 1.55, 0)
+radius = 0.025
+height = 0.2
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_antler")
+
+; Left antler branch
+[node name="AntlerLeftBranch" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.87, 0.5, 0, -0.5, 0.87, 0, 0, 0, 1, -0.18, 1.65, 0.05)
+radius = 0.02
+height = 0.15
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_antler")
+
+; Right antler main
+[node name="AntlerRightMain" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.97, -0.26, 0, 0.26, 0.97, 0, 0, 0, 1, 0.12, 1.55, 0)
+radius = 0.025
+height = 0.2
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_antler")
+
+; Right antler branch
+[node name="AntlerRightBranch" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.87, -0.5, 0, 0.5, 0.87, 0, 0, 0, 1, 0.18, 1.65, 0.05)
+radius = 0.02
+height = 0.15
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_antler")
+
+; === ROBED BODY (wide dark robe) ===
+[node name="RobeBody" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+size = Vector3(0.55, 0.65, 0.4)
+material = SubResource("StandardMaterial3D_robe")
+
+; Robe collar
+[node name="RobeCollar" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+size = Vector3(0.35, 0.08, 0.3)
+material = SubResource("StandardMaterial3D_robe")
+
+; Robe lower flare
+[node name="RobeLower" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+size = Vector3(0.6, 0.2, 0.45)
+material = SubResource("StandardMaterial3D_robe")
+
+; === TATTERED ROBE EDGES (thin strips hanging) ===
+[node name="Tatter1" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.2, 0.28, -0.2)
+size = Vector3(0.04, 0.18, 0.02)
+material = SubResource("StandardMaterial3D_robe_tattered")
+
+[node name="Tatter2" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.26, -0.22)
+size = Vector3(0.05, 0.22, 0.02)
+material = SubResource("StandardMaterial3D_robe_tattered")
+
+[node name="Tatter3" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.05, 0.3, 0.22)
+size = Vector3(0.04, 0.14, 0.02)
+material = SubResource("StandardMaterial3D_robe_tattered")
+
+[node name="Tatter4" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.27, 0.15)
+size = Vector3(0.03, 0.2, 0.02)
+material = SubResource("StandardMaterial3D_robe_tattered")
+
+; === BONE ARMS (peeking from robe sleeves) ===
+[node name="ArmLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -0.35, 0.95, 0)
+radius = 0.03
+height = 0.2
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="HandLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45, 0.95, 0)
+radius = 0.035
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="ArmRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 0.35, 0.95, 0)
+radius = 0.03
+height = 0.2
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="HandRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0.95, 0)
+radius = 0.035
+material = SubResource("StandardMaterial3D_bone")
+
+; === BONE LEGS (thin, visible below robe) ===
+[node name="LegLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.15, 0)
+radius = 0.03
+height = 0.3
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="FootLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.01, -0.03)
+size = Vector3(0.08, 0.02, 0.14)
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="LegRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.15, 0)
+radius = 0.03
+height = 0.3
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="FootRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.01, -0.03)
+size = Vector3(0.08, 0.02, 0.14)
+material = SubResource("StandardMaterial3D_bone")
+
+; === STAFF (held in right hand) ===
+[node name="Staff" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0.95, -0.05)
+
+; Staff shaft
+[node name="Shaft" type="CSGCylinder3D" parent="Staff"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
+radius = 0.025
+height = 1.4
+sides = 6
+material = SubResource("StandardMaterial3D_staff_wood")
+
+; Staff head fork (two prongs holding orb)
+[node name="ProngLeft" type="CSGCylinder3D" parent="Staff"]
+transform = Transform3D(0.97, 0.26, 0, -0.26, 0.97, 0, 0, 0, 1, -0.03, 0.72, 0)
+radius = 0.015
+height = 0.12
+sides = 5
+material = SubResource("StandardMaterial3D_staff_wood")
+
+[node name="ProngRight" type="CSGCylinder3D" parent="Staff"]
+transform = Transform3D(0.97, -0.26, 0, 0.26, 0.97, 0, 0, 0, 1, 0.03, 0.72, 0)
+radius = 0.015
+height = 0.12
+sides = 5
+material = SubResource("StandardMaterial3D_staff_wood")
+
+; Glowing orb on top
+[node name="Orb" type="CSGSphere3D" parent="Staff"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.78, 0)
+radius = 0.08
+radial_segments = 12
+rings = 6
+material = SubResource("StandardMaterial3D_orb")
+
+; Inner orb core (brighter glow)
+[node name="OrbCore" type="CSGSphere3D" parent="Staff"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.78, 0)
+radius = 0.04
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+shape = SubResource("CapsuleShape3D_rattler")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 2.5
+one_shot = true

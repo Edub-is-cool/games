@@ -1,0 +1,381 @@
+[gd_scene load_steps=6 format=3 uid="uid://hud001"]
+
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="1_hud"]
+[ext_resource type="Script" path="res://scripts/ui/minimap.gd" id="2_minimap"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_fill"]
+bg_color = Color(0.7, 0.08, 0.08, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_health_bg"]
+bg_color = Color(0.15, 0.05, 0.05, 0.7)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mana_fill"]
+bg_color = Color(0.12, 0.25, 0.75, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_hud")
+
+; === TOP LEFT: Health/Mana ===
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 262.0
+offset_bottom = 105.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="HealthLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "HP"
+theme_override_colors/font_color = Color(0.9, 0.25, 0.25, 0.9)
+theme_override_font_sizes/font_size = 12
+
+[node name="HealthBar" type="ProgressBar" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(210, 16)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/fill = SubResource("StyleBoxFlat_health_fill")
+theme_override_styles/background = SubResource("StyleBoxFlat_health_bg")
+
+[node name="ManaLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "MP"
+theme_override_colors/font_color = Color(0.25, 0.45, 0.9, 0.9)
+theme_override_font_sizes/font_size = 12
+
+[node name="ManaBar" type="ProgressBar" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(210, 16)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+theme_override_styles/fill = SubResource("StyleBoxFlat_mana_fill")
+
+; === GOLD (top left, below bars) ===
+[node name="GoldLabel" type="Label" parent="."]
+anchors_preset = 0
+offset_left = 12.0
+offset_top = 108.0
+offset_right = 200.0
+offset_bottom = 128.0
+text = "0g"
+theme_override_colors/font_color = Color(0.95, 0.8, 0.2, 0.9)
+theme_override_font_sizes/font_size = 15
+
+; === INVENTORY INFO ===
+[node name="InventoryLabel" type="Label" parent="."]
+anchors_preset = 0
+offset_left = 12.0
+offset_top = 130.0
+offset_right = 350.0
+offset_bottom = 148.0
+text = ""
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 0.7)
+theme_override_font_sizes/font_size = 12
+
+; === BOTTOM LEFT: Weapon & Spell ===
+[node name="WeaponLabel" type="Label" parent="."]
+anchors_preset = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -55.0
+offset_right = 200.0
+offset_bottom = -35.0
+text = "Fist"
+theme_override_colors/font_color = Color(0.85, 0.65, 0.25, 0.9)
+theme_override_font_sizes/font_size = 14
+
+[node name="SpellLabel" type="Label" parent="."]
+anchors_preset = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 12.0
+offset_top = -30.0
+offset_right = 200.0
+offset_bottom = -10.0
+text = "Fireball"
+theme_override_colors/font_color = Color(0.4, 0.6, 0.95, 0.9)
+theme_override_font_sizes/font_size = 14
+
+; === CROSSHAIR ===
+[node name="Crosshair" type="TextureRect" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 12.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+
+; Center dot
+[node name="CrosshairDot" type="ColorRect" parent="Crosshair"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -1.5
+offset_top = -1.5
+offset_right = 1.5
+offset_bottom = 1.5
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.6)
+
+; Top crosshair line
+[node name="CrossTop" type="ColorRect" parent="Crosshair"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -0.5
+offset_top = -8.0
+offset_right = 0.5
+offset_bottom = -3.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.45)
+
+; Bottom crosshair line
+[node name="CrossBottom" type="ColorRect" parent="Crosshair"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -0.5
+offset_top = 3.0
+offset_right = 0.5
+offset_bottom = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.45)
+
+; Left crosshair line
+[node name="CrossLeft" type="ColorRect" parent="Crosshair"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -8.0
+offset_top = -0.5
+offset_right = -3.0
+offset_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.45)
+
+; Right crosshair line
+[node name="CrossRight" type="ColorRect" parent="Crosshair"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 3.0
+offset_top = -0.5
+offset_right = 8.0
+offset_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.45)
+
+; === INTERACTION LABEL ===
+[node name="InteractionLabel" type="Label" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -120.0
+offset_top = -65.0
+offset_right = 120.0
+offset_bottom = -42.0
+grow_horizontal = 2
+grow_vertical = 0
+horizontal_alignment = 1
+theme_override_colors/font_color = Color(1, 1, 1, 0.85)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.5)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 15
+text = "[E] Interact"
+
+; === DAMAGE OVERLAY ===
+[node name="DamageOverlay" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.6, 0, 0, 1)
+
+; === SHIELD INDICATOR (green border) ===
+[node name="ShieldIndicator" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.15, 0.8, 0.35, 1)
+
+; === BOSS HEALTH BAR (top center) ===
+[node name="BossNameLabel" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 10.0
+offset_right = 120.0
+offset_bottom = 30.0
+grow_horizontal = 2
+horizontal_alignment = 1
+text = "DRAGON"
+theme_override_colors/font_color = Color(0.9, 0.25, 0.15, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.6)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 18
+
+[node name="BossBar" type="ProgressBar" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 34.0
+offset_right = 200.0
+offset_bottom = 50.0
+grow_horizontal = 2
+max_value = 250.0
+value = 250.0
+show_percentage = false
+
+; === DEATH SCREEN ===
+[node name="DeathScreen" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="DeathBG" type="ColorRect" parent="DeathScreen"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.05, 0, 0, 0.75)
+
+[node name="DeathLabel" type="Label" parent="DeathScreen"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -50.0
+offset_right = 200.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+text = "YOU DIED"
+theme_override_colors/font_color = Color(0.8, 0.1, 0.08, 1)
+theme_override_colors/font_shadow_color = Color(0.3, 0.02, 0.0, 0.6)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 3
+theme_override_font_sizes/font_size = 60
+
+[node name="RestartLabel" type="Label" parent="DeathScreen"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = 10.0
+offset_right = 150.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_alignment = 1
+text = "R: Restart | Esc: Main Menu"
+theme_override_colors/font_color = Color(0.7, 0.7, 0.7, 0.7)
+theme_override_font_sizes/font_size = 16
+
+; === MINIMAP (top right) ===
+[node name="MinimapContainer" type="Control" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -160.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 160.0
+grow_horizontal = 0
+script = ExtResource("2_minimap")
+
+; === FLOOR LABEL (top center-right) ===
+[node name="FloorLabel" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 220.0
+offset_top = 10.0
+offset_right = 400.0
+offset_bottom = 30.0
+grow_horizontal = 2
+text = "Floor 1"
+theme_override_colors/font_color = Color(0.6, 0.6, 0.7, 0.7)
+theme_override_font_sizes/font_size = 14
+
+; === CONTROLS HINT ===
+[node name="ControlsHint" type="Label" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -230.0
+offset_top = -30.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+horizontal_alignment = 2
+text = "1-4: Weapons | Tab: Spell | Q/F: Potions | H: Help"
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 0.35)
+theme_override_font_sizes/font_size = 10

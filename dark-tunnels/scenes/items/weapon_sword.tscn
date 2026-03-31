@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://wsword001"]
+
+[ext_resource type="Script" path="res://scripts/items/weapon_pickup.gd" id="1_weapon"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_sword"]
+size = Vector3(0.15, 1.0, 0.15)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_blade"]
+albedo_color = Color(0.75, 0.75, 0.8, 1)
+metallic = 0.9
+roughness = 0.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hilt"]
+albedo_color = Color(0.4, 0.25, 0.1, 1)
+
+[node name="WeaponSword" type="StaticBody3D"]
+script = ExtResource("1_weapon")
+weapon_name = "sword"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("BoxShape3D_sword")
+
+[node name="Blade" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+size = Vector3(0.08, 0.8, 0.03)
+material = SubResource("StandardMaterial3D_blade")
+
+[node name="Hilt" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+size = Vector3(0.25, 0.06, 0.06)
+material = SubResource("StandardMaterial3D_hilt")
+
+[node name="Grip" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+radius = 0.03
+height = 0.25
+material = SubResource("StandardMaterial3D_hilt")

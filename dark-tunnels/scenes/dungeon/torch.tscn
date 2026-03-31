@@ -1,0 +1,82 @@
+[gd_scene load_steps=7 format=3 uid="uid://torch001"]
+
+[ext_resource type="Script" path="res://scripts/dungeon/torch.gd" id="1_torch"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_torch"]
+albedo_color = Color(0.25, 0.15, 0.06, 1)
+roughness = 0.85
+metallic = 0.05
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bracket"]
+albedo_color = Color(0.2, 0.18, 0.15, 1)
+roughness = 0.5
+metallic = 0.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_flame"]
+albedo_color = Color(1, 0.55, 0.05, 1)
+emission_enabled = true
+emission = Color(1, 0.45, 0.05, 1)
+emission_energy_multiplier = 5.0
+transparency = 1
+blend_mode = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_flame_inner"]
+albedo_color = Color(1, 0.9, 0.5, 1)
+emission_enabled = true
+emission = Color(1, 0.85, 0.4, 1)
+emission_energy_multiplier = 8.0
+transparency = 1
+blend_mode = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_embers"]
+albedo_color = Color(1, 0.3, 0.0, 1)
+emission_enabled = true
+emission = Color(1, 0.25, 0.0, 1)
+emission_energy_multiplier = 4.0
+
+[node name="Torch" type="Node3D"]
+script = ExtResource("1_torch")
+
+; Wall bracket
+[node name="Bracket" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+size = Vector3(0.1, 0.06, 0.15)
+material = SubResource("StandardMaterial3D_bracket")
+
+; Torch handle
+[node name="Handle" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+radius = 0.04
+height = 0.5
+sides = 8
+material = SubResource("StandardMaterial3D_torch")
+
+; Torch head wrap
+[node name="Head" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.98, 0)
+radius = 0.06
+height = 0.1
+sides = 8
+material = SubResource("StandardMaterial3D_torch")
+
+; Outer flame glow
+[node name="Flame" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1.4, 0, 0, 0, 1, 0, 1.1, 0)
+radius = 0.09
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_flame")
+
+; Inner flame core (brighter)
+[node name="FlameCore" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1.6, 0, 0, 0, 1, 0, 1.08, 0)
+radius = 0.045
+radial_segments = 6
+rings = 3
+material = SubResource("StandardMaterial3D_flame_inner")
+
+; Ember dot
+[node name="Ember" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.03, 1.18, 0)
+radius = 0.015
+material = SubResource("StandardMaterial3D_embers")

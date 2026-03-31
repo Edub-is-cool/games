@@ -1,0 +1,161 @@
+[gd_scene format=3 uid="uid://spider001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/cave_spider.gd" id="1_spider"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_spider"]
+radius = 0.4
+height = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+transparency = 1
+albedo_color = Color(0.15, 0.1, 0.05, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_abdomen"]
+transparency = 1
+albedo_color = Color(0.12, 0.07, 0.03, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+transparency = 1
+albedo_color = Color(0.8, 0.1, 0.1, 1)
+emission_enabled = true
+emission = Color(0.8, 0.1, 0.1, 1)
+emission_energy_multiplier = 2.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_leg"]
+transparency = 1
+albedo_color = Color(0.1, 0.07, 0.03, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fang"]
+transparency = 1
+albedo_color = Color(0.2, 0.18, 0.12, 1)
+roughness = 0.5
+metallic_specular = 0.3
+
+[node name="CaveSpider" type="CharacterBody3D"]
+script = ExtResource("1_spider")
+max_health = 25
+damage = 15
+speed = 5.0
+attack_range = 1.8
+detection_range = 5.0
+loot_gold_min = 6
+loot_gold_max = 14
+
+; === BODY (flattened sphere) ===
+[node name="Body" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.2, 0, 0, 0, 0.5, 0, 0, 0, 1, 0, 0.3, 0)
+radius = 0.25
+radial_segments = 14
+rings = 7
+material = SubResource("StandardMaterial3D_body")
+
+; === ABDOMEN (larger bulb behind) ===
+[node name="Abdomen" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.1, 0, 0, 0, 0.6, 0, 0, 0, 1.2, 0, 0.28, 0.3)
+radius = 0.2
+radial_segments = 12
+rings = 6
+material = SubResource("StandardMaterial3D_abdomen")
+
+; === EYES (two red emissive) ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.06, 0.38, -0.2)
+radius = 0.03
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.06, 0.38, -0.2)
+radius = 0.03
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+; === FANGS (two small cones pointing down) ===
+[node name="FangLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.04, 0.2, -0.22)
+radius = 0.015
+height = 0.1
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_fang")
+
+[node name="FangRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.04, 0.2, -0.22)
+radius = 0.015
+height = 0.1
+cone = true
+sides = 5
+material = SubResource("StandardMaterial3D_fang")
+
+; === LEFT SIDE LEGS (4 legs angled outward) ===
+[node name="LegL1" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.7, 0, 0.7, 0, 1, 0, -0.7, 0, 0.7, -0.22, 0.25, -0.12)
+radius = 0.02
+height = 0.4
+sides = 5
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="LegL2" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.7, 0, 0.5, 0, 1, 0, -0.5, 0, 0.7, -0.24, 0.25, -0.02)
+radius = 0.02
+height = 0.4
+sides = 5
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="LegL3" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.7, 0, -0.5, 0, 1, 0, 0.5, 0, 0.7, -0.24, 0.25, 0.1)
+radius = 0.02
+height = 0.4
+sides = 5
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="LegL4" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.7, 0, -0.7, 0, 1, 0, 0.7, 0, 0.7, -0.22, 0.25, 0.22)
+radius = 0.02
+height = 0.4
+sides = 5
+material = SubResource("StandardMaterial3D_leg")
+
+; === RIGHT SIDE LEGS (4 legs angled outward) ===
+[node name="LegR1" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.7, 0, -0.7, 0, 1, 0, 0.7, 0, 0.7, 0.22, 0.25, -0.12)
+radius = 0.02
+height = 0.4
+sides = 5
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="LegR2" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.7, 0, -0.5, 0, 1, 0, 0.5, 0, 0.7, 0.24, 0.25, -0.02)
+radius = 0.02
+height = 0.4
+sides = 5
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="LegR3" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.7, 0, 0.5, 0, 1, 0, -0.5, 0, 0.7, 0.24, 0.25, 0.1)
+radius = 0.02
+height = 0.4
+sides = 5
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="LegR4" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.7, 0, 0.7, 0, 1, 0, -0.7, 0, 0.7, 0.22, 0.25, 0.22)
+radius = 0.02
+height = 0.4
+sides = 5
+material = SubResource("StandardMaterial3D_leg")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+shape = SubResource("CapsuleShape3D_spider")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 2.5
+one_shot = true

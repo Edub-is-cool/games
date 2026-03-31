@@ -1,0 +1,107 @@
+[gd_scene load_steps=6 format=3 uid="uid://door001"]
+
+[ext_resource type="Script" path="res://scripts/dungeon/door.gd" id="1_door"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_door"]
+size = Vector3(4.0, 3.0, 0.25)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_door"]
+albedo_color = Color(0.3, 0.18, 0.08, 1)
+roughness = 0.8
+metallic = 0.0
+metallic_specular = 0.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bands"]
+albedo_color = Color(0.2, 0.18, 0.15, 1)
+metallic = 0.65
+roughness = 0.4
+metallic_specular = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_studs"]
+albedo_color = Color(0.25, 0.22, 0.18, 1)
+metallic = 0.7
+roughness = 0.35
+
+[node name="Door" type="AnimatableBody3D"]
+script = ExtResource("1_door")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_door")
+
+[node name="DoorPanel" type="CSGBox3D" parent="."]
+size = Vector3(4.0, 3.0, 0.2)
+material = SubResource("StandardMaterial3D_door")
+
+; Vertical plank lines
+[node name="Plank1" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0, 0, -0.11)
+size = Vector3(0.03, 3.0, 0.02)
+material = SubResource("StandardMaterial3D_bands")
+
+[node name="Plank2" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.0, 0, -0.11)
+size = Vector3(0.03, 3.0, 0.02)
+material = SubResource("StandardMaterial3D_bands")
+
+; Metal bands
+[node name="BandTop" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, -0.12)
+size = Vector3(4.0, 0.1, 0.04)
+material = SubResource("StandardMaterial3D_bands")
+
+[node name="BandMid" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.12)
+size = Vector3(4.0, 0.1, 0.04)
+material = SubResource("StandardMaterial3D_bands")
+
+[node name="BandBot" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.2, -0.12)
+size = Vector3(4.0, 0.1, 0.04)
+material = SubResource("StandardMaterial3D_bands")
+
+; Decorative studs on bands
+[node name="Stud1" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 1.2, -0.14)
+radius = 0.04
+material = SubResource("StandardMaterial3D_studs")
+
+[node name="Stud2" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 1.2, -0.14)
+radius = 0.04
+material = SubResource("StandardMaterial3D_studs")
+
+[node name="Stud3" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 0, -0.14)
+radius = 0.04
+material = SubResource("StandardMaterial3D_studs")
+
+[node name="Stud4" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0, -0.14)
+radius = 0.04
+material = SubResource("StandardMaterial3D_studs")
+
+[node name="Stud5" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, -1.2, -0.14)
+radius = 0.04
+material = SubResource("StandardMaterial3D_studs")
+
+[node name="Stud6" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, -1.2, -0.14)
+radius = 0.04
+material = SubResource("StandardMaterial3D_studs")
+
+; Door ring/handle
+[node name="HandlePlate" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.8, 0, -0.12)
+radius = 0.08
+height = 0.03
+sides = 12
+material = SubResource("StandardMaterial3D_studs")
+
+[node name="HandleRing" type="CSGTorus3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.8, -0.1, -0.14)
+inner_radius = 0.04
+outer_radius = 0.07
+sides = 12
+ring_sides = 6
+material = SubResource("StandardMaterial3D_studs")

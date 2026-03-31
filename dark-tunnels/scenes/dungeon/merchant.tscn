@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://merchant001"]
+
+[ext_resource type="Script" path="res://scripts/dungeon/merchant.gd" id="1_merchant"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_merchant"]
+radius = 0.4
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe"]
+albedo_color = Color(0.3, 0.15, 0.5, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skin"]
+albedo_color = Color(0.8, 0.65, 0.5, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hat"]
+albedo_color = Color(0.25, 0.1, 0.45, 1)
+
+[node name="Merchant" type="StaticBody3D"]
+script = ExtResource("1_merchant")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_merchant")
+
+[node name="Robe" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+size = Vector3(0.6, 1.2, 0.5)
+material = SubResource("StandardMaterial3D_robe")
+
+[node name="Head" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+radius = 0.22
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="Hat" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.85, 0)
+radius = 0.2
+height = 0.4
+cone = true
+material = SubResource("StandardMaterial3D_hat")
+
+[node name="HatBrim" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+radius = 0.3
+height = 0.04
+material = SubResource("StandardMaterial3D_hat")
+
+[node name="ShopLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
+light_color = Color(0.7, 0.5, 1, 1)
+light_energy = 3.0
+omni_range = 8.0

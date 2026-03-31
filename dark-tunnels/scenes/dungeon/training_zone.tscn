@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3 uid="uid://training001"]
+
+[ext_resource type="PackedScene" uid="uid://player001" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://hud001" path="res://scenes/ui/hud.tscn" id="2_hud"]
+[ext_resource type="Script" path="res://scripts/dungeon/training_zone.gd" id="3_training"]
+[ext_resource type="Environment" uid="uid://env001" path="res://resources/dungeon_environment.tres" id="4_env"]
+
+[sub_resource type="NavigationMesh" id="NavigationMesh_1"]
+vertices_per_polygon = 6.0
+sample_partition_type = 1
+cell_size = 0.25
+cell_height = 0.25
+agent_height = 1.8
+agent_radius = 0.4
+agent_max_climb = 0.3
+agent_max_slope = 45.0
+
+[node name="TrainingZone" type="Node3D"]
+script = ExtResource("3_training")
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="HUD" parent="." instance=ExtResource("2_hud")]
+
+[node name="NavigationRegion3D" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("NavigationMesh_1")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = ExtResource("4_env")

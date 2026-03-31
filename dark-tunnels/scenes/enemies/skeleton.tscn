@@ -1,0 +1,293 @@
+[gd_scene format=3 uid="uid://skeleton001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/skeleton_archer.gd" id="1_skeleton"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_skel"]
+radius = 0.3
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bone"]
+albedo_color = Color(0.82, 0.77, 0.65, 1)
+roughness = 0.55
+metallic_specular = 0.35
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bone_dark"]
+albedo_color = Color(0.6, 0.55, 0.45, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(0.8, 0.15, 0.15, 1)
+emission_enabled = true
+emission = Color(1, 0.08, 0.08, 1)
+emission_energy_multiplier = 3.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bow"]
+albedo_color = Color(0.3, 0.18, 0.06, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_string"]
+albedo_color = Color(0.7, 0.7, 0.65, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_teeth"]
+albedo_color = Color(0.9, 0.87, 0.75, 1)
+roughness = 0.4
+metallic_specular = 0.3
+
+[node name="Skeleton" type="CharacterBody3D"]
+script = ExtResource("1_skeleton")
+
+; === RIBCAGE (with individual rib lines) ===
+[node name="Ribcage" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+size = Vector3(0.4, 0.5, 0.25)
+material = SubResource("StandardMaterial3D_bone")
+
+; Rib details
+[node name="Rib1" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.88, -0.13)
+size = Vector3(0.38, 0.025, 0.025)
+material = SubResource("StandardMaterial3D_bone_dark")
+
+[node name="Rib2" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.78, -0.13)
+size = Vector3(0.4, 0.025, 0.025)
+material = SubResource("StandardMaterial3D_bone_dark")
+
+[node name="Rib3" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, -0.13)
+size = Vector3(0.38, 0.025, 0.025)
+material = SubResource("StandardMaterial3D_bone_dark")
+
+[node name="Rib4" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.58, -0.13)
+size = Vector3(0.34, 0.025, 0.025)
+material = SubResource("StandardMaterial3D_bone_dark")
+
+; Sternum
+[node name="Sternum" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.73, -0.135)
+size = Vector3(0.03, 0.38, 0.02)
+material = SubResource("StandardMaterial3D_bone")
+
+; === SPINE ===
+[node name="Spine" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+radius = 0.04
+height = 0.6
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+; Vertebrae bumps
+[node name="Vert1" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0.04)
+radius = 0.025
+material = SubResource("StandardMaterial3D_bone_dark")
+
+[node name="Vert2" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0.04)
+radius = 0.025
+material = SubResource("StandardMaterial3D_bone_dark")
+
+[node name="Vert3" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0.04)
+radius = 0.025
+material = SubResource("StandardMaterial3D_bone_dark")
+
+; === PELVIS ===
+[node name="Pelvis" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+size = Vector3(0.35, 0.12, 0.2)
+material = SubResource("StandardMaterial3D_bone")
+
+; Hip bones
+[node name="HipLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.3, 0, 0, 0, 0.8, 0, 0, 0, 1, -0.15, 0.35, 0)
+radius = 0.06
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="HipRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.3, 0, 0, 0, 0.8, 0, 0, 0, 1, 0.15, 0.35, 0)
+radius = 0.06
+material = SubResource("StandardMaterial3D_bone")
+
+; === SKULL (more detailed) ===
+[node name="Skull" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1.1, 0, 0, 0, 0.95, 0, 1.15, 0)
+radius = 0.18
+radial_segments = 16
+rings = 8
+material = SubResource("StandardMaterial3D_bone")
+
+; Cheekbones
+[node name="CheekLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 1.1, -0.12)
+radius = 0.04
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="CheekRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 1.1, -0.12)
+radius = 0.04
+material = SubResource("StandardMaterial3D_bone")
+
+; Nose hole
+[node name="NoseHole" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -0.17)
+size = Vector3(0.05, 0.04, 0.02)
+material = SubResource("StandardMaterial3D_bone_dark")
+
+; Eye sockets (dark recesses)
+[node name="SocketLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.07, 1.18, -0.12)
+radius = 0.05
+material = SubResource("StandardMaterial3D_bone_dark")
+
+[node name="SocketRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07, 1.18, -0.12)
+radius = 0.05
+material = SubResource("StandardMaterial3D_bone_dark")
+
+; === JAW ===
+[node name="Jaw" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.98, -0.08)
+size = Vector3(0.15, 0.06, 0.12)
+material = SubResource("StandardMaterial3D_bone")
+
+; Teeth
+[node name="TeethUpper" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.02, -0.16)
+size = Vector3(0.1, 0.02, 0.02)
+material = SubResource("StandardMaterial3D_teeth")
+
+[node name="TeethLower" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.98, -0.13)
+size = Vector3(0.1, 0.02, 0.02)
+material = SubResource("StandardMaterial3D_teeth")
+
+; === EYES (red glow in sockets) ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.07, 1.18, -0.14)
+radius = 0.035
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.07, 1.18, -0.14)
+radius = 0.035
+material = SubResource("StandardMaterial3D_eye")
+
+; === SHOULDER BONES ===
+[node name="ShoulderLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.22, 0.92, 0)
+radius = 0.04
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="ShoulderRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, 0.92, 0)
+radius = 0.04
+material = SubResource("StandardMaterial3D_bone")
+
+; === LEFT ARM (holding bow) ===
+[node name="ArmLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, -0.3, 0.75, -0.1)
+radius = 0.03
+height = 0.55
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+; Elbow joint
+[node name="ElbowLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.65, -0.2)
+radius = 0.03
+material = SubResource("StandardMaterial3D_bone")
+
+; === RIGHT ARM (drawing string) ===
+[node name="ArmRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, 0.3, 0.75, -0.1)
+radius = 0.03
+height = 0.55
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="ElbowRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.65, -0.2)
+radius = 0.03
+material = SubResource("StandardMaterial3D_bone")
+
+; === BOW (held in left hand) ===
+[node name="BowTop" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.97, 0.26, 0, -0.26, 0.97, 0, 0, 0, 1, -0.45, 0.85, -0.15)
+radius = 0.018
+height = 0.35
+sides = 6
+material = SubResource("StandardMaterial3D_bow")
+
+[node name="BowBottom" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.97, -0.26, 0, 0.26, 0.97, 0, 0, 0, 1, -0.45, 0.55, -0.15)
+radius = 0.018
+height = 0.35
+sides = 6
+material = SubResource("StandardMaterial3D_bow")
+
+[node name="BowString" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.42, 0.7, -0.15)
+radius = 0.005
+height = 0.5
+material = SubResource("StandardMaterial3D_string")
+
+; === LEGS (with knee joints) ===
+[node name="ThighLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.28, 0)
+radius = 0.035
+height = 0.22
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="KneeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.16, 0)
+radius = 0.03
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="ShinLeft" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.08, 0)
+radius = 0.03
+height = 0.18
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="FootLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.01, -0.03)
+size = Vector3(0.08, 0.02, 0.14)
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="ThighRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.28, 0)
+radius = 0.035
+height = 0.22
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="KneeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.16, 0)
+radius = 0.03
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="ShinRight" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.08, 0)
+radius = 0.03
+height = 0.18
+sides = 6
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="FootRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.01, -0.03)
+size = Vector3(0.08, 0.02, 0.14)
+material = SubResource("StandardMaterial3D_bone")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+shape = SubResource("CapsuleShape3D_skel")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 1.5
+one_shot = true

@@ -1,0 +1,129 @@
+[gd_scene format=3 uid="uid://wraith001"]
+
+[ext_resource type="Script" path="res://scripts/enemies/shadow_wraith.gd" id="1_wraith"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_wraith"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_body"]
+transparency = 1
+albedo_color = Color(0.15, 0.05, 0.2, 0.6)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_head"]
+transparency = 1
+albedo_color = Color(0.1, 0.05, 0.15, 0.7)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+transparency = 1
+albedo_color = Color(0.7, 0.8, 1.0, 1)
+emission_enabled = true
+emission = Color(0.7, 0.8, 1.0, 1)
+emission_energy_multiplier = 3.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cloak"]
+transparency = 1
+albedo_color = Color(0.1, 0.03, 0.15, 0.5)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cloak_dark"]
+transparency = 1
+albedo_color = Color(0.08, 0.02, 0.1, 0.45)
+roughness = 0.95
+
+[node name="ShadowWraith" type="CharacterBody3D"]
+script = ExtResource("1_wraith")
+max_health = 35
+damage = 14
+speed = 2.5
+attack_range = 2.0
+detection_range = 14.0
+loot_gold_min = 10
+loot_gold_max = 22
+
+; === BODY (tall narrow translucent box) ===
+[node name="Body" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+size = Vector3(0.4, 1.2, 0.3)
+material = SubResource("StandardMaterial3D_body")
+
+; === HEAD (translucent sphere) ===
+[node name="Head" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.72, 0)
+radius = 0.18
+radial_segments = 14
+rings = 7
+material = SubResource("StandardMaterial3D_head")
+
+; === EYES (bright white-blue emissive) ===
+[node name="EyeLeft" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.06, 1.74, -0.14)
+radius = 0.035
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="EyeRight" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.06, 1.74, -0.14)
+radius = 0.035
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+; === HOOD (dark shape over head) ===
+[node name="Hood" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.2, 0, 0, 0, 1.1, 0, 0, 0, 1.3, 0, 1.76, 0.02)
+radius = 0.2
+radial_segments = 12
+rings = 6
+material = SubResource("StandardMaterial3D_cloak")
+
+; === SHOULDER WISPS ===
+[node name="ShoulderLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, 0.26, 0, -0.26, 0.97, 0, 0, 0, 1, -0.22, 1.5, 0)
+size = Vector3(0.15, 0.2, 0.2)
+material = SubResource("StandardMaterial3D_cloak")
+
+[node name="ShoulderRight" type="CSGBox3D" parent="."]
+transform = Transform3D(0.97, -0.26, 0, 0.26, 0.97, 0, 0, 0, 1, 0.22, 1.5, 0)
+size = Vector3(0.15, 0.2, 0.2)
+material = SubResource("StandardMaterial3D_cloak")
+
+; === TATTERED CLOAK STRIPS (3 thin boxes hanging below body) ===
+[node name="CloakStrip1" type="CSGBox3D" parent="."]
+transform = Transform3D(0.98, 0, 0.17, 0, 1, 0, -0.17, 0, 0.98, -0.1, 0.2, 0.02)
+size = Vector3(0.12, 0.5, 0.04)
+material = SubResource("StandardMaterial3D_cloak")
+
+[node name="CloakStrip2" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.05, 0.18, -0.05)
+size = Vector3(0.1, 0.55, 0.04)
+material = SubResource("StandardMaterial3D_cloak_dark")
+
+[node name="CloakStrip3" type="CSGBox3D" parent="."]
+transform = Transform3D(0.98, 0, -0.17, 0, 1, 0, 0.17, 0, 0.98, 0.14, 0.22, 0.04)
+size = Vector3(0.1, 0.45, 0.04)
+material = SubResource("StandardMaterial3D_cloak")
+
+; === WISPY ARM SHAPES ===
+[node name="ArmLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(0.87, -0.5, 0, 0.5, 0.87, 0, 0, 0, 1, -0.28, 1.1, 0)
+size = Vector3(0.1, 0.5, 0.08)
+material = SubResource("StandardMaterial3D_cloak_dark")
+
+[node name="ArmRight" type="CSGBox3D" parent="."]
+transform = Transform3D(0.87, 0.5, 0, -0.5, 0.87, 0, 0, 0, 1, 0.28, 1.1, 0)
+size = Vector3(0.1, 0.5, 0.08)
+material = SubResource("StandardMaterial3D_cloak_dark")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_wraith")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 1.5
+one_shot = true

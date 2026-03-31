@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://poison001"]
+
+[ext_resource type="Script" path="res://scripts/dungeon/poison_gas.gd" id="1_poison"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_poison"]
+size = Vector3(3.0, 2.0, 3.0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cloud"]
+albedo_color = Color(0.15, 0.5, 0.08, 0.2)
+emission_enabled = true
+emission = Color(0.08, 0.3, 0.03, 1)
+emission_energy_multiplier = 0.6
+transparency = 1
+blend_mode = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cloud_dense"]
+albedo_color = Color(0.2, 0.55, 0.1, 0.25)
+emission_enabled = true
+emission = Color(0.1, 0.35, 0.04, 1)
+emission_energy_multiplier = 0.8
+transparency = 1
+blend_mode = 1
+
+[node name="PoisonGas" type="Area3D"]
+script = ExtResource("1_poison")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+shape = SubResource("BoxShape3D_poison")
+
+[node name="Cloud1" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.5, 0, 0, 0, 0.8, 0, 0, 0, 1.5, 0, 0.8, 0)
+radius = 0.8
+radial_segments = 12
+rings = 6
+material = SubResource("StandardMaterial3D_cloud")
+
+[node name="Cloud2" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.3, 0, 0, 0, 0.7, 0, 0, 0, 1.3, 0.5, 1.0, 0.3)
+radius = 0.6
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_cloud_dense")
+
+[node name="Cloud3" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.3, 0, 0, 0, 0.7, 0, 0, 0, 1.3, -0.4, 0.9, -0.3)
+radius = 0.5
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_cloud")
+
+[node name="Cloud4" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.1, 0, 0, 0, 0.5, 0, 0, 0, 1.1, 0.2, 0.5, 0.1)
+radius = 0.7
+radial_segments = 10
+rings = 5
+material = SubResource("StandardMaterial3D_cloud_dense")
+
+[node name="PoisonLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+light_color = Color(0.15, 0.6, 0.08, 1)
+light_energy = 0.8
+omni_range = 5.0
+omni_attenuation = 1.5

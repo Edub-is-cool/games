@@ -1,0 +1,120 @@
+[gd_scene format=3 uid="uid://trap_spike001"]
+
+[ext_resource type="Script" path="res://scripts/dungeon/trap_spikes.gd" id="1_trap"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_trap"]
+size = Vector3(2.0, 0.5, 2.0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_base"]
+albedo_color = Color(0.15, 0.12, 0.08, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_spike"]
+albedo_color = Color(0.45, 0.43, 0.48, 1)
+metallic = 0.75
+roughness = 0.25
+metallic_specular = 0.6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_spike_tip"]
+albedo_color = Color(0.55, 0.53, 0.58, 1)
+metallic = 0.8
+roughness = 0.15
+metallic_specular = 0.7
+
+[node name="TrapSpikes" type="Area3D"]
+script = ExtResource("1_trap")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+shape = SubResource("BoxShape3D_trap")
+
+[node name="Base" type="CSGBox3D" parent="."]
+size = Vector3(2.0, 0.12, 2.0)
+use_collision = true
+material = SubResource("StandardMaterial3D_base")
+
+; Raised rim around base
+[node name="RimN" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, -0.95)
+size = Vector3(2.0, 0.08, 0.1)
+material = SubResource("StandardMaterial3D_base")
+
+[node name="RimS" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.04, 0.95)
+size = Vector3(2.0, 0.08, 0.1)
+material = SubResource("StandardMaterial3D_base")
+
+[node name="Spikes" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="Spike1" type="CSGCylinder3D" parent="Spikes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.15, -0.4)
+radius = 0.035
+height = 0.3
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_spike")
+
+[node name="Spike2" type="CSGCylinder3D" parent="Spikes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17, -0.4)
+radius = 0.04
+height = 0.34
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_spike_tip")
+
+[node name="Spike3" type="CSGCylinder3D" parent="Spikes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.14, -0.4)
+radius = 0.035
+height = 0.28
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_spike")
+
+[node name="Spike4" type="CSGCylinder3D" parent="Spikes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.16, 0)
+radius = 0.04
+height = 0.32
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_spike_tip")
+
+[node name="Spike5" type="CSGCylinder3D" parent="Spikes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.035
+height = 0.3
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_spike")
+
+[node name="Spike6" type="CSGCylinder3D" parent="Spikes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.17, 0)
+radius = 0.038
+height = 0.34
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_spike_tip")
+
+[node name="Spike7" type="CSGCylinder3D" parent="Spikes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.14, 0.4)
+radius = 0.035
+height = 0.28
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_spike")
+
+[node name="Spike8" type="CSGCylinder3D" parent="Spikes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.16, 0.4)
+radius = 0.04
+height = 0.32
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_spike_tip")
+
+[node name="Spike9" type="CSGCylinder3D" parent="Spikes"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.15, 0.4)
+radius = 0.035
+height = 0.3
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_spike")

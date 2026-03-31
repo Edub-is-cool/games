@@ -91,7 +91,7 @@ func _build_ui() -> void:
 	_add_button_left("JumpBtn", "JUMP", Color(0.3, 0.8, 0.3, 0.5),
 		Vector2(left_base, -425.0), btn_size, btn_font_size, "jump")
 
-	_add_button_left("InteractBtn", "TALK", Color(0.9, 0.8, 0.2, 0.5),
+	_add_button_left("InteractBtn", "INTERACT", Color(0.9, 0.8, 0.2, 0.5),
 		Vector2(left_base + 95.0, -425.0), btn_size, btn_font_size, "interact")
 
 	# Right side utility buttons (smaller, stacked)

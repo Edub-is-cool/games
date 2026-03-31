@@ -123,6 +123,25 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("jump") and is_on_floor():
 		velocity.y = JUMP_VELOCITY
 
+	# Touch controls: poll actions that _unhandled_input won't see
+	if GameManager.use_touch_controls:
+		if Input.is_action_just_pressed("attack") and not is_attacking and attack_cooldown.is_stopped():
+			_do_attack()
+		if Input.is_action_just_pressed("interact"):
+			_try_interact()
+		if Input.is_action_just_pressed("cast_spell"):
+			_cast_spell()
+		if Input.is_action_just_pressed("use_health_potion"):
+			if Inventory.use_health_potion(self):
+				SoundManager.play_sound("potion")
+		if Input.is_action_just_pressed("use_mana_potion"):
+			if Inventory.use_mana_potion(self):
+				SoundManager.play_sound("potion")
+		if Input.is_action_just_pressed("cycle_spell"):
+			Inventory.cycle_spell()
+		if Input.is_action_just_pressed("cycle_weapon"):
+			Inventory.cycle_weapon()
+
 	var input_dir := Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
 	var direction := (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 

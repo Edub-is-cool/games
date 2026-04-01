@@ -259,7 +259,6 @@ func _generate_gulp(dur: float, rate: int, vol: float) -> PackedByteArray:
 	buf.resize(count)
 	for i in range(count):
 		var t := float(i) / rate
-		var prog := t / dur
 		# Liquid bubble sound
 		var bubble_freq := 400.0 + sin(t * 8.0 * TAU) * 200.0
 		var env := exp(-t * 5.0)
@@ -317,7 +316,7 @@ func _generate_fanfare(dur: float, rate: int, vol: float) -> PackedByteArray:
 		var t := float(i) / rate
 		var prog := t / dur
 		var note_idx := mini(int(prog * notes.size()), notes.size() - 1)
-		var freq := notes[note_idx]
+		var freq: float = notes[note_idx]
 		var note_t := fmod(prog * notes.size(), 1.0)
 		var env := (1.0 - note_t * 0.3) * (1.0 - prog * 0.2)
 		var val := sin(t * freq * TAU) * 0.35

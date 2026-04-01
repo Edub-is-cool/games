@@ -29,51 +29,56 @@ script = ExtResource("1_player")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_player")
 
-; === VISIBLE BODY (seen when looking down) ===
-; Torso
-[node name="Torso" type="CSGCylinder3D" parent="."]
+; === VISIBLE BODY (no collision, visual only) ===
+[node name="Body" type="Node3D" parent="."]
+
+[node name="Torso" type="CSGCylinder3D" parent="Body"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0.05)
 radius = 0.25
 height = 0.7
 sides = 10
+use_collision = false
 material = SubResource("StandardMaterial3D_armor")
 
-; Legs
-[node name="LegL" type="CSGCylinder3D" parent="."]
+[node name="LegL" type="CSGCylinder3D" parent="Body"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 0.3, 0)
 radius = 0.08
 height = 0.5
 sides = 8
+use_collision = false
 material = SubResource("StandardMaterial3D_armor")
 
-[node name="LegR" type="CSGCylinder3D" parent="."]
+[node name="LegR" type="CSGCylinder3D" parent="Body"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 0.3, 0)
 radius = 0.08
 height = 0.5
 sides = 8
+use_collision = false
 material = SubResource("StandardMaterial3D_armor")
 
-[node name="BootL" type="CSGSphere3D" parent="."]
+[node name="BootL" type="CSGSphere3D" parent="Body"]
 transform = Transform3D(1.2, 0, 0, 0, 0.4, 0, 0, 0, 1.5, -0.1, 0.06, -0.03)
 radius = 0.07
 radial_segments = 6
 rings = 3
+use_collision = false
 material = SubResource("StandardMaterial3D_armor")
 
-[node name="BootR" type="CSGSphere3D" parent="."]
+[node name="BootR" type="CSGSphere3D" parent="Body"]
 transform = Transform3D(1.2, 0, 0, 0, 0.4, 0, 0, 0, 1.5, 0.1, 0.06, -0.03)
 radius = 0.07
 radial_segments = 6
 rings = 3
+use_collision = false
 material = SubResource("StandardMaterial3D_armor")
 
-; Belt
-[node name="Belt" type="CSGTorus3D" parent="."]
+[node name="Belt" type="CSGTorus3D" parent="Body"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 inner_radius = 0.22
 outer_radius = 0.26
 sides = 10
 ring_sides = 5
+use_collision = false
 material = SubResource("StandardMaterial3D_glove")
 
 [node name="Head" type="Node3D" parent="."]
@@ -83,13 +88,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
 current = true
 fov = 75.0
 
-; === FIRST-PERSON ARMS (attached to camera, always visible) ===
-; Right arm
+; === FIRST-PERSON ARMS (no collision, visual only) ===
 [node name="ArmR" type="CSGCylinder3D" parent="Head/Camera3D"]
 transform = Transform3D(0.97, 0, 0.26, 0, 1, 0, -0.26, 0, 0.97, 0.3, -0.35, -0.15)
 radius = 0.04
 height = 0.35
 sides = 8
+use_collision = false
 material = SubResource("StandardMaterial3D_armor")
 
 [node name="ForearmR" type="CSGCylinder3D" parent="Head/Camera3D"]
@@ -97,19 +102,21 @@ transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, 0.3, -0.42, -0.35)
 radius = 0.035
 height = 0.25
 sides = 8
+use_collision = false
 material = SubResource("StandardMaterial3D_skin")
 
 [node name="HandR" type="CSGSphere3D" parent="Head/Camera3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, -0.48, -0.48)
 radius = 0.04
+use_collision = false
 material = SubResource("StandardMaterial3D_glove")
 
-; Left arm
 [node name="ArmL" type="CSGCylinder3D" parent="Head/Camera3D"]
 transform = Transform3D(0.97, 0, -0.26, 0, 1, 0, 0.26, 0, 0.97, -0.3, -0.35, -0.15)
 radius = 0.04
 height = 0.35
 sides = 8
+use_collision = false
 material = SubResource("StandardMaterial3D_armor")
 
 [node name="ForearmL" type="CSGCylinder3D" parent="Head/Camera3D"]
@@ -117,11 +124,13 @@ transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, -0.3, -0.42, -0.35)
 radius = 0.035
 height = 0.25
 sides = 8
+use_collision = false
 material = SubResource("StandardMaterial3D_skin")
 
 [node name="HandL" type="CSGSphere3D" parent="Head/Camera3D"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, -0.48, -0.48)
 radius = 0.04
+use_collision = false
 material = SubResource("StandardMaterial3D_glove")
 
 [node name="InteractionRay" type="RayCast3D" parent="Head/Camera3D"]

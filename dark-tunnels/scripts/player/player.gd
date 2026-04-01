@@ -594,19 +594,19 @@ func _update_held_weapon() -> void:
 		wpn.queue_free()
 
 func _animate_arm_swing() -> void:
-	var hand_r := camera.get_node_or_null("HandR")
+	var hand_r: Node3D = camera.get_node_or_null("HandR") as Node3D
 	if not hand_r:
 		return
-	var orig_pos := hand_r.position
+	var orig_pos: Vector3 = hand_r.position
 	var tw := create_tween()
 	tw.tween_property(hand_r, "position", orig_pos + Vector3(0.05, 0.1, -0.15), 0.1)
 	tw.tween_property(hand_r, "position", orig_pos, 0.15)
 
 func _animate_arm_interact() -> void:
-	var hand_r := camera.get_node_or_null("HandR")
+	var hand_r: Node3D = camera.get_node_or_null("HandR") as Node3D
 	if not hand_r:
 		return
-	var orig_pos := hand_r.position
+	var orig_pos: Vector3 = hand_r.position
 	var tw := create_tween()
 	tw.tween_property(hand_r, "position", orig_pos + Vector3(0, 0, -0.2), 0.15)
 	tw.tween_property(hand_r, "position", orig_pos, 0.2)

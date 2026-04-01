@@ -1,7 +1,6 @@
 extends "res://scripts/enemies/boss.gd"
 
 # Phase 1: Shield blocks frontal. Phase 2 (50%): Dual wield, faster. Phase 3 (25%): Fire AoE.
-var phase: int = 1
 var fire_timer: float = 0.0
 const FIRE_COOLDOWN := 4.0
 

@@ -92,10 +92,10 @@ func _summon_minion() -> void:
 
 func _shoot_bolt() -> void:
 	attack_timer.start()
-	var bolt := bolt_scene.instantiate()
+	var bolt: Node3D = bolt_scene.instantiate() as Node3D
 	get_tree().current_scene.add_child(bolt)
 	bolt.global_position = global_position + Vector3(0, 1.2, 0)
-	var dir := (player.global_position + Vector3(0, 1, 0) - bolt.global_position).normalized()
+	var dir: Vector3 = (player.global_position + Vector3(0, 1, 0) - bolt.global_position).normalized()
 	bolt.direction = dir
 	SoundManager.play_sound("fireball")
 

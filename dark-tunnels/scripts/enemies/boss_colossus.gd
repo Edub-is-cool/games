@@ -1,7 +1,6 @@
 extends "res://scripts/enemies/boss.gd"
 
 # Phase 1: Slow sweeps. Phase 2 (50%): Spawns bone projectiles. Phase 3 (25%): Faster.
-var phase: int = 1
 var projectile_timer: float = 0.0
 const PROJECTILE_COOLDOWN := 2.0
 var bolt_scene: PackedScene = preload("res://scenes/magic/skeleton_arrow.tscn")
@@ -11,10 +10,10 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# Phase transitions
-	if phase == 1 and health <= max_health / 2:
+	if phase == 1 and health <= int(max_health * 0.5):
 		phase = 2
 		speed = base_speed * 0.8
-	elif phase == 2 and health <= max_health / 4:
+	elif phase == 2 and health <= int(max_health * 0.25):
 		phase = 3
 		speed = base_speed * 1.8
 		attack_range = 3.0
@@ -57,11 +56,10 @@ func _shoot_bones() -> void:
 		return
 	SoundManager.play_sound("sword")
 	for i in range(3):
-		var arrow := bolt_scene.instantiate()
+		var arrow: Node3D = bolt_scene.instantiate() as Node3D
 		get_tree().current_scene.add_child(arrow)
 		arrow.global_position = global_position + Vector3(0, 2.5, 0)
 		var angle_offset := (float(i) - 1.0) * 0.3
 		var base_dir := (player.global_position - global_position).normalized()
-		var rot := Transform3D().rotated(Vector3.UP, angle_offset)
-		arrow.direction = rot * base_dir
+		arrow.direction = base_dir.rotated(Vector3.UP, angle_offset)
 		arrow.damage = int(damage * 0.5)

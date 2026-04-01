@@ -2,7 +2,6 @@ extends "res://scripts/enemies/boss.gd"
 
 # Phase 1: Summons shadows, teleports. Phase 2 (60%): Melee + projectiles.
 # Phase 3 (30%): Rapid teleport assault. Phase 4 (10%): Desperate frenzy.
-var phase: int = 1
 var teleport_timer: float = 4.0
 var summon_timer: float = 5.0
 var projectile_timer: float = 0.0
@@ -119,13 +118,13 @@ func _shoot_bolts() -> void:
 	SoundManager.play_sound("fireball")
 	var count := 1 if phase <= 2 else 3
 	for i in range(count):
-		var bolt := bolt_scene.instantiate()
+		var bolt: Node3D = bolt_scene.instantiate() as Node3D
 		get_tree().current_scene.add_child(bolt)
 		bolt.global_position = global_position + Vector3(0, 2.0, 0)
-		var base_dir := (player.global_position + Vector3(0, 1, 0) - bolt.global_position).normalized()
+		var base_dir: Vector3 = (player.global_position + Vector3(0, 1, 0) - bolt.global_position).normalized()
 		if count > 1:
 			var angle := (float(i) - 1.0) * 0.3
-			bolt.direction = Transform3D().rotated(Vector3.UP, angle) * base_dir
+			bolt.direction = base_dir.rotated(Vector3.UP, angle)
 		else:
 			bolt.direction = base_dir
 

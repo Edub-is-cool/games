@@ -436,30 +436,60 @@ func _decorate_room(room: Dictionary) -> void:
 	stain_mat.roughness = 0.98
 	stain_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 
-	# Scattered rubble (small rocks on floor)
+	# Scattered rubble (natural rock shapes on floor)
 	var rubble_count := debris_rng.randi_range(3, 7)
 	for _r in range(rubble_count):
-		var rubble := CSGBox3D.new()
-		var rsize := debris_rng.randf_range(0.05, 0.15)
-		rubble.size = Vector3(rsize, rsize * 0.6, rsize * 0.8)
-		rubble.position = pos + Vector3(
-			debris_rng.randf_range(-half_x + 1, half_x - 1),
-			rsize * 0.3 + 0.1,
-			debris_rng.randf_range(-half_z + 1, half_z - 1))
-		rubble.rotation.y = debris_rng.randf() * TAU
-		rubble.material = debris_mat
-		_add_geometry(rubble)
+		var rsize := debris_rng.randf_range(0.04, 0.12)
+		var rx := debris_rng.randf_range(-half_x + 1, half_x - 1)
+		var rz := debris_rng.randf_range(-half_z + 1, half_z - 1)
+		var rtype := debris_rng.randi() % 3
+		if rtype == 0:
+			# Rounded rock
+			var rock := CSGSphere3D.new()
+			rock.radius = rsize
+			rock.radial_segments = 6
+			rock.rings = 3
+			rock.position = pos + Vector3(rx, rsize * 0.5 + 0.1, rz)
+			rock.material = debris_mat
+			_add_geometry(rock)
+		elif rtype == 1:
+			# Flat pebble (squished sphere)
+			var pebble := CSGSphere3D.new()
+			pebble.radius = rsize * 1.2
+			pebble.radial_segments = 6
+			pebble.rings = 3
+			pebble.transform = Transform3D(
+				Vector3(1.3, 0, 0), Vector3(0, 0.4, 0), Vector3(0, 0, 1.1),
+				pos + Vector3(rx, rsize * 0.2 + 0.1, rz))
+			pebble.material = debris_mat
+			_add_geometry(pebble)
+		else:
+			# Broken chunk (cylinder fragment)
+			var chunk := CSGCylinder3D.new()
+			chunk.radius = rsize
+			chunk.height = rsize * 0.8
+			chunk.sides = 5
+			chunk.position = pos + Vector3(rx, rsize * 0.4 + 0.1, rz)
+			chunk.rotation = Vector3(debris_rng.randf_range(-0.3, 0.3), debris_rng.randf() * TAU, debris_rng.randf_range(-0.3, 0.3))
+			chunk.material = debris_mat
+			_add_geometry(chunk)
 
-	# Floor stains (dark patches)
+	# Floor stains (organic-shaped dark patches using flattened spheres)
 	var stain_count := debris_rng.randi_range(1, 3)
 	for _s in range(stain_count):
-		var stain := CSGBox3D.new()
-		var ssize := debris_rng.randf_range(0.5, 1.5)
-		stain.size = Vector3(ssize, 0.01, ssize * debris_rng.randf_range(0.6, 1.4))
-		stain.position = pos + Vector3(
-			debris_rng.randf_range(-half_x + 1, half_x - 1),
-			0.11,
-			debris_rng.randf_range(-half_z + 1, half_z - 1))
+		var stain := CSGSphere3D.new()
+		var ssize := debris_rng.randf_range(0.3, 0.8)
+		stain.radius = ssize
+		stain.radial_segments = 8
+		stain.rings = 4
+		stain.transform = Transform3D(
+			Vector3(1.0 + debris_rng.randf_range(-0.3, 0.3), 0, 0),
+			Vector3(0, 0.01, 0),
+			Vector3(0, 0, 1.0 + debris_rng.randf_range(-0.3, 0.3)),
+			pos + Vector3(
+				debris_rng.randf_range(-half_x + 1, half_x - 1),
+				0.11,
+				debris_rng.randf_range(-half_z + 1, half_z - 1)))
 		stain.material = stain_mat
 		_add_geometry(stain)
 

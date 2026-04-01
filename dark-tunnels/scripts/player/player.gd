@@ -107,6 +107,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		Inventory.select_weapon(3)
 	if event.is_action_pressed("weapon_5"):
 		Inventory.select_weapon(4)
+	if event.is_action_pressed("weapon_6"):
+		Inventory.select_weapon(5)
+	if event.is_action_pressed("weapon_7"):
+		Inventory.select_weapon(6)
+	if event.is_action_pressed("weapon_8"):
+		Inventory.select_weapon(7)
+	if event.is_action_pressed("weapon_9"):
+		Inventory.select_weapon(8)
+	if event.is_action_pressed("weapon_0"):
+		Inventory.select_weapon(9)
 
 	if event.is_action_pressed("show_controls"):
 		var hud_node := get_tree().current_scene.get_node_or_null("HUD")
@@ -174,11 +184,9 @@ func _physics_process(delta: float) -> void:
 
 func _do_attack() -> void:
 	is_attacking = true
-	attack_cooldown.wait_time = Inventory.get_weapon_speed()
-	attack_cooldown.start()
 	var weapon := Inventory.current_weapon
-
 	var stats: Dictionary = Inventory.weapon_stats[weapon]
+
 	if stats.has("ranged") and stats["ranged"]:
 		# Ranged weapons: shoot projectiles
 		SoundManager.play_sound("sword")
@@ -188,6 +196,8 @@ func _do_attack() -> void:
 		var arrow_scene: PackedScene = preload("res://scenes/magic/arrow.tscn")
 		var shot_count := stats.get("burst", 1) as int
 		for shot_i in range(shot_count):
+			if not is_instance_valid(self) or is_dead:
+				return
 			var arrow: Node3D = arrow_scene.instantiate()
 			get_tree().current_scene.add_child(arrow)
 			arrow.global_position = camera.global_position + -camera.global_basis.z * 1.0
@@ -197,7 +207,7 @@ func _do_attack() -> void:
 			arrow.direction = (-camera.global_basis.z + camera.global_basis.x * spread).normalized()
 			arrow.damage = int(Inventory.get_weapon_damage() * GameManager.get_player_damage_mult())
 			if shot_count > 1 and shot_i < shot_count - 1:
-				await get_tree().create_timer(0.1).timeout
+				await get_tree().create_timer(0.08).timeout
 	else:
 		# Melee swing
 		var swing_strength := 0.15
@@ -227,7 +237,9 @@ func _do_attack() -> void:
 				if stats.has("stun") and target.has_method("apply_slow"):
 					target.apply_slow(stats["stun"])
 
-	await attack_cooldown.timeout
+	# Set cooldown and release attack lock
+	attack_cooldown.wait_time = Inventory.get_weapon_speed()
+	attack_cooldown.start()
 	is_attacking = false
 
 func _try_interact() -> void:

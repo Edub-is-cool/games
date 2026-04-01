@@ -7,13 +7,53 @@ radius = 0.4
 height = 1.8
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe"]
-albedo_color = Color(0.3, 0.15, 0.5, 1)
+albedo_color = Color(0.25, 0.12, 0.42, 1)
+roughness = 0.88
+metallic_specular = 0.15
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_robe_trim"]
+albedo_color = Color(0.6, 0.45, 0.15, 1)
+roughness = 0.7
+metallic = 0.3
+metallic_specular = 0.5
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_skin"]
-albedo_color = Color(0.8, 0.65, 0.5, 1)
+albedo_color = Color(0.72, 0.58, 0.45, 1)
+roughness = 0.6
+metallic_specular = 0.3
+metallic = 0.02
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eye"]
+albedo_color = Color(0.9, 0.85, 0.7, 1)
+roughness = 0.1
+metallic_specular = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pupil"]
+albedo_color = Color(0.15, 0.1, 0.05, 1)
+roughness = 0.15
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hat"]
-albedo_color = Color(0.25, 0.1, 0.45, 1)
+albedo_color = Color(0.2, 0.08, 0.38, 1)
+roughness = 0.85
+metallic_specular = 0.15
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_beard"]
+albedo_color = Color(0.6, 0.58, 0.55, 1)
+roughness = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gem"]
+albedo_color = Color(0.3, 0.8, 0.4, 1)
+emission_enabled = true
+emission = Color(0.2, 0.7, 0.3, 1)
+emission_energy_multiplier = 2.0
+roughness = 0.05
+metallic = 0.4
+metallic_specular = 0.9
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pouch"]
+albedo_color = Color(0.35, 0.22, 0.08, 1)
+roughness = 0.75
+metallic_specular = 0.2
 
 [node name="Merchant" type="StaticBody3D"]
 script = ExtResource("1_merchant")
@@ -22,31 +62,211 @@ script = ExtResource("1_merchant")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_merchant")
 
-[node name="Robe" type="CSGBox3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
-size = Vector3(0.6, 1.2, 0.5)
+; === ROBE BODY (flowing cylinder) ===
+[node name="Robe" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
+radius = 0.3
+height = 1.1
+sides = 10
 material = SubResource("StandardMaterial3D_robe")
 
+; Robe flare at bottom
+[node name="RobeBase" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+radius = 0.4
+height = 0.3
+sides = 10
+material = SubResource("StandardMaterial3D_robe")
+
+; Gold trim at collar
+[node name="Collar" type="CSGTorus3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+inner_radius = 0.25
+outer_radius = 0.3
+sides = 10
+ring_sides = 5
+material = SubResource("StandardMaterial3D_robe_trim")
+
+; Gold trim at waist
+[node name="Sash" type="CSGTorus3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+inner_radius = 0.27
+outer_radius = 0.32
+sides = 10
+ring_sides = 5
+material = SubResource("StandardMaterial3D_robe_trim")
+
+; Gold clasp on sash
+[node name="Clasp" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, -0.32)
+radius = 0.04
+material = SubResource("StandardMaterial3D_robe_trim")
+
+; === HEAD (round with details) ===
 [node name="Head" type="CSGSphere3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0)
+transform = Transform3D(1, 0, 0, 0, 1.05, 0, 0, 0, 1, 0, 1.5, 0)
 radius = 0.22
+radial_segments = 14
+rings = 7
 material = SubResource("StandardMaterial3D_skin")
 
-[node name="Hat" type="CSGCylinder3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.85, 0)
-radius = 0.2
-height = 0.4
-cone = true
-material = SubResource("StandardMaterial3D_hat")
+; Nose
+[node name="Nose" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8, 0, 0, 0, 1.5, 0, 1.47, -0.2)
+radius = 0.04
+radial_segments = 6
+rings = 3
+material = SubResource("StandardMaterial3D_skin")
 
+; Eyes
+[node name="EyeL" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.08, 1.54, -0.17)
+radius = 0.04
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="PupilL" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.08, 1.54, -0.21)
+radius = 0.02
+material = SubResource("StandardMaterial3D_pupil")
+
+[node name="EyeR" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 1.54, -0.17)
+radius = 0.04
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_eye")
+
+[node name="PupilR" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.08, 1.54, -0.21)
+radius = 0.02
+material = SubResource("StandardMaterial3D_pupil")
+
+; Eyebrows (bushy)
+[node name="BrowL" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.5, 0, 0, 0, 0.4, 0, 0, 0, 0.6, -0.08, 1.59, -0.15)
+radius = 0.03
+material = SubResource("StandardMaterial3D_beard")
+
+[node name="BrowR" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.5, 0, 0, 0, 0.4, 0, 0, 0, 0.6, 0.08, 1.59, -0.15)
+radius = 0.03
+material = SubResource("StandardMaterial3D_beard")
+
+; Ears
+[node name="EarL" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.5, 0, 0, 0, 0.8, 0, 0, 0, 1, -0.22, 1.52, 0)
+radius = 0.05
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="EarR" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.5, 0, 0, 0, 0.8, 0, 0, 0, 1, 0.22, 1.52, 0)
+radius = 0.05
+material = SubResource("StandardMaterial3D_skin")
+
+; === BEARD (flowing) ===
+[node name="Beard" type="CSGSphere3D" parent="."]
+transform = Transform3D(0.8, 0, 0, 0, 1.2, 0, 0, 0, 0.6, 0, 1.32, -0.12)
+radius = 0.12
+radial_segments = 8
+rings = 4
+material = SubResource("StandardMaterial3D_beard")
+
+[node name="BeardTip" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.18, -0.14)
+radius = 0.04
+height = 0.12
+cone = true
+sides = 6
+material = SubResource("StandardMaterial3D_beard")
+
+; === HAT (wizard style) ===
 [node name="HatBrim" type="CSGCylinder3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.68, 0)
 radius = 0.3
 height = 0.04
+sides = 12
 material = SubResource("StandardMaterial3D_hat")
 
-[node name="ShopLight" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
-light_color = Color(0.7, 0.5, 1, 1)
-light_energy = 3.0
-omni_range = 8.0
+[node name="Hat" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.92, 0)
+radius = 0.18
+height = 0.45
+cone = true
+sides = 10
+material = SubResource("StandardMaterial3D_hat")
+
+; Hat band with gem
+[node name="HatBand" type="CSGTorus3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.72, 0)
+inner_radius = 0.16
+outer_radius = 0.19
+sides = 10
+ring_sides = 5
+material = SubResource("StandardMaterial3D_robe_trim")
+
+[node name="HatGem" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.73, -0.19)
+radius = 0.03
+material = SubResource("StandardMaterial3D_gem")
+
+; === ARMS (sleeves with hands) ===
+[node name="SleeveL" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, -0.3, 0.95, -0.1)
+radius = 0.1
+height = 0.4
+sides = 8
+material = SubResource("StandardMaterial3D_robe")
+
+[node name="HandL" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45, 0.8, -0.25)
+radius = 0.06
+material = SubResource("StandardMaterial3D_skin")
+
+[node name="SleeveR" type="CSGCylinder3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.7, 0.7, 0, -0.7, 0.7, 0.3, 0.95, -0.1)
+radius = 0.1
+height = 0.4
+sides = 8
+material = SubResource("StandardMaterial3D_robe")
+
+[node name="HandR" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0.8, -0.25)
+radius = 0.06
+material = SubResource("StandardMaterial3D_skin")
+
+; === POUCHES on belt ===
+[node name="Pouch1" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8, 0, 0, 0, 1, -0.28, 0.52, -0.1)
+radius = 0.06
+material = SubResource("StandardMaterial3D_pouch")
+
+[node name="Pouch2" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.8, 0, 0, 0, 1, 0.25, 0.5, -0.15)
+radius = 0.05
+material = SubResource("StandardMaterial3D_pouch")
+
+; === STAFF (held, leaning) ===
+[node name="Staff" type="CSGCylinder3D" parent="."]
+transform = Transform3D(0.98, 0, 0.2, 0, 1, 0, -0.2, 0, 0.98, 0.45, 0.9, -0.2)
+radius = 0.025
+height = 1.6
+sides = 6
+material = SubResource("StandardMaterial3D_pouch")
+
+[node name="StaffOrb" type="CSGSphere3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.52, 1.75, -0.25)
+radius = 0.07
+material = SubResource("StandardMaterial3D_gem")
+
+; Feet peeking out
+[node name="FootL" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.2, 0, 0, 0, 0.4, 0, 0, 0, 1.5, -0.1, 0.03, -0.2)
+radius = 0.05
+material = SubResource("StandardMaterial3D_pouch")
+
+[node name="FootR" type="CSGSphere3D" parent="."]
+transform = Transform3D(1.2, 0, 0, 0, 0.4, 0, 0, 0, 1.5, 0.1, 0.03, -0.18)
+radius = 0.05
+material = SubResource("StandardMaterial3D_pouch")

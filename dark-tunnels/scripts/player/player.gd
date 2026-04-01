@@ -17,6 +17,8 @@ var mana: int
 var bob_timer: float = 0.0
 var is_attacking: bool = false
 var is_dead: bool = false
+var held_weapon_node: Node3D = null
+var current_held_weapon: String = ""
 
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
@@ -42,6 +44,8 @@ func _ready() -> void:
 	GameManager.register_player(self)
 	health_changed.emit(health, max_health)
 	mana_changed.emit(mana, max_mana)
+	Inventory.weapon_changed.connect(_on_weapon_changed)
+	_update_held_weapon()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if is_dead:
@@ -166,7 +170,13 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, current_speed)
 		velocity.z = move_toward(velocity.z, 0, current_speed)
 
-	# Head bob + lateral sway for realistic movement
+	# Keep held weapon in sync
+	if current_held_weapon != Inventory.current_weapon:
+		_update_held_weapon()
+
+	# Head bob + lateral sway + arm bob for realistic movement
+	var hand_r := camera.get_node_or_null("HandR")
+	var hand_l := camera.get_node_or_null("HandL")
 	if is_on_floor() and direction:
 		bob_timer += delta * velocity.length()
 		camera.transform.origin.y = sin(bob_timer * BOB_FREQ) * BOB_AMP
@@ -174,16 +184,33 @@ func _physics_process(delta: float) -> void:
 		# Subtle roll when strafing
 		var strafe := input_dir.x
 		camera.rotation.z = lerp(camera.rotation.z, -strafe * 0.015, delta * 5.0)
+		# Arm swing while walking (opposite phase like natural walking)
+		if hand_r and not is_attacking:
+			var arm_swing := sin(bob_timer * BOB_FREQ) * 0.04
+			hand_r.position.z = -0.48 + arm_swing
+			hand_r.position.y = -0.48 + abs(arm_swing) * 0.3
+		if hand_l:
+			var arm_swing_l := sin(bob_timer * BOB_FREQ + PI) * 0.04
+			hand_l.position.z = -0.48 + arm_swing_l
+			hand_l.position.y = -0.48 + abs(arm_swing_l) * 0.3
 	else:
 		bob_timer = 0.0
 		camera.transform.origin.y = move_toward(camera.transform.origin.y, 0.0, delta * 3.0)
 		camera.transform.origin.x = move_toward(camera.transform.origin.x, 0.0, delta * 3.0)
 		camera.rotation.z = lerp(camera.rotation.z, 0.0, delta * 5.0)
+		# Return arms to rest
+		if hand_r and not is_attacking:
+			hand_r.position.y = move_toward(hand_r.position.y, -0.48, delta * 3.0)
+			hand_r.position.z = move_toward(hand_r.position.z, -0.48, delta * 3.0)
+		if hand_l:
+			hand_l.position.y = move_toward(hand_l.position.y, -0.48, delta * 3.0)
+			hand_l.position.z = move_toward(hand_l.position.z, -0.48, delta * 3.0)
 
 	move_and_slide()
 
 func _do_attack() -> void:
 	is_attacking = true
+	_animate_arm_swing()
 	var weapon := Inventory.current_weapon
 	var stats: Dictionary = Inventory.weapon_stats[weapon]
 
@@ -246,6 +273,7 @@ func _try_interact() -> void:
 	if ray.is_colliding():
 		var target = ray.get_collider()
 		if target.has_method("interact"):
+			_animate_arm_interact()
 			target.interact(self)
 
 func _cast_spell() -> void:
@@ -413,3 +441,172 @@ func _on_mana_regen_timer_timeout() -> void:
 	if mana < max_mana + Inventory.get_mana_bonus():
 		mana = min(mana + 1, max_mana + Inventory.get_mana_bonus())
 		mana_changed.emit(mana, max_mana)
+
+func _on_weapon_changed(weapon_name: String) -> void:
+	_update_held_weapon()
+
+func _update_held_weapon() -> void:
+	# Remove old weapon model
+	if held_weapon_node:
+		held_weapon_node.queue_free()
+		held_weapon_node = null
+	current_held_weapon = Inventory.current_weapon
+
+	var hand_r := camera.get_node_or_null("HandR")
+	if not hand_r:
+		return
+
+	# Build a simple weapon model at the right hand
+	var wpn := Node3D.new()
+	wpn.name = "HeldWeapon"
+
+	var blade_mat := StandardMaterial3D.new()
+	blade_mat.albedo_color = Color(0.65, 0.65, 0.7)
+	blade_mat.metallic = 0.85
+	blade_mat.roughness = 0.2
+
+	var wood_mat := StandardMaterial3D.new()
+	wood_mat.albedo_color = Color(0.3, 0.18, 0.06)
+	wood_mat.roughness = 0.75
+
+	match current_held_weapon:
+		"fist":
+			pass # No weapon model for fists
+		"sword":
+			var blade := CSGBox3D.new()
+			blade.size = Vector3(0.03, 0.35, 0.01)
+			blade.position = Vector3(0, 0.2, 0)
+			blade.material = blade_mat
+			wpn.add_child(blade)
+			var guard := CSGBox3D.new()
+			guard.size = Vector3(0.08, 0.015, 0.02)
+			guard.position = Vector3(0, 0.03, 0)
+			guard.material = wood_mat
+			wpn.add_child(guard)
+		"axe":
+			var shaft := CSGCylinder3D.new()
+			shaft.radius = 0.015
+			shaft.height = 0.35
+			shaft.sides = 6
+			shaft.position = Vector3(0, 0.18, 0)
+			shaft.material = wood_mat
+			wpn.add_child(shaft)
+			var axe_head := CSGBox3D.new()
+			axe_head.size = Vector3(0.1, 0.1, 0.025)
+			axe_head.position = Vector3(0.04, 0.35, 0)
+			axe_head.material = blade_mat
+			wpn.add_child(axe_head)
+		"bow":
+			var bow := CSGCylinder3D.new()
+			bow.radius = 0.01
+			bow.height = 0.35
+			bow.sides = 6
+			bow.position = Vector3(0, 0.18, 0)
+			bow.material = wood_mat
+			wpn.add_child(bow)
+		"staff":
+			var shaft := CSGCylinder3D.new()
+			shaft.radius = 0.015
+			shaft.height = 0.4
+			shaft.sides = 6
+			shaft.position = Vector3(0, 0.22, 0)
+			shaft.material = wood_mat
+			wpn.add_child(shaft)
+			var orb_mat := StandardMaterial3D.new()
+			orb_mat.albedo_color = Color(0.4, 0.2, 1)
+			orb_mat.emission_enabled = true
+			orb_mat.emission = Color(0.5, 0.2, 1)
+			orb_mat.emission_energy_multiplier = 2.0
+			var orb := CSGSphere3D.new()
+			orb.radius = 0.035
+			orb.position = Vector3(0, 0.44, 0)
+			orb.material = orb_mat
+			wpn.add_child(orb)
+		"spear":
+			var shaft := CSGCylinder3D.new()
+			shaft.radius = 0.012
+			shaft.height = 0.5
+			shaft.sides = 6
+			shaft.position = Vector3(0, 0.28, 0)
+			shaft.material = wood_mat
+			wpn.add_child(shaft)
+			var tip := CSGCylinder3D.new()
+			tip.radius = 0.02
+			tip.height = 0.06
+			tip.cone = true
+			tip.sides = 5
+			tip.position = Vector3(0, 0.54, 0)
+			tip.material = blade_mat
+			wpn.add_child(tip)
+		"flail":
+			var handle := CSGCylinder3D.new()
+			handle.radius = 0.015
+			handle.height = 0.2
+			handle.sides = 6
+			handle.position = Vector3(0, 0.1, 0)
+			handle.material = wood_mat
+			wpn.add_child(handle)
+			var ball := CSGSphere3D.new()
+			ball.radius = 0.04
+			ball.position = Vector3(0, 0.28, 0)
+			ball.material = blade_mat
+			wpn.add_child(ball)
+		"crossbow":
+			var body := CSGBox3D.new()
+			body.size = Vector3(0.03, 0.03, 0.2)
+			body.position = Vector3(0, 0.02, -0.1)
+			body.material = wood_mat
+			wpn.add_child(body)
+			var arm := CSGBox3D.new()
+			arm.size = Vector3(0.2, 0.015, 0.015)
+			arm.position = Vector3(0, 0.03, -0.2)
+			arm.material = wood_mat
+			wpn.add_child(arm)
+		"daggers":
+			var d1 := CSGBox3D.new()
+			d1.size = Vector3(0.015, 0.1, 0.008)
+			d1.position = Vector3(-0.02, 0.08, 0)
+			d1.material = blade_mat
+			wpn.add_child(d1)
+			var d2 := CSGBox3D.new()
+			d2.size = Vector3(0.015, 0.1, 0.008)
+			d2.position = Vector3(0.02, 0.08, 0)
+			d2.material = blade_mat
+			wpn.add_child(d2)
+		"warhammer":
+			var shaft := CSGCylinder3D.new()
+			shaft.radius = 0.015
+			shaft.height = 0.4
+			shaft.sides = 6
+			shaft.position = Vector3(0, 0.22, 0)
+			shaft.material = wood_mat
+			wpn.add_child(shaft)
+			var hammer := CSGBox3D.new()
+			hammer.size = Vector3(0.1, 0.06, 0.05)
+			hammer.position = Vector3(0.04, 0.42, 0)
+			hammer.material = blade_mat
+			wpn.add_child(hammer)
+
+	if wpn.get_child_count() > 0:
+		hand_r.add_child(wpn)
+		held_weapon_node = wpn
+	else:
+		wpn.queue_free()
+
+func _animate_arm_swing() -> void:
+	var hand_r := camera.get_node_or_null("HandR")
+	if not hand_r:
+		return
+	var orig_pos := hand_r.position
+	var tw := create_tween()
+	tw.tween_property(hand_r, "position", orig_pos + Vector3(0.05, 0.1, -0.15), 0.1)
+	tw.tween_property(hand_r, "position", orig_pos, 0.15)
+
+func _animate_arm_interact() -> void:
+	var hand_r := camera.get_node_or_null("HandR")
+	if not hand_r:
+		return
+	var orig_pos := hand_r.position
+	var tw := create_tween()
+	tw.tween_property(hand_r, "position", orig_pos + Vector3(0, 0, -0.2), 0.15)
+	tw.tween_property(hand_r, "position", orig_pos, 0.2)

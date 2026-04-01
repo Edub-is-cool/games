@@ -54,11 +54,14 @@ export class EconomySystem {
     for (const entity of this.world.entities.values()) {
       if (entity.type !== 'unit' || entity.key !== 'villager' || entity.state !== 'idle' || entity.owner < 0) continue;
 
-      // Find nearest resource within 150px
+      // If villager has a preferred gather type, find nearest of that type (any distance)
+      // Otherwise fall back to nearest resource within 150px
+      const preferredType = entity.gatherType;
       let nearestRes: EntityData | null = null;
-      let nearestDist = 150 * 150;
+      let nearestDist = preferredType ? Infinity : 150 * 150;
       for (const res of this.world.entities.values()) {
         if (res.type !== 'resource' || res.state === 'dead') continue;
+        if (preferredType && res.key !== preferredType) continue;
         const dx = res.x - entity.x;
         const dy = res.y - entity.y;
         const dist = dx * dx + dy * dy;
@@ -103,8 +106,25 @@ export class EconomySystem {
 
     const target = this.world.entities.get(entity.target);
 
-    // If resource is depleted, go idle
+    // If resource is depleted, auto-find next of same type or go idle
     if (!target || target.state === 'dead') {
+      if (entity.gatherType) {
+        // Find nearest resource of the same type
+        let nextRes: EntityData | null = null;
+        let nextDist = Infinity;
+        for (const res of this.world.entities.values()) {
+          if (res.type !== 'resource' || res.state === 'dead' || res.key !== entity.gatherType) continue;
+          const ddx = res.x - entity.x;
+          const ddy = res.y - entity.y;
+          const d = ddx * ddx + ddy * ddy;
+          if (d < nextDist) { nextDist = d; nextRes = res; }
+        }
+        if (nextRes) {
+          entity.target = nextRes.id;
+          entity.commandQueue = [{ type: 'gather', targetId: nextRes.id }];
+          return;
+        }
+      }
       entity.state = 'idle';
       entity.target = null;
       return;
@@ -132,7 +152,7 @@ export class EconomySystem {
           entity.carryAmount = 0;
         } else {
           // Move to drop-off
-          const config = UNITS[entity.key];
+          const config = ALL_UNITS[entity.key] ?? UNITS[entity.key];
           if (config) {
             const step = config.speed * (delta / 1000);
             const ratio = Math.min(step / ddist, 1);
@@ -146,7 +166,7 @@ export class EconomySystem {
 
     // Move toward resource
     if (dist > GATHER_RANGE) {
-      const config = UNITS[entity.key];
+      const config = ALL_UNITS[entity.key] ?? UNITS[entity.key];
       if (config) {
         const step = config.speed * (delta / 1000);
         const ratio = Math.min(step / dist, 1);
@@ -185,7 +205,7 @@ export class EconomySystem {
 
     // Move to building site
     if (dist > 40) {
-      const config = UNITS[entity.key];
+      const config = ALL_UNITS[entity.key] ?? UNITS[entity.key];
       if (config) {
         const step = config.speed * (delta / 1000);
         const ratio = Math.min(step / dist, 1);

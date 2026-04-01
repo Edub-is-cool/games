@@ -75,7 +75,7 @@ const BRONZE_AGE_BUILDINGS: Record<string, BuildingConfig> = {
     cost: { food: 0, wood: 200, gold: 50, stone: 0 },
     buildTime: 45,
     size: 2,
-    produces: ['chariot'],
+    produces: ['chariot', 'lancer'],
     color: 0x997744,
   },
   watchtower: {
@@ -114,6 +114,19 @@ const BRONZE_AGE: AgeConfig = {
 // ---------------------------------------------------------------------------
 
 const IRON_AGE_UNITS: Record<string, UnitConfig> = {
+  crossbowman: {
+    name: 'Crossbowman',
+    hp: 40,
+    attack: 9,
+    armor: 1,
+    speed: 60,
+    range: 110,
+    attackSpeed: 0.7,
+    cost: { food: 30, wood: 40, gold: 30, stone: 0 },
+    trainTime: 26,
+    size: 8,
+    color: 0x5588aa,
+  },
   knight: {
     name: 'Knight',
     hp: 120,
@@ -153,6 +166,7 @@ const IRON_AGE_UNITS: Record<string, UnitConfig> = {
     size: 14,
     color: 0x886633,
   },
+  spy: UNITS.spy,
 };
 
 const IRON_AGE_BUILDINGS: Record<string, BuildingConfig> = {

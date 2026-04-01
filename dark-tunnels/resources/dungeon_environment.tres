@@ -2,20 +2,25 @@
 
 [resource]
 background_mode = 1
-background_color = Color(0.05, 0.05, 0.08, 1)
+background_color = Color(0.03, 0.03, 0.05, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.8, 0.7, 0.6, 1)
-ambient_light_energy = 2.5
+ambient_light_color = Color(0.75, 0.65, 0.55, 1)
+ambient_light_energy = 2.2
 tonemap_mode = 2
-tonemap_exposure = 1.05
+tonemap_exposure = 1.15
+tonemap_white = 8.0
 glow_enabled = true
-glow_intensity = 0.4
-glow_strength = 0.6
-glow_bloom = 0.08
-glow_hdr_threshold = 0.8
+glow_intensity = 0.5
+glow_strength = 0.8
+glow_bloom = 0.12
+glow_blend_mode = 0
+glow_hdr_threshold = 0.7
+glow_hdr_scale = 2.5
 fog_enabled = true
-fog_light_color = Color(0.1, 0.08, 0.12, 1)
-fog_density = 0.002
+fog_light_color = Color(0.08, 0.06, 0.1, 1)
+fog_density = 0.003
+fog_aerial_perspective = 0.15
 adjustment_enabled = true
-adjustment_contrast = 1.05
-adjustment_saturation = 0.95
+adjustment_brightness = 1.02
+adjustment_contrast = 1.12
+adjustment_saturation = 0.88

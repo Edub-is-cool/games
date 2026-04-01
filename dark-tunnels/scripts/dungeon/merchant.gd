@@ -76,45 +76,45 @@ func _show_shop() -> void:
 			p.health_changed.emit(p.health, p.max_health)
 	)
 
-	vbox.add_child(HSeparator.new())
-
-	# Weapons
-	if "sword" not in Inventory.owned_weapons:
-		_add_shop_item(vbox, gold_label, "Sword", 50, func():
-			Inventory.add_weapon("sword")
-		)
-	if "bow" not in Inventory.owned_weapons:
-		_add_shop_item(vbox, gold_label, "Bow", 70, func():
-			Inventory.add_weapon("bow")
-		)
-	if "axe" not in Inventory.owned_weapons:
-		_add_shop_item(vbox, gold_label, "Axe", 90, func():
-			Inventory.add_weapon("axe")
-		)
-	if "staff" not in Inventory.owned_weapons:
-		_add_shop_item(vbox, gold_label, "Staff", 110, func():
-			Inventory.add_weapon("staff")
-		)
-	if "flail" not in Inventory.owned_weapons:
-		_add_shop_item(vbox, gold_label, "Flail", 100, func():
-			Inventory.add_weapon("flail")
-		)
-	if "crossbow" not in Inventory.owned_weapons:
-		_add_shop_item(vbox, gold_label, "Crossbow", 120, func():
-			Inventory.add_weapon("crossbow")
-		)
-	if "daggers" not in Inventory.owned_weapons:
-		_add_shop_item(vbox, gold_label, "Throwing Daggers", 80, func():
-			Inventory.add_weapon("daggers")
-		)
-	if "warhammer" not in Inventory.owned_weapons:
-		_add_shop_item(vbox, gold_label, "Warhammer", 140, func():
-			Inventory.add_weapon("warhammer")
-		)
-	if "spear" not in Inventory.owned_weapons:
-		_add_shop_item(vbox, gold_label, "Spear", 90, func():
-			Inventory.add_weapon("spear")
-		)
+	# Weapons - only in training mode
+	if GameManager.game_mode == "training":
+		vbox.add_child(HSeparator.new())
+		if "sword" not in Inventory.owned_weapons:
+			_add_shop_item(vbox, gold_label, "Sword", 50, func():
+				Inventory.add_weapon("sword")
+			)
+		if "bow" not in Inventory.owned_weapons:
+			_add_shop_item(vbox, gold_label, "Bow", 70, func():
+				Inventory.add_weapon("bow")
+			)
+		if "axe" not in Inventory.owned_weapons:
+			_add_shop_item(vbox, gold_label, "Axe", 90, func():
+				Inventory.add_weapon("axe")
+			)
+		if "staff" not in Inventory.owned_weapons:
+			_add_shop_item(vbox, gold_label, "Staff", 110, func():
+				Inventory.add_weapon("staff")
+			)
+		if "flail" not in Inventory.owned_weapons:
+			_add_shop_item(vbox, gold_label, "Flail", 100, func():
+				Inventory.add_weapon("flail")
+			)
+		if "crossbow" not in Inventory.owned_weapons:
+			_add_shop_item(vbox, gold_label, "Crossbow", 120, func():
+				Inventory.add_weapon("crossbow")
+			)
+		if "daggers" not in Inventory.owned_weapons:
+			_add_shop_item(vbox, gold_label, "Throwing Daggers", 80, func():
+				Inventory.add_weapon("daggers")
+			)
+		if "warhammer" not in Inventory.owned_weapons:
+			_add_shop_item(vbox, gold_label, "Warhammer", 140, func():
+				Inventory.add_weapon("warhammer")
+			)
+		if "spear" not in Inventory.owned_weapons:
+			_add_shop_item(vbox, gold_label, "Spear", 90, func():
+				Inventory.add_weapon("spear")
+			)
 
 	vbox.add_child(HSeparator.new())
 

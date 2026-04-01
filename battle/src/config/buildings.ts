@@ -27,7 +27,7 @@ export const BUILDINGS: Record<string, BuildingConfig> = {
     cost: { food: 0, wood: 175, gold: 0, stone: 0 },
     buildTime: 40,
     size: 2,
-    produces: ['militia', 'knight'],
+    produces: ['militia', 'spearman', 'swordsman', 'knight'],
     color: 0xaa4444,
   },
   archeryRange: {
@@ -37,7 +37,7 @@ export const BUILDINGS: Record<string, BuildingConfig> = {
     cost: { food: 0, wood: 175, gold: 0, stone: 0 },
     buildTime: 40,
     size: 2,
-    produces: ['archer'],
+    produces: ['archer', 'crossbowman', 'musketeer', 'rifleman'],
     color: 0x4488aa,
   },
   house: {

@@ -92,9 +92,9 @@ export class HUDScene extends Phaser.Scene {
       padding: { x: 8, y: 4 },
     }).setDepth(200);
 
-    // Action panel — bottom right
+    // Action panel — bottom right, positioned higher to fit more actions
     const panelX = this.scale.width - PANEL_W - 10;
-    const panelY = this.scale.height - 300;
+    const panelY = 40;
 
     this.panelBg = this.add.rectangle(panelX, panelY, PANEL_W, 280, 0x111111, 0.9)
       .setOrigin(0, 0)
@@ -303,6 +303,39 @@ export class HUDScene extends Phaser.Scene {
     });
 
     if (isVillager) {
+      // Auto-gather buttons — send villagers to nearest resource of type and keep them collecting
+      const gatherResources: { key: string; label: string; hotkey: string; color: string }[] = [
+        { key: 'food', label: 'Gather Food', hotkey: 'G', color: '#ff6644' },
+        { key: 'wood', label: 'Gather Wood', hotkey: 'W', color: '#44aa44' },
+        { key: 'gold', label: 'Gather Gold', hotkey: 'O', color: '#ffcc00' },
+        { key: 'stone', label: 'Gather Stone', hotkey: 'N', color: '#999999' },
+      ];
+
+      for (const res of gatherResources) {
+        this.currentActions.push({
+          label: `${res.label} [${res.hotkey}]`,
+          hotkey: res.hotkey,
+          tooltip: `Send to nearest ${res.key} and auto-continue`,
+          enabled: () => true,
+          action: () => {
+            const villagerIds = selectedIds.filter((id) => {
+              const e = gs.world.entities.get(id);
+              return e && e.key === 'villager' && e.owner === 0;
+            });
+            for (const vid of villagerIds) {
+              const vil = gs.world.entities.get(vid);
+              if (!vil) continue;
+              const target = this.findNearestResourceOfType(vil, res.key);
+              if (target) {
+                gs.commands.issueCommand([vid], { type: 'gather', targetId: target.id });
+                // Tag this villager to auto-continue gathering this resource type
+                vil.gatherType = res.key;
+              }
+            }
+          },
+        });
+      }
+
       // Build actions — filtered by age
       const player = gs.world.players.get(0);
       const playerAge = player?.age ?? 1;
@@ -369,6 +402,24 @@ export class HUDScene extends Phaser.Scene {
       if (e.owner === entity.owner || e.owner === -1 || e.state === 'dead') continue;
       // Only target players at war (or neutral — attacking will auto-declare)
       if (this.diplomacy && this.diplomacy.areAllied(entity.owner, e.owner)) continue;
+      const dx = e.x - entity.x;
+      const dy = e.y - entity.y;
+      const dist = dx * dx + dy * dy;
+      if (dist < closestDist) {
+        closestDist = dist;
+        closest = e;
+      }
+    }
+
+    return closest;
+  }
+
+  private findNearestResourceOfType(entity: EntityData, resType: string): EntityData | null {
+    let closest: EntityData | null = null;
+    let closestDist = Infinity;
+
+    for (const e of this.gameScene.world.entities.values()) {
+      if (e.type !== 'resource' || e.state === 'dead' || e.key !== resType) continue;
       const dx = e.x - entity.x;
       const dy = e.y - entity.y;
       const dist = dx * dx + dy * dy;

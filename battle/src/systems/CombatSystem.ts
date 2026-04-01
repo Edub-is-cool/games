@@ -1,5 +1,6 @@
 import { GameWorld, EntityData } from './GameWorld';
 import { UNITS } from '../config/units';
+import { ALL_UNITS } from '../config/ages';
 import { DiplomacySystem } from './DiplomacySystem';
 import { DEFENSES } from '../config/defenses';
 import { getBonusDamage, getArmorClass } from '../config/combatClasses';
@@ -62,7 +63,7 @@ export class CombatSystem {
         }
       }
 
-      const config = UNITS[entity.key];
+      const config = ALL_UNITS[entity.key] ?? UNITS[entity.key];
       if (!config) continue;
 
       const dx = target.x - entity.x;

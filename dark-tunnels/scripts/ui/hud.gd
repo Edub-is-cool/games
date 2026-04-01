@@ -126,9 +126,9 @@ func _on_boss_health_changed(new_health: int, _max_hp: int) -> void:
 	boss_bar.value = new_health
 
 func _flash_damage() -> void:
-	damage_overlay.modulate.a = 0.3
+	damage_overlay.modulate.a = 0.35
 	var tween := create_tween()
-	tween.tween_property(damage_overlay, "modulate:a", 0.0, 0.3)
+	tween.tween_property(damage_overlay, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_EXPO)
 
 func show_interaction(text: String) -> void:
 	interaction_label.text = text

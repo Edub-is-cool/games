@@ -305,6 +305,24 @@ export class BootScene extends Phaser.Scene {
 
   private generateAgeUnitTextures() {
     // Spearman — person with long spear
+    // Crossbowman — person with crossbow
+    this.makeTexture('unit_crossbowman', 20, 20, (g) => {
+      g.fillStyle(0x5588aa, 1);
+      g.fillRect(6, 8, 8, 10);
+      g.fillStyle(0xddbb88, 1);
+      g.fillCircle(10, 5, 4);
+      g.fillStyle(0x447788, 1);
+      g.fillRect(6, 16, 3, 4);
+      g.fillRect(11, 16, 3, 4);
+      // Crossbow
+      g.fillStyle(0x886644, 1);
+      g.fillRect(14, 8, 6, 3); // stock
+      g.lineStyle(2, 0x886644);
+      g.lineBetween(15, 6, 15, 12); // bow arms
+      g.lineStyle(1, 0xcccccc);
+      g.lineBetween(15, 6, 15, 12); // string
+    });
+
     this.makeTexture('unit_spearman', 20, 22, (g) => {
       g.fillStyle(0x66aa66, 1); g.fillRect(6, 8, 8, 10);
       g.fillStyle(0xddbb88, 1); g.fillCircle(10, 5, 4);

@@ -61,45 +61,52 @@ var weapon_scenes: Array[PackedScene] = [
 ]
 
 func _init() -> void:
-	# Gray cobblestone floor - weathered stone look
+	# Gray cobblestone floor - weathered, worn stone
 	floor_mat = StandardMaterial3D.new()
-	floor_mat.albedo_color = Color(0.5, 0.5, 0.5)
-	floor_mat.roughness = 0.92
+	floor_mat.albedo_color = Color(0.48, 0.46, 0.44)
+	floor_mat.roughness = 0.94
 	floor_mat.metallic = 0.02
-	floor_mat.metallic_specular = 0.3
+	floor_mat.metallic_specular = 0.35
 	floor_mat.albedo_texture = _generate_cobblestone_texture()
 	floor_mat.normal_enabled = true
 	floor_mat.normal_texture = _generate_cobblestone_normal()
-	floor_mat.normal_scale = 1.2
+	floor_mat.normal_scale = 1.8
 	floor_mat.uv1_triplanar = true
-	floor_mat.uv1_scale = Vector3(1.5, 1.5, 1.5)
+	floor_mat.uv1_scale = Vector3(1.2, 1.2, 1.2)
+	floor_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 
-	# Dark stone brick walls - aged masonry
+	# Dark stone brick walls - aged masonry with wear
 	wall_mat = StandardMaterial3D.new()
-	wall_mat.albedo_color = Color(0.3, 0.28, 0.26)
-	wall_mat.roughness = 0.88
+	wall_mat.albedo_color = Color(0.32, 0.3, 0.27)
+	wall_mat.roughness = 0.9
 	wall_mat.metallic = 0.01
-	wall_mat.metallic_specular = 0.25
+	wall_mat.metallic_specular = 0.3
 	wall_mat.albedo_texture = _generate_brick_texture()
 	wall_mat.normal_enabled = true
 	wall_mat.normal_texture = _generate_brick_normal()
-	wall_mat.normal_scale = 1.5
+	wall_mat.normal_scale = 2.0
 	wall_mat.uv1_triplanar = true
-	wall_mat.uv1_scale = Vector3(2, 2, 2)
+	wall_mat.uv1_scale = Vector3(1.5, 1.5, 1.5)
+	wall_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 
-	# Ceiling - rough dark stone with subtle texture
+	# Ceiling - rough dark stone with drip stains
 	ceiling_mat = StandardMaterial3D.new()
-	ceiling_mat.albedo_color = Color(0.22, 0.21, 0.2)
+	ceiling_mat.albedo_color = Color(0.2, 0.19, 0.17)
 	ceiling_mat.roughness = 0.98
 	ceiling_mat.albedo_texture = _generate_ceiling_texture()
+	ceiling_mat.normal_enabled = true
+	ceiling_mat.normal_texture = _generate_ceiling_normal()
+	ceiling_mat.normal_scale = 1.0
 	ceiling_mat.uv1_triplanar = true
-	ceiling_mat.uv1_scale = Vector3(2, 2, 2)
+	ceiling_mat.uv1_scale = Vector3(1.5, 1.5, 1.5)
+	ceiling_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 
 	# Wall trim - chiseled stone
 	trim_mat = StandardMaterial3D.new()
 	trim_mat.albedo_color = Color(0.18, 0.16, 0.14)
 	trim_mat.roughness = 0.7
 	trim_mat.metallic = 0.05
+	trim_mat.metallic_specular = 0.4
 	trim_mat.metallic_specular = 0.4
 
 func generate() -> void:
@@ -415,6 +422,67 @@ func _decorate_room(room: Dictionary) -> void:
 		trim_w.position = pos + Vector3(-half_x + trim_depth / 2.0, trim_height / 2.0 + 0.1, 0)
 		trim_w.material = base_mat
 		_add_geometry(trim_w)
+
+	# --- DEBRIS AND DETAIL ---
+	var debris_rng := RandomNumberGenerator.new()
+	debris_rng.seed = int(pos.x * 100 + pos.z * 37)
+
+	var debris_mat := StandardMaterial3D.new()
+	debris_mat.albedo_color = Color(0.28, 0.26, 0.23)
+	debris_mat.roughness = 0.95
+
+	var stain_mat := StandardMaterial3D.new()
+	stain_mat.albedo_color = Color(0.15, 0.13, 0.1, 0.5)
+	stain_mat.roughness = 0.98
+	stain_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+
+	# Scattered rubble (small rocks on floor)
+	var rubble_count := debris_rng.randi_range(3, 7)
+	for _r in range(rubble_count):
+		var rubble := CSGBox3D.new()
+		var rsize := debris_rng.randf_range(0.05, 0.15)
+		rubble.size = Vector3(rsize, rsize * 0.6, rsize * 0.8)
+		rubble.position = pos + Vector3(
+			debris_rng.randf_range(-half_x + 1, half_x - 1),
+			rsize * 0.3 + 0.1,
+			debris_rng.randf_range(-half_z + 1, half_z - 1))
+		rubble.rotation.y = debris_rng.randf() * TAU
+		rubble.material = debris_mat
+		_add_geometry(rubble)
+
+	# Floor stains (dark patches)
+	var stain_count := debris_rng.randi_range(1, 3)
+	for _s in range(stain_count):
+		var stain := CSGBox3D.new()
+		var ssize := debris_rng.randf_range(0.5, 1.5)
+		stain.size = Vector3(ssize, 0.01, ssize * debris_rng.randf_range(0.6, 1.4))
+		stain.position = pos + Vector3(
+			debris_rng.randf_range(-half_x + 1, half_x - 1),
+			0.11,
+			debris_rng.randf_range(-half_z + 1, half_z - 1))
+		stain.material = stain_mat
+		_add_geometry(stain)
+
+	# Wall cracks (thin dark lines on walls, 1-2 per room)
+	var crack_mat := StandardMaterial3D.new()
+	crack_mat.albedo_color = Color(0.08, 0.07, 0.06)
+	crack_mat.roughness = 0.99
+	var crack_count := debris_rng.randi_range(1, 2)
+	for _c in range(crack_count):
+		var crack := CSGBox3D.new()
+		var crack_h := debris_rng.randf_range(0.5, 1.5)
+		crack.size = Vector3(0.015, crack_h, 0.015)
+		var wall_side := debris_rng.randi() % 4
+		var crack_pos: Vector3
+		match wall_side:
+			0: crack_pos = pos + Vector3(debris_rng.randf_range(-half_x + 1, half_x - 1), debris_rng.randf_range(0.5, 2.5), -half_z + 0.01)
+			1: crack_pos = pos + Vector3(debris_rng.randf_range(-half_x + 1, half_x - 1), debris_rng.randf_range(0.5, 2.5), half_z - 0.01)
+			2: crack_pos = pos + Vector3(-half_x + 0.01, debris_rng.randf_range(0.5, 2.5), debris_rng.randf_range(-half_z + 1, half_z - 1))
+			3: crack_pos = pos + Vector3(half_x - 0.01, debris_rng.randf_range(0.5, 2.5), debris_rng.randf_range(-half_z + 1, half_z - 1))
+		crack.position = crack_pos
+		crack.rotation.z = debris_rng.randf_range(-0.3, 0.3)
+		crack.material = crack_mat
+		_add_geometry(crack)
 
 func _dir_to_wall(dir: Vector3) -> String:
 	if dir.x > 0.5: return "east"
@@ -880,157 +948,183 @@ func _place_merchant() -> void:
 		get_parent().call_deferred("add_child", merchant2)
 
 func _generate_cobblestone_texture() -> ImageTexture:
-	var size := 128
+	var size := 256
 	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
-	img.fill(Color(0.38, 0.36, 0.34))
-	# Irregular cobblestones with varied sizes
-	var stone_rng := RandomNumberGenerator.new()
-	stone_rng.seed = 42
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42
 	for x in range(size):
 		for y in range(size):
-			var cell_x := x % 32
-			var cell_y := y % 32
-			var row := y / 32
-			var col := x / 32
-			# Offset alternating rows
+			var cell_size := 40
+			var cell_x := x % cell_size
+			var cell_y := y % cell_size
+			var row := y / cell_size
+			var col := x / cell_size
 			var offset_x := cell_x
 			if row % 2 == 1:
-				offset_x = (x + 12) % 32
-
-			# Mortar gaps
-			if offset_x <= 1 or cell_y <= 1:
-				var mortar_shade := 0.14 + stone_rng.randf() * 0.04
-				img.set_pixel(x, y, Color(mortar_shade, mortar_shade * 0.95, mortar_shade * 0.9))
-			elif offset_x == 2 or cell_y == 2:
-				# Edge shadow
-				img.set_pixel(x, y, Color(0.28, 0.27, 0.25))
+				offset_x = (x + cell_size / 2) % cell_size
+			# Mortar
+			if offset_x <= 2 or cell_y <= 2:
+				var m := 0.12 + sin(float(x * 3 + y * 7)) * 0.02
+				img.set_pixel(x, y, Color(m, m * 0.92, m * 0.88))
+			elif offset_x == 3 or cell_y == 3:
+				img.set_pixel(x, y, Color(0.22, 0.21, 0.19))
+			elif offset_x >= cell_size - 2 or cell_y >= cell_size - 2:
+				img.set_pixel(x, y, Color(0.25, 0.24, 0.22))
 			else:
-				var stone_id := row * 4 + col
-				var base_val := 0.35 + sin(float(stone_id) * 3.7) * 0.04
-				# Per-pixel noise for surface grain
-				var noise_val := sin(float(x) * 0.8 + float(y) * 1.3) * 0.015
-				noise_val += sin(float(x) * 2.1 - float(y) * 0.7) * 0.01
-				var g := base_val + noise_val
-				# Slight warm/cool variation per stone
-				var warm := sin(float(stone_id) * 7.1) * 0.02
-				img.set_pixel(x, y, Color(g + warm, g, g - warm * 0.5))
+				var stone_id := row * 7 + col
+				var base_r := 0.38 + sin(float(stone_id) * 3.7) * 0.04
+				var base_g := 0.37 + sin(float(stone_id) * 5.1) * 0.03
+				var base_b := 0.35 + sin(float(stone_id) * 2.3) * 0.03
+				# Multi-octave noise
+				var n1 := sin(float(x) * 0.6 + float(y) * 0.9) * 0.018
+				var n2 := sin(float(x) * 1.7 - float(y) * 0.5) * 0.012
+				var n3 := sin(float(x) * 3.3 + float(y) * 2.8) * 0.006
+				var n4 := sin(float(x) * 7.1 - float(y) * 4.2) * 0.003
+				var noise := n1 + n2 + n3 + n4
+				# Wear pattern - darken edges of stones
+				var edge_dist := minf(minf(float(offset_x - 3), float(cell_size - 3 - offset_x)),
+					minf(float(cell_y - 3), float(cell_size - 3 - cell_y)))
+				var edge_dark := clampf(edge_dist / 6.0, 0.0, 1.0) * 0.04
+				img.set_pixel(x, y, Color(
+					clampf(base_r + noise + edge_dark, 0.05, 0.95),
+					clampf(base_g + noise + edge_dark, 0.05, 0.95),
+					clampf(base_b + noise * 0.8 + edge_dark, 0.05, 0.95)))
 	return ImageTexture.create_from_image(img)
 
 func _generate_cobblestone_normal() -> ImageTexture:
-	var size := 128
+	var size := 256
 	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
-	# Flat normal as base
 	img.fill(Color(0.5, 0.5, 1.0))
 	for x in range(size):
 		for y in range(size):
-			var cell_x := x % 32
-			var cell_y := y % 32
-			var row := y / 32
+			var cell_size := 40
+			var cell_x := x % cell_size
+			var cell_y := y % cell_size
+			var row := y / cell_size
 			var offset_x := cell_x
 			if row % 2 == 1:
-				offset_x = (x + 12) % 32
-
+				offset_x = (x + cell_size / 2) % cell_size
 			var nx := 0.5
 			var ny := 0.5
-
-			# Mortar grooves - inset
-			if offset_x <= 1:
-				nx = 0.7  # slant toward right
-			elif offset_x == 2:
-				nx = 0.3  # slant toward left (edge)
-			elif offset_x >= 30:
-				nx = 0.7
-			if cell_y <= 1:
-				ny = 0.7
-			elif cell_y == 2:
-				ny = 0.3
-			elif cell_y >= 30:
-				ny = 0.7
-
-			# Subtle surface bumps
-			var bump := sin(float(x) * 1.5 + float(y) * 2.0) * 0.03
-			img.set_pixel(x, y, Color(nx + bump, ny + bump, 1.0))
+			if offset_x <= 2:
+				nx = 0.72
+			elif offset_x == 3:
+				nx = 0.32
+			elif offset_x >= cell_size - 2:
+				nx = 0.68
+			elif offset_x >= cell_size - 3:
+				nx = 0.35
+			if cell_y <= 2:
+				ny = 0.72
+			elif cell_y == 3:
+				ny = 0.32
+			elif cell_y >= cell_size - 2:
+				ny = 0.68
+			elif cell_y >= cell_size - 3:
+				ny = 0.35
+			var bx := sin(float(x) * 1.3 + float(y) * 1.8) * 0.035
+			bx += sin(float(x) * 4.1 - float(y) * 2.3) * 0.015
+			var by := sin(float(x) * 1.8 + float(y) * 1.3) * 0.035
+			by += sin(float(x) * 2.7 + float(y) * 5.1) * 0.015
+			img.set_pixel(x, y, Color(clampf(nx + bx, 0, 1), clampf(ny + by, 0, 1), 1.0))
 	return ImageTexture.create_from_image(img)
 
 func _generate_brick_texture() -> ImageTexture:
-	var size := 128
+	var size := 256
 	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
-	img.fill(Color(0.24, 0.22, 0.2))
-	var brick_rng := RandomNumberGenerator.new()
-	brick_rng.seed = 99
 	for y in range(size):
-		var row := y / 16
-		var y_in_brick := y % 16
+		var brick_h := 24
+		var row := y / brick_h
+		var y_in := y % brick_h
 		for x in range(size):
-			var x_offset := 0 if row % 2 == 0 else 32
-			var x_shifted := (x + x_offset) % 64
-			var brick_col := x_shifted / 64
-
-			if y_in_brick <= 1 or x_shifted <= 1:
-				# Deep mortar
-				var shade := 0.08 + sin(float(x + y) * 0.3) * 0.02
-				img.set_pixel(x, y, Color(shade, shade * 0.9, shade * 0.85))
-			elif y_in_brick == 2 or x_shifted == 2:
-				# Inner edge highlight
-				img.set_pixel(x, y, Color(0.28, 0.26, 0.24))
-			elif y_in_brick >= 14 or x_shifted >= 62:
-				# Opposite edge shadow
-				img.set_pixel(x, y, Color(0.18, 0.17, 0.15))
+			var x_off := 0 if row % 2 == 0 else 48
+			var brick_w := 96
+			var x_in := (x + x_off) % brick_w
+			if y_in <= 2 or x_in <= 2:
+				var m := 0.07 + sin(float(x + y) * 0.4) * 0.015
+				img.set_pixel(x, y, Color(m, m * 0.9, m * 0.85))
+			elif y_in == 3 or x_in == 3:
+				img.set_pixel(x, y, Color(0.26, 0.24, 0.22))
+			elif y_in >= brick_h - 2 or x_in >= brick_w - 2:
+				img.set_pixel(x, y, Color(0.16, 0.15, 0.13))
 			else:
-				var brick_id := row * 2 + brick_col
-				var base_val := 0.23 + sin(float(brick_id) * 5.3) * 0.03
-				# Surface grain
-				var grain := sin(float(x) * 1.2 + float(y) * 0.7) * 0.012
-				grain += sin(float(x) * 3.1 + float(y) * 1.9) * 0.008
-				var g := base_val + grain
-				# Slight color variation per brick (some warmer, some cooler)
-				var temp := sin(float(brick_id) * 3.3) * 0.025
-				img.set_pixel(x, y, Color(g + temp, g * 0.96, g * 0.92 - temp * 0.5))
+				var brick_id := row * 3 + x_in / brick_w
+				var base := 0.25 + sin(float(brick_id) * 5.3) * 0.035
+				var n1 := sin(float(x) * 0.9 + float(y) * 0.6) * 0.014
+				var n2 := sin(float(x) * 2.5 - float(y) * 1.3) * 0.008
+				var n3 := sin(float(x) * 5.7 + float(y) * 3.9) * 0.004
+				var g := base + n1 + n2 + n3
+				var temp := sin(float(brick_id) * 3.3) * 0.03
+				# Wear near edges
+				var ey := minf(float(y_in - 3), float(brick_h - 3 - y_in))
+				var ex := minf(float(x_in - 3), float(brick_w - 3 - x_in))
+				var edge := clampf(minf(ey, ex) / 5.0, 0.0, 1.0) * 0.02
+				img.set_pixel(x, y, Color(
+					clampf(g + temp + edge, 0.05, 0.95),
+					clampf(g * 0.97 + edge, 0.05, 0.95),
+					clampf(g * 0.93 - temp * 0.5 + edge, 0.05, 0.95)))
 	return ImageTexture.create_from_image(img)
 
 func _generate_brick_normal() -> ImageTexture:
-	var size := 128
+	var size := 256
 	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
 	img.fill(Color(0.5, 0.5, 1.0))
 	for y in range(size):
-		var row := y / 16
-		var y_in_brick := y % 16
+		var brick_h := 24
+		var row := y / brick_h
+		var y_in := y % brick_h
 		for x in range(size):
-			var x_offset := 0 if row % 2 == 0 else 32
-			var x_shifted := (x + x_offset) % 64
+			var x_off := 0 if row % 2 == 0 else 48
+			var brick_w := 96
+			var x_in := (x + x_off) % brick_w
 			var nx := 0.5
 			var ny := 0.5
-
-			# Mortar groove normals
-			if x_shifted <= 1:
-				nx = 0.75
-			elif x_shifted == 2:
-				nx = 0.3
-			elif x_shifted >= 62:
-				nx = 0.7
-			if y_in_brick <= 1:
-				ny = 0.75
-			elif y_in_brick == 2:
-				ny = 0.3
-			elif y_in_brick >= 14:
-				ny = 0.7
-
-			# Surface roughness bumps
-			var bump_x := sin(float(x) * 2.3 + float(y) * 1.1) * 0.04
-			var bump_y := sin(float(x) * 1.1 + float(y) * 2.7) * 0.04
-			img.set_pixel(x, y, Color(nx + bump_x, ny + bump_y, 1.0))
+			if x_in <= 2: nx = 0.76
+			elif x_in == 3: nx = 0.28
+			elif x_in >= brick_w - 2: nx = 0.72
+			elif x_in >= brick_w - 3: nx = 0.32
+			if y_in <= 2: ny = 0.76
+			elif y_in == 3: ny = 0.28
+			elif y_in >= brick_h - 2: ny = 0.72
+			elif y_in >= brick_h - 3: ny = 0.32
+			var bx := sin(float(x) * 2.1 + float(y) * 1.0) * 0.04
+			bx += sin(float(x) * 5.3 - float(y) * 2.8) * 0.02
+			var by := sin(float(x) * 1.0 + float(y) * 2.4) * 0.04
+			by += sin(float(x) * 3.2 + float(y) * 6.1) * 0.02
+			img.set_pixel(x, y, Color(clampf(nx + bx, 0, 1), clampf(ny + by, 0, 1), 1.0))
 	return ImageTexture.create_from_image(img)
 
 func _generate_ceiling_texture() -> ImageTexture:
-	var size := 64
+	var size := 128
 	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
-	img.fill(Color(0.1, 0.09, 0.08))
 	for x in range(size):
 		for y in range(size):
-			var noise := sin(float(x) * 0.9 + float(y) * 1.4) * 0.015
-			noise += sin(float(x) * 2.6 - float(y) * 0.5) * 0.01
-			var g := 0.1 + noise
-			img.set_pixel(x, y, Color(g, g * 0.95, g * 0.9))
+			var n1 := sin(float(x) * 0.7 + float(y) * 1.1) * 0.018
+			var n2 := sin(float(x) * 2.3 - float(y) * 0.4) * 0.012
+			var n3 := sin(float(x) * 4.5 + float(y) * 3.2) * 0.006
+			var g := 0.12 + n1 + n2 + n3
+			# Drip stain streaks (vertical bias)
+			var drip := sin(float(x) * 0.3) * 0.5 + 0.5
+			drip *= sin(float(y) * 0.15 + float(x) * 0.05) * 0.5 + 0.5
+			if drip > 0.7:
+				g -= 0.02
+			img.set_pixel(x, y, Color(
+				clampf(g, 0.04, 0.3),
+				clampf(g * 0.94, 0.04, 0.3),
+				clampf(g * 0.88, 0.04, 0.3)))
+	return ImageTexture.create_from_image(img)
+
+func _generate_ceiling_normal() -> ImageTexture:
+	var size := 128
+	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
+	img.fill(Color(0.5, 0.5, 1.0))
+	for x in range(size):
+		for y in range(size):
+			var bx := sin(float(x) * 1.8 + float(y) * 0.7) * 0.04
+			bx += sin(float(x) * 4.2 - float(y) * 1.5) * 0.02
+			var by := sin(float(x) * 0.9 + float(y) * 2.1) * 0.04
+			by += sin(float(x) * 2.1 + float(y) * 4.8) * 0.02
+			img.set_pixel(x, y, Color(0.5 + bx, 0.5 + by, 1.0))
 	return ImageTexture.create_from_image(img)
 
 func _on_boss_defeated() -> void:

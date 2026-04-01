@@ -1,5 +1,6 @@
 import { GameWorld, EntityData, Command } from './GameWorld';
 import { UNITS } from '../config/units';
+import { ALL_UNITS } from '../config/ages';
 
 export class CommandSystem {
   constructor(private world: GameWorld) {}
@@ -63,7 +64,7 @@ export class CommandSystem {
   private processMovement(entity: EntityData, delta: number) {
     if (entity.destX === null || entity.destY === null) return;
 
-    const config = UNITS[entity.key];
+    const config = ALL_UNITS[entity.key] ?? UNITS[entity.key];
     if (!config) return;
 
     const dx = entity.destX - entity.x;

@@ -4,8 +4,10 @@ const SPEED := 5.0
 const SPRINT_SPEED := 8.0
 const JUMP_VELOCITY := 4.5
 const MOUSE_SENSITIVITY := 0.002
-const BOB_FREQ := 2.4
-const BOB_AMP := 0.04
+const BOB_FREQ := 2.2
+const BOB_AMP := 0.06
+const SWAY_FREQ := 1.1
+const SWAY_AMP := 0.008
 
 @export var max_health: int = 100
 @export var max_mana: int = 100
@@ -154,13 +156,19 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, current_speed)
 		velocity.z = move_toward(velocity.z, 0, current_speed)
 
-	# Head bob
+	# Head bob + lateral sway for realistic movement
 	if is_on_floor() and direction:
 		bob_timer += delta * velocity.length()
 		camera.transform.origin.y = sin(bob_timer * BOB_FREQ) * BOB_AMP
+		camera.transform.origin.x = sin(bob_timer * SWAY_FREQ) * SWAY_AMP
+		# Subtle roll when strafing
+		var strafe := input_dir.x
+		camera.rotation.z = lerp(camera.rotation.z, -strafe * 0.015, delta * 5.0)
 	else:
 		bob_timer = 0.0
-		camera.transform.origin.y = move_toward(camera.transform.origin.y, 0.0, delta)
+		camera.transform.origin.y = move_toward(camera.transform.origin.y, 0.0, delta * 3.0)
+		camera.transform.origin.x = move_toward(camera.transform.origin.x, 0.0, delta * 3.0)
+		camera.rotation.z = lerp(camera.rotation.z, 0.0, delta * 5.0)
 
 	move_and_slide()
 
@@ -365,6 +373,7 @@ func take_damage(amount: int) -> void:
 	SoundManager.play_sound("player_hit")
 	if actual > 0:
 		_spawn_damage_number(global_position, actual)
+		_camera_shake(actual)
 	if health <= 0:
 		health = 0
 		is_dead = true
@@ -372,6 +381,13 @@ func take_damage(amount: int) -> void:
 		died.emit()
 		GameManager.player_died.emit()
 		SoundManager.play_sound("death")
+
+func _camera_shake(damage_amount: int) -> void:
+	var intensity := clampf(float(damage_amount) / 50.0, 0.1, 1.0)
+	var shake_tween := create_tween()
+	shake_tween.tween_property(camera, "rotation:z", randf_range(-0.03, 0.03) * intensity, 0.05)
+	shake_tween.tween_property(camera, "rotation:z", randf_range(-0.02, 0.02) * intensity, 0.05)
+	shake_tween.tween_property(camera, "rotation:z", 0.0, 0.1)
 
 func heal(amount: int) -> void:
 	health = min(health + amount, max_health)

@@ -7,6 +7,7 @@ import { EconomySystem } from '../systems/EconomySystem';
 import { AISystem } from '../systems/AISystem';
 import { DiplomacySystem } from '../systems/DiplomacySystem';
 import { VictorySystem } from '../systems/VictorySystem';
+import { GraphicsEnhancer } from '../systems/GraphicsEnhancer';
 import { UNITS } from '../config/units';
 import { BUILDINGS } from '../config/buildings';
 import { ALL_UNITS, ALL_BUILDINGS } from '../config/ages';
@@ -52,6 +53,7 @@ export class GameScene extends Phaser.Scene {
   private hitFlashTimers: Map<number, number> = new Map();
   private buildAnimTimers: Map<number, number> = new Map();
   private lastHp: Map<number, number> = new Map();
+  private graphicsEnhancer!: GraphicsEnhancer;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -133,6 +135,9 @@ export class GameScene extends Phaser.Scene {
     // Pass terrain to combat for elevation bonuses
     this.combat.terrain = mapData.terrain;
 
+    // Graphics enhancer for visual polish
+    this.graphicsEnhancer = new GraphicsEnhancer(this, this.world, this.sprites, this.selection, this.playerColors, mapData.terrain);
+
     // Fallback ground behind terrain
     const bg = this.add.rectangle(mapW / 2, mapH / 2, mapW, mapH, 0x2d5a1e);
     bg.setDepth(-11);
@@ -151,6 +156,11 @@ export class GameScene extends Phaser.Scene {
     this.dayNightOverlay = this.add.rectangle(mapW / 2, mapH / 2, mapW, mapH, 0x000022, 0);
     this.dayNightOverlay.setDepth(95); // above terrain, below selection/effects
     this.dayNightOverlay.setBlendMode(Phaser.BlendModes.MULTIPLY);
+
+    // Graphics enhancer (visual polish layer between sprites and selection)
+    this.graphicsEnhancer = new GraphicsEnhancer(
+      this, this.world, this.sprites, this.selection, this.playerColors, mapData.terrain,
+    );
 
     // Spawn starting entities using map data
     this.spawnFromMapData(mapData, totalPlayers);
@@ -432,6 +442,9 @@ export class GameScene extends Phaser.Scene {
     // Day/night cycle
     this.updateDayNight(delta);
 
+    // Visual polish
+    this.graphicsEnhancer.update(delta, _time);
+
     // Tick down effect timers
     this.tickTimers(delta);
 
@@ -443,6 +456,9 @@ export class GameScene extends Phaser.Scene {
 
     // Draw effects (building anim, hit flash)
     this.drawEffects();
+
+    // Visual polish layer
+    this.graphicsEnhancer.update(delta, _time);
 
     // Draw selection box
     this.drawSelectionBox();

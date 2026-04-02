@@ -28,7 +28,7 @@ const config: Phaser.Types.Core.GameConfig = {
     mouse: true,
   },
   audio: {
-    noAudio: true, // no audio assets yet
+    disableWebAudio: false,
   },
 };
 

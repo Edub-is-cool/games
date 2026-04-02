@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { generateDefenseTextures } from '../config/defenses';
+import { SoundManager } from '../systems/SoundManager';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -14,6 +15,9 @@ export class BootScene extends Phaser.Scene {
     this.generateResourceTextures();
 
     generateDefenseTextures(this);
+
+    // Procedural sound generation
+    SoundManager.generateSounds(this);
 
     // Fallbacks
     this.makeRect('pixel', 1, 1, 0xffffff);

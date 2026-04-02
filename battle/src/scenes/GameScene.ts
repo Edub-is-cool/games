@@ -45,6 +45,7 @@ export class GameScene extends Phaser.Scene {
   placementVillagerId = -1;
   private placementHologram: Phaser.GameObjects.Sprite | null = null;
   private placementRange: Phaser.GameObjects.Graphics | null = null;
+  private placementFrameDelay = 0; // skip first frame to prevent instant placement
   private dayNightOverlay!: Phaser.GameObjects.Rectangle;
   private dayNightTime = 0; // 0-240 seconds full cycle
   private dayNightStars: { x: number; y: number; alpha: number }[] = [];
@@ -304,11 +305,14 @@ export class GameScene extends Phaser.Scene {
 
       // Placement mode intercept
       if (this.placementMode) {
+        if (this.placementFrameDelay > 0) {
+          // Ignore — this is the same click that opened placement mode
+          this.isDragging = false;
+          return;
+        }
         if (pointer.rightButtonReleased()) {
-          // Right-click or two-finger: cancel placement
           this.cancelPlacement();
         } else if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
-          // Click: confirm placement
           this.confirmPlacement(worldPoint.x, worldPoint.y);
         }
         this.isDragging = false;
@@ -335,6 +339,15 @@ export class GameScene extends Phaser.Scene {
     // Escape cancels placement mode
     this.input.keyboard?.on('keydown-ESC', () => {
       if (this.placementMode) this.cancelPlacement();
+      else this.selection.clearSelection();
+    });
+
+    // Scroll wheel zoom
+    this.input.on('wheel', (_pointer: unknown, _over: unknown, _dx: number, dy: number) => {
+      const cam = this.cameras.main;
+      const zoomDelta = dy > 0 ? -0.1 : 0.1;
+      const newZoom = Phaser.Math.Clamp(cam.zoom + zoomDelta, 0.3, 3);
+      cam.setZoom(newZoom);
     });
 
     // Control groups: Ctrl+1-9 to assign, 1-9 to select, double-tap to center camera
@@ -379,10 +392,35 @@ export class GameScene extends Phaser.Scene {
   /**
    * Smart single-click: if units selected and you click a resource/enemy, issue command.
    * If nothing selected or clicking own entity, select it.
+   * Double-click selects all visible units of the same type.
    */
   private handleSmartClick(pointer: Phaser.Input.Pointer) {
     const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
     const clickedEntity = this.selection.entityAtPoint(worldPoint.x, worldPoint.y);
+
+    // Double-click detection: select all of same type on screen
+    const now = Date.now();
+    if (clickedEntity && clickedEntity.owner === 0 && clickedEntity.type === 'unit') {
+      if (now - this.lastTapTime < 350) {
+        // Double-click — select all visible units of this type
+        const cam = this.cameras.main;
+        const vx = cam.worldView.x;
+        const vy = cam.worldView.y;
+        const vw = cam.worldView.width;
+        const vh = cam.worldView.height;
+
+        this.selection.clearSelection();
+        for (const e of this.world.entities.values()) {
+          if (e.owner === 0 && e.type === 'unit' && e.key === clickedEntity.key && e.state !== 'dead'
+            && e.x >= vx && e.x <= vx + vw && e.y >= vy && e.y <= vy + vh) {
+            this.selection.addToSelection(e.id);
+          }
+        }
+        this.lastTapTime = 0;
+        return;
+      }
+    }
+    this.lastTapTime = now;
     const selectedIds = [...this.selection.selected];
     const hasUnitsSelected = selectedIds.some((id) => {
       const e = this.world.entities.get(id);
@@ -514,6 +552,7 @@ export class GameScene extends Phaser.Scene {
     this.updateDayNight(delta);
 
     // Build placement hologram
+    if (this.placementFrameDelay > 0) this.placementFrameDelay--;
     this.updatePlacement();
 
     // Visual polish
@@ -559,6 +598,19 @@ export class GameScene extends Phaser.Scene {
       if (keys.addKey('S').isDown || keys.addKey('DOWN').isDown) cam.scrollY += speed;
       if (keys.addKey('A').isDown || keys.addKey('LEFT').isDown) cam.scrollX -= speed;
       if (keys.addKey('D').isDown || keys.addKey('RIGHT').isDown) cam.scrollX += speed;
+    }
+
+    // Pinch zoom for touch
+    if (this.isTouchDevice && this.input.pointer1.isDown && this.input.pointer2.isDown) {
+      const dx = this.input.pointer1.x - this.input.pointer2.x;
+      const dy = this.input.pointer1.y - this.input.pointer2.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (this.pinchStartDist > 0) {
+        const scale = dist / this.pinchStartDist;
+        const newZoom = Phaser.Math.Clamp(cam.zoom * scale, 0.3, 3);
+        cam.setZoom(newZoom);
+      }
+      this.pinchStartDist = dist;
     }
   }
 
@@ -686,18 +738,27 @@ export class GameScene extends Phaser.Scene {
   // ─── Build Placement Mode ─────────────────────────────────
 
   enterPlacementMode(buildingKey: string, villagerId: number) {
+    // Cancel any existing placement first
+    this.cancelPlacement();
     this.placementMode = true;
     this.placementKey = buildingKey;
     this.placementVillagerId = villagerId;
+    this.placementFrameDelay = 3;
 
-    // Create hologram sprite
+    // Create hologram sprite — use building texture or fallback to a rectangle
     const texKey = `building_${buildingKey}`;
-    this.placementHologram = this.add.sprite(0, 0, texKey);
-    this.placementHologram.setAlpha(0.5);
+    if (this.textures.exists(texKey)) {
+      this.placementHologram = this.add.sprite(0, 0, texKey);
+    } else {
+      // Fallback: create a simple green rectangle as hologram
+      this.placementHologram = this.add.sprite(0, 0, 'pixel');
+      this.placementHologram.setScale(24, 24);
+    }
+    this.placementHologram.setAlpha(0.6);
     this.placementHologram.setTint(0x44ff44);
     this.placementHologram.setDepth(200);
 
-    // Range circle
+    // Range circle showing build radius from villager
     this.placementRange = this.add.graphics();
     this.placementRange.setDepth(199);
   }
@@ -736,10 +797,15 @@ export class GameScene extends Phaser.Scene {
 
     const valid = walkable && !tooFar;
 
-    // Draw range circle
+    // Draw range circle around villager showing max build distance
     this.placementRange.clear();
-    this.placementRange.lineStyle(1, valid ? 0x44ff44 : 0xff4444, 0.3);
-    this.placementRange.strokeCircle(worldPoint.x, worldPoint.y, 20);
+    if (vil) {
+      this.placementRange.lineStyle(1, 0x44ff44, 0.15);
+      this.placementRange.strokeCircle(vil.x, vil.y, 400);
+    }
+    // Draw placement outline
+    this.placementRange.lineStyle(2, valid ? 0x44ff44 : 0xff4444, 0.6);
+    this.placementRange.strokeRect(worldPoint.x - 16, worldPoint.y - 16, 32, 32);
 
     // Tint hologram
     this.placementHologram.setTint(valid ? 0x44ff44 : 0xff4444);
@@ -766,6 +832,7 @@ export class GameScene extends Phaser.Scene {
     // Spend and place
     const config = ALL_BUILDINGS[this.placementKey] ?? BUILDINGS[this.placementKey] ?? DEFENSES[this.placementKey];
     if (!config) { this.cancelPlacement(); return false; }
+    if (!this.economy.canAfford(0, config.cost)) return false;
 
     this.economy.spend(0, config.cost);
 

@@ -99,19 +99,20 @@ export class MenuScene extends Phaser.Scene {
     emblem.lineStyle(2, 0xccaa44, 0.6);
     emblem.strokeCircle(cx, ey, 15);
 
-    // Title
+    // Title — scale with screen size
+    const titleScale = Math.min(1, w / 800);
     this.add.text(cx, 90, 'BATTLE OF', {
-      fontSize: '24px', color: '#aa8833', fontFamily: 'monospace',
+      fontSize: `${Math.floor(28 * titleScale)}px`, color: '#aa8833', fontFamily: 'monospace',
       fontStyle: 'bold', stroke: '#000000', strokeThickness: 3,
     }).setOrigin(0.5).setDepth(10);
 
     this.add.text(cx, 130, 'THE AGES', {
-      fontSize: '52px', color: '#ffcc44', fontFamily: 'monospace',
+      fontSize: `${Math.floor(60 * titleScale)}px`, color: '#ffcc44', fontFamily: 'monospace',
       fontStyle: 'bold', stroke: '#000000', strokeThickness: 5,
     }).setOrigin(0.5).setDepth(10);
 
-    this.add.text(cx, 160, 'REAL-TIME STRATEGY', {
-      fontSize: '11px', color: '#776633', fontFamily: 'monospace',
+    this.add.text(cx, 168, 'REAL-TIME STRATEGY', {
+      fontSize: `${Math.floor(13 * titleScale)}px`, color: '#776633', fontFamily: 'monospace',
       letterSpacing: 6, stroke: '#000000', strokeThickness: 2,
     }).setOrigin(0.5).setDepth(10);
 
@@ -140,7 +141,7 @@ export class MenuScene extends Phaser.Scene {
     if (this.settingsContainer) this.settingsContainer.destroy();
     this.settingsContainer = this.add.container(0, 0).setDepth(10);
 
-    const panelW = 540;
+    const panelW = Math.min(600, this.scale.width - 40);
     const panelX = cx - panelW / 2;
     const panelY = 190;
     const col1 = panelX + 14;           // labels
@@ -431,21 +432,27 @@ export class MenuScene extends Phaser.Scene {
   // ─── Bottom Buttons ─────────────────────────────────────────
 
   private buildMenuButtons(cx: number, h: number) {
-    const btnY = h - 70;
+    const row1Y = h - 90;
+    const row2Y = h - 48;
 
-    const buttons = [
-      { label: 'START GAME', x: cx - 150, w: 150, action: () => this.startGame() },
-      { label: 'MULTIPLAYER', x: cx, w: 150, action: () => this.scene.start('MultiplayerScene') },
-      { label: 'HOW TO PLAY', x: cx + 150, w: 150, action: () => this.showHelp() },
+    const row1 = [
+      { label: 'START GAME', x: cx - 150, w: 140, action: () => this.startGame() },
+      { label: 'MULTIPLAYER', x: cx, w: 140, action: () => this.scene.start('MultiplayerScene') },
+      { label: 'HOW TO PLAY', x: cx + 150, w: 140, action: () => this.showHelp() },
     ];
 
-    for (const btn of buttons) {
-      const bg = this.add.rectangle(btn.x, btnY, btn.w, 36, 0x222233, 0.9)
+    const row2 = [
+      { label: 'TUTORIAL', x: cx - 80, w: 130, action: () => this.scene.start('TutorialScene') },
+      { label: 'SETTINGS', x: cx + 80, w: 130, action: () => this.scene.start('SettingsScene') },
+    ];
+
+    for (const btn of [...row1.map((b) => ({ ...b, y: row1Y })), ...row2.map((b) => ({ ...b, y: row2Y }))]) {
+      const bg = this.add.rectangle(btn.x, btn.y, btn.w, 34, 0x222233, 0.9)
         .setStrokeStyle(1, 0x555566)
         .setInteractive({ useHandCursor: true })
         .setDepth(10);
-      const label = this.add.text(btn.x, btnY, btn.label, {
-        fontSize: '15px', color: '#88cc44', fontFamily: 'monospace',
+      const label = this.add.text(btn.x, btn.y, btn.label, {
+        fontSize: '14px', color: '#88cc44', fontFamily: 'monospace',
       }).setOrigin(0.5).setDepth(11);
 
       bg.on('pointerover', () => { bg.setFillStyle(0x333344, 1); bg.setStrokeStyle(2, 0x88cc44); label.setColor('#aaffaa'); });

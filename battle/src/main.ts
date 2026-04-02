@@ -5,12 +5,14 @@ import { MultiplayerScene } from './scenes/MultiplayerScene';
 import { GameScene } from './scenes/GameScene';
 import { HUDScene } from './scenes/HUDScene';
 import { DiplomacyPanelScene } from './scenes/DiplomacyPanelScene';
+import { TutorialScene } from './scenes/TutorialScene';
+import { SettingsScene } from './scenes/SettingsScene';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   backgroundColor: '#1a1a2e',
   parent: 'game-container',
-  scene: [BootScene, MenuScene, MultiplayerScene, GameScene, HUDScene, DiplomacyPanelScene],
+  scene: [BootScene, MenuScene, SettingsScene, TutorialScene, MultiplayerScene, GameScene, HUDScene, DiplomacyPanelScene],
   scale: {
     mode: Phaser.Scale.RESIZE,
     parent: 'game-container',

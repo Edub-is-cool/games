@@ -41,6 +41,9 @@ export class HUDScene extends Phaser.Scene {
   private diploBtn!: Phaser.GameObjects.Text;
   private diploNotif!: Phaser.GameObjects.Text;
 
+  // Idle villager indicator
+  private idleVilBtn!: Phaser.GameObjects.Text;
+
   constructor() {
     super({ key: 'HUDScene' });
   }
@@ -81,6 +84,38 @@ export class HUDScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-P', () => {
       const panel = this.scene.get('DiplomacyPanelScene') as DiplomacyPanelScene;
       if (panel) panel.toggle();
+    });
+
+    // Idle villager indicator — clickable, cycles through idle villagers
+    this.idleVilBtn = this.add.text(this.scale.width - 270, 10, '', {
+      fontSize: '13px', color: '#ffcc44', fontFamily: 'monospace',
+      backgroundColor: '#111122cc', padding: { x: 8, y: 4 },
+    }).setDepth(200).setInteractive({ useHandCursor: true });
+
+    let lastIdleVilId = 0;
+    this.idleVilBtn.on('pointerdown', () => {
+      const gs = this.gameScene;
+      // Find next idle villager after lastIdleVilId
+      const idleVils = [...gs.world.entities.values()].filter(
+        (e) => e.owner === 0 && e.key === 'villager' && e.state === 'idle' && e.type === 'unit'
+      ).sort((a, b) => a.id - b.id);
+
+      if (idleVils.length === 0) return;
+
+      let next = idleVils.find((v) => v.id > lastIdleVilId) ?? idleVils[0];
+      lastIdleVilId = next.id;
+
+      // Select and center camera on the idle villager
+      gs.selection.selectSingle(next.id);
+      gs.cameras.main.setScroll(
+        next.x - gs.scale.width / 2,
+        next.y - gs.scale.height / 2
+      );
+    });
+
+    // Hotkey: period (.) to cycle idle villagers
+    this.input.keyboard?.on('keydown-PERIOD', () => {
+      this.idleVilBtn.emit('pointerdown');
     });
 
     // Selection info — bottom left
@@ -464,23 +499,14 @@ export class HUDScene extends Phaser.Scene {
     if (!config) return;
     if (!gs.economy.canAfford(0, config.cost)) return;
 
-    // Spend resources and place building at a spot near the selected villager
+    // Find a villager to be the builder
     const selected = [...gs.selection.selected];
     for (const id of selected) {
       const entity = gs.world.entities.get(id);
       if (!entity || entity.key !== 'villager' || entity.owner !== 0) continue;
 
-      gs.economy.spend(0, config.cost);
-      const bEntity = gs.world.spawnEntity('building', buildingKey, 0, entity.x + 40, entity.y, config.hp);
-      bEntity.trainQueue = [];
-      bEntity.buildProgress = 0;
-      bEntity.hp = 1;
-      bEntity.maxHp = config.hp;
-
-      // Send villager to build it
-      entity.commandQueue = [{ type: 'build', targetId: bEntity.id }];
-      entity.state = 'building';
-      entity.target = bEntity.id;
+      // Enter placement mode — hologram follows mouse until click
+      gs.enterPlacementMode(buildingKey, entity.id);
       break;
     }
   }
@@ -634,6 +660,21 @@ export class HUDScene extends Phaser.Scene {
       } else {
         this.diploNotif.setVisible(false);
       }
+    }
+
+    // Idle villager count
+    const idleCount = [...gs.world.entities.values()].filter(
+      (e) => e.owner === 0 && e.key === 'villager' && e.state === 'idle' && e.type === 'unit'
+    ).length;
+
+    if (idleCount > 0) {
+      this.idleVilBtn.setText(`Idle Villagers: ${idleCount} [.]`);
+      this.idleVilBtn.setColor('#ffcc44');
+      this.idleVilBtn.setVisible(true);
+    } else {
+      this.idleVilBtn.setText('No Idle Villagers');
+      this.idleVilBtn.setColor('#555566');
+      this.idleVilBtn.setVisible(true);
     }
   }
 }

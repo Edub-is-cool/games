@@ -147,13 +147,96 @@ export class GraphicsEnhancer {
         this.spawnDust(entity, dt);
       }
 
-      // --- Attack flash & projectile ---
-      if (entity.state === 'attacking') {
+      // --- Attack flash, projectile & swing animation ---
+      if (entity.state === 'attacking' && entity.type === 'unit') {
         currentAttacking.add(entity.id);
         if (!this.prevAttacking.has(entity.id)) {
-          // New attack started
           this.attackFlashTimers.set(entity.id, 0.12);
           this.drawProjectile(entity);
+        }
+
+        // Melee swing animation
+        const aCfg = (ALL_UNITS[entity.key] ?? UNITS[entity.key]) as UnitConfig | undefined;
+        if (aCfg && aCfg.range < RANGED_THRESHOLD && entity.target !== null) {
+          const target = this.world.entities.get(entity.target);
+          if (target) {
+            const angle = Math.atan2(target.y - entity.y, target.x - entity.x);
+            const swingPhase = Math.sin(time * 0.012 + entity.id) * 0.8;
+            const swordLen = 10;
+            const sx = entity.x + Math.cos(angle + swingPhase) * swordLen;
+            const sy = entity.y - 4 + Math.sin(angle + swingPhase) * swordLen;
+            // Sword/weapon line
+            this.graphics.lineStyle(2, 0xcccccc, 0.9);
+            this.graphics.lineBetween(entity.x, entity.y - 4, sx, sy);
+            // Impact spark at tip
+            if (Math.abs(swingPhase) < 0.2) {
+              this.graphics.fillStyle(0xffcc44, 0.8);
+              this.graphics.fillCircle(sx, sy, 2);
+            }
+          }
+        }
+
+        // Ranged: draw arrow flying toward target
+        if (aCfg && aCfg.range >= RANGED_THRESHOLD && entity.target !== null) {
+          const target = this.world.entities.get(entity.target);
+          if (target) {
+            // Arrow as a small line with a moving position
+            const progress = (Math.sin(time * 0.008 + entity.id * 2) + 1) / 2;
+            const ax = entity.x + (target.x - entity.x) * progress;
+            const ay = (entity.y - 4) + (target.y - 4 - entity.y + 4) * progress - Math.sin(progress * Math.PI) * 15;
+            const angle = Math.atan2(target.y - entity.y, target.x - entity.x);
+            // Arrow shaft
+            this.graphics.lineStyle(2, 0x886644, 0.9);
+            this.graphics.lineBetween(
+              ax - Math.cos(angle) * 5, ay - Math.sin(angle) * 5,
+              ax + Math.cos(angle) * 5, ay + Math.sin(angle) * 5
+            );
+            // Arrow tip
+            this.graphics.fillStyle(0xaaaaaa, 1);
+            this.graphics.fillCircle(ax + Math.cos(angle) * 5, ay + Math.sin(angle) * 5, 1.5);
+          }
+        }
+      }
+
+      // --- Gathering animation ---
+      if (entity.state === 'gathering' && entity.key === 'villager') {
+        const gatherSwing = Math.sin(time * 0.01 + entity.id * 1.3);
+        const toolAngle = -1.2 + gatherSwing * 0.6;
+        const pivotX = entity.x + 6;
+        const pivotY = entity.y - 4;
+        const toolLen = 9;
+        const endX = pivotX + Math.cos(toolAngle) * toolLen;
+        const endY = pivotY + Math.sin(toolAngle) * toolLen;
+
+        if (entity.gatherType === 'wood') {
+          // Axe
+          this.graphics.lineStyle(2, 0x886644, 0.9);
+          this.graphics.lineBetween(pivotX, pivotY, endX, endY);
+          this.graphics.fillStyle(0xaaaaaa, 1);
+          this.graphics.fillRect(endX - 2, endY - 1, 5, 3);
+        } else if (entity.gatherType === 'stone' || entity.gatherType === 'gold') {
+          // Pickaxe
+          this.graphics.lineStyle(2, 0x886644, 0.9);
+          this.graphics.lineBetween(pivotX, pivotY, endX, endY);
+          this.graphics.lineStyle(2, 0x888888, 1);
+          this.graphics.lineBetween(endX - 3, endY - 2, endX + 3, endY + 2);
+        } else {
+          // Food — hands gathering (bobbing motion)
+          if (sprite) {
+            sprite.y = entity.y + Math.abs(gatherSwing) * 2;
+          }
+        }
+
+        // Gathering particles — small bits flying off
+        if (Math.abs(gatherSwing) > 0.7) {
+          const pColor = entity.gatherType === 'wood' ? 0x886644
+            : entity.gatherType === 'gold' ? 0xffcc00
+            : entity.gatherType === 'stone' ? 0x888888
+            : 0x44aa44;
+          this.graphics.fillStyle(pColor, 0.6);
+          const px = entity.x + 8 + Math.random() * 6;
+          const py = entity.y - 2 - Math.random() * 6;
+          this.graphics.fillRect(px, py, 2, 2);
         }
       }
 

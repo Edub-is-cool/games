@@ -2,6 +2,7 @@ import { GameWorld, EntityData } from './GameWorld';
 import { UNITS } from '../config/units';
 import { BUILDINGS } from '../config/buildings';
 import { AGES, ALL_UNITS, ALL_BUILDINGS } from '../config/ages';
+import { DEFENSES } from '../config/defenses';
 
 const GATHER_RATE = 0.4; // resource per second
 const CARRY_CAPACITY = 10;
@@ -215,11 +216,22 @@ export class EconomySystem {
       return;
     }
 
-    // Build
-    const buildingCfg = ALL_BUILDINGS[target.key] ?? BUILDINGS[target.key];
+    // Build — multiple villagers speed up construction with diminishing returns
+    const buildingCfg = ALL_BUILDINGS[target.key] ?? BUILDINGS[target.key] ?? DEFENSES[target.key];
     if (!buildingCfg || buildingCfg.buildTime <= 0) return;
 
-    const progress = (delta / 1000) / buildingCfg.buildTime;
+    // Count how many villagers are building this same target
+    let builderCount = 0;
+    for (const other of this.world.entities.values()) {
+      if (other.type === 'unit' && other.state === 'building' && other.target === target.id) {
+        builderCount++;
+      }
+    }
+
+    // Each additional builder adds 60% of a full builder's rate (diminishing returns)
+    // 1 builder = 1x, 2 = 1.6x, 3 = 2.0x, 4 = 2.3x, etc.
+    const speedMult = builderCount > 0 ? (1 + (builderCount - 1) * 0.6) / builderCount : 1;
+    const progress = (delta / 1000) / buildingCfg.buildTime * speedMult;
     target.buildProgress = Math.min(1, (target.buildProgress ?? 0) + progress);
     target.hp = Math.floor(target.maxHp * target.buildProgress);
 

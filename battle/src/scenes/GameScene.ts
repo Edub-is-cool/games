@@ -11,6 +11,7 @@ import { GraphicsEnhancer } from '../systems/GraphicsEnhancer';
 import { UNITS } from '../config/units';
 import { BUILDINGS } from '../config/buildings';
 import { ALL_UNITS, ALL_BUILDINGS } from '../config/ages';
+import { DEFENSES } from '../config/defenses';
 import { MapGenerator, MapData } from '../systems/MapGenerator';
 import { TerrainRenderer } from '../systems/TerrainRenderer';
 import {
@@ -37,6 +38,13 @@ export class GameScene extends Phaser.Scene {
   private victoryShown = false;
 
   private sprites: Map<number, Phaser.GameObjects.Sprite> = new Map();
+
+  // Build placement mode
+  placementMode = false;
+  placementKey = '';
+  placementVillagerId = -1;
+  private placementHologram: Phaser.GameObjects.Sprite | null = null;
+  private placementRange: Phaser.GameObjects.Graphics | null = null;
   private dayNightOverlay!: Phaser.GameObjects.Rectangle;
   private dayNightTime = 0; // 0-240 seconds full cycle
   private dayNightStars: { x: number; y: number; alpha: number }[] = [];
@@ -113,6 +121,7 @@ export class GameScene extends Phaser.Scene {
 
     // Link diplomacy to combat
     this.combat.diplomacy = this.diplomacy;
+    this.combat.commands = this.commands;
 
     for (let i = 0; i < this.settings.cpuPlayers.length; i++) {
       const cpu = this.settings.cpuPlayers[i];
@@ -132,8 +141,10 @@ export class GameScene extends Phaser.Scene {
     terrainRenderer.renderTerrain(mapData.terrain);
     terrainRenderer.renderDecorations(mapData.decorations);
 
-    // Pass terrain to combat for elevation bonuses
+    // Pass terrain to combat and commands for collision/elevation
     this.combat.terrain = mapData.terrain;
+    this.commands.terrain = mapData.terrain;
+    this.commands.registerDecorations(mapData.decorations);
 
     // Graphics enhancer for visual polish
     this.graphicsEnhancer = new GraphicsEnhancer(this, this.world, this.sprites, this.selection, this.playerColors, mapData.terrain);
@@ -236,6 +247,12 @@ export class GameScene extends Phaser.Scene {
     this.isTouchDevice = this.sys.game.device.input.touch;
 
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      // Two-finger tap cancels placement mode
+      if (this.placementMode && this.input.pointer1.isDown && this.input.pointer2.isDown) {
+        this.cancelPlacement();
+        return;
+      }
+
       const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
       this.isDragging = true;
       this.isLongPress = false;
@@ -285,6 +302,19 @@ export class GameScene extends Phaser.Scene {
       const dx = worldPoint.x - this.dragStartWorld.x;
       const dy = worldPoint.y - this.dragStartWorld.y;
 
+      // Placement mode intercept
+      if (this.placementMode) {
+        if (pointer.rightButtonReleased()) {
+          // Right-click or two-finger: cancel placement
+          this.cancelPlacement();
+        } else if (Math.abs(dx) < 8 && Math.abs(dy) < 8) {
+          // Click: confirm placement
+          this.confirmPlacement(worldPoint.x, worldPoint.y);
+        }
+        this.isDragging = false;
+        return;
+      }
+
       if (pointer.rightButtonReleased()) {
         // Right-click: always issue command
         this.issueCommand(pointer);
@@ -301,6 +331,11 @@ export class GameScene extends Phaser.Scene {
 
     // Prevent context menu
     this.input.mouse?.disableContextMenu();
+
+    // Escape cancels placement mode
+    this.input.keyboard?.on('keydown-ESC', () => {
+      if (this.placementMode) this.cancelPlacement();
+    });
 
     // Control groups: Ctrl+1-9 to assign, 1-9 to select, double-tap to center camera
     const lastGroupTap: Map<number, number> = new Map();
@@ -367,6 +402,25 @@ export class GameScene extends Phaser.Scene {
         }
       }
 
+      // If clicking own unfinished building with villagers → go build it
+      if (clickedEntity.type === 'building' && clickedEntity.owner === 0
+        && clickedEntity.buildProgress !== undefined && clickedEntity.buildProgress < 1) {
+        const villagerIds = selectedIds.filter((id) => {
+          const e = this.world.entities.get(id);
+          return e && e.key === 'villager' && e.owner === 0;
+        });
+        if (villagerIds.length > 0) {
+          for (const vid of villagerIds) {
+            const vil = this.world.entities.get(vid);
+            if (!vil) continue;
+            vil.commandQueue = [{ type: 'build', targetId: clickedEntity.id }];
+            vil.state = 'building';
+            vil.target = clickedEntity.id;
+          }
+          return;
+        }
+      }
+
       // If clicking an enemy → attack
       if (clickedEntity.owner !== 0 && clickedEntity.owner !== -1 && clickedEntity.type !== 'resource') {
         if (!this.diplomacy.areAllied(0, clickedEntity.owner)) {
@@ -398,6 +452,23 @@ export class GameScene extends Phaser.Scene {
     const targetEntity = this.selection.entityAtPoint(worldPoint.x, worldPoint.y);
 
     if (targetEntity) {
+      // Unfinished own building → send villagers to build
+      if (targetEntity.type === 'building' && targetEntity.owner === 0
+        && targetEntity.buildProgress !== undefined && targetEntity.buildProgress < 1) {
+        const villagerIds = selectedIds.filter((id) => {
+          const e = this.world.entities.get(id);
+          return e && e.key === 'villager';
+        });
+        for (const vid of villagerIds) {
+          const vil = this.world.entities.get(vid);
+          if (!vil) continue;
+          vil.commandQueue = [{ type: 'build', targetId: targetEntity.id }];
+          vil.state = 'building';
+          vil.target = targetEntity.id;
+        }
+        if (villagerIds.length > 0) return;
+      }
+
       if (targetEntity.type === 'resource') {
         // Gather
         const villagerIds = selectedIds.filter((id) => {
@@ -441,6 +512,9 @@ export class GameScene extends Phaser.Scene {
 
     // Day/night cycle
     this.updateDayNight(delta);
+
+    // Build placement hologram
+    this.updatePlacement();
 
     // Visual polish
     this.graphicsEnhancer.update(delta, _time);
@@ -607,6 +681,107 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.dayNightOverlay.setFillStyle(tint, alpha);
+  }
+
+  // ─── Build Placement Mode ─────────────────────────────────
+
+  enterPlacementMode(buildingKey: string, villagerId: number) {
+    this.placementMode = true;
+    this.placementKey = buildingKey;
+    this.placementVillagerId = villagerId;
+
+    // Create hologram sprite
+    const texKey = `building_${buildingKey}`;
+    this.placementHologram = this.add.sprite(0, 0, texKey);
+    this.placementHologram.setAlpha(0.5);
+    this.placementHologram.setTint(0x44ff44);
+    this.placementHologram.setDepth(200);
+
+    // Range circle
+    this.placementRange = this.add.graphics();
+    this.placementRange.setDepth(199);
+  }
+
+  cancelPlacement() {
+    this.placementMode = false;
+    this.placementKey = '';
+    this.placementVillagerId = -1;
+    if (this.placementHologram) {
+      this.placementHologram.destroy();
+      this.placementHologram = null;
+    }
+    if (this.placementRange) {
+      this.placementRange.destroy();
+      this.placementRange = null;
+    }
+  }
+
+  private updatePlacement() {
+    if (!this.placementMode || !this.placementHologram || !this.placementRange) return;
+
+    const pointer = this.input.activePointer;
+    const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+
+    this.placementHologram.setPosition(worldPoint.x, worldPoint.y);
+
+    // Check if placement is valid
+    const walkable = this.commands.isTerrainWalkable(worldPoint.x, worldPoint.y);
+    const vil = this.world.entities.get(this.placementVillagerId);
+    let tooFar = false;
+    if (vil) {
+      const dx = worldPoint.x - vil.x;
+      const dy = worldPoint.y - vil.y;
+      tooFar = Math.sqrt(dx * dx + dy * dy) > 400;
+    }
+
+    const valid = walkable && !tooFar;
+
+    // Draw range circle
+    this.placementRange.clear();
+    this.placementRange.lineStyle(1, valid ? 0x44ff44 : 0xff4444, 0.3);
+    this.placementRange.strokeCircle(worldPoint.x, worldPoint.y, 20);
+
+    // Tint hologram
+    this.placementHologram.setTint(valid ? 0x44ff44 : 0xff4444);
+    this.placementHologram.setAlpha(valid ? 0.6 : 0.3);
+  }
+
+  confirmPlacement(worldX: number, worldY: number) {
+    if (!this.placementMode) return false;
+
+    const vil = this.world.entities.get(this.placementVillagerId);
+    if (!vil || vil.state === 'dead') {
+      this.cancelPlacement();
+      return false;
+    }
+
+    // Check distance
+    const dx = worldX - vil.x;
+    const dy = worldY - vil.y;
+    if (Math.sqrt(dx * dx + dy * dy) > 400) return false;
+
+    // Check terrain — can't build on water or dense forests (but allow near other entities)
+    if (!this.commands.isTerrainWalkable(worldX, worldY)) return false;
+
+    // Spend and place
+    const config = ALL_BUILDINGS[this.placementKey] ?? BUILDINGS[this.placementKey] ?? DEFENSES[this.placementKey];
+    if (!config) { this.cancelPlacement(); return false; }
+
+    this.economy.spend(0, config.cost);
+
+    const bEntity = this.world.spawnEntity('building', this.placementKey, 0, worldX, worldY, config.hp);
+    bEntity.trainQueue = [];
+    bEntity.buildProgress = 0;
+    bEntity.hp = 1;
+    bEntity.maxHp = config.hp;
+
+    // Send villager to build
+    vil.commandQueue = [{ type: 'build', targetId: bEntity.id }];
+    vil.state = 'building';
+    vil.target = bEntity.id;
+
+    this.cancelPlacement();
+    return true;
   }
 
   private lerpColor(a: number, b: number, t: number): number {

@@ -2,6 +2,7 @@ import { GameWorld, EntityData } from './GameWorld';
 import { UNITS } from '../config/units';
 import { ALL_UNITS } from '../config/ages';
 import { DiplomacySystem } from './DiplomacySystem';
+import { CommandSystem } from './CommandSystem';
 import { DEFENSES } from '../config/defenses';
 import { getBonusDamage, getArmorClass } from '../config/combatClasses';
 import type { TerrainTile } from './MapGenerator';
@@ -11,7 +12,8 @@ const TILE_SIZE = 32;
 export class CombatSystem {
   private attackCooldowns: Map<number, number> = new Map();
   diplomacy: DiplomacySystem | null = null;
-  terrain: TerrainTile[][] | null = null; // set after map generation
+  terrain: TerrainTile[][] | null = null;
+  commands: CommandSystem | null = null; // for walkability checks
 
   constructor(private world: GameWorld) {}
 
@@ -74,8 +76,13 @@ export class CombatSystem {
       if (dist > config.range) {
         const step = config.speed * (delta / 1000);
         const ratio = Math.min(step / dist, 1);
-        entity.x += dx * ratio;
-        entity.y += dy * ratio;
+        const newX = entity.x + dx * ratio;
+        const newY = entity.y + dy * ratio;
+        // Respect terrain walkability
+        if (!this.commands || this.commands.isWalkable(newX, newY)) {
+          entity.x = newX;
+          entity.y = newY;
+        }
         continue;
       }
 

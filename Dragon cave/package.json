@@ -1,0 +1,17 @@
+{
+  "name": "dragon-cave",
+  "version": "1.0.0",
+  "description": "A dungeon crawler game set in a dragon's cave",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3"
+  }
+}

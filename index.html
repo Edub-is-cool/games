@@ -14,6 +14,7 @@
       --accent-1: #ff6b4a;
       --accent-2: #7c4dff;
       --accent-3: #00e5a0;
+      --accent-4: #f0c040;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -68,6 +69,7 @@
     .card:nth-child(1):hover { border-color: var(--accent-1); }
     .card:nth-child(2):hover { border-color: var(--accent-2); }
     .card:nth-child(3):hover { border-color: var(--accent-3); }
+    .card:nth-child(4):hover { border-color: var(--accent-4); }
 
     .card-banner {
       height: 180px;
@@ -87,6 +89,9 @@
     }
     .card:nth-child(3) .card-banner {
       background: linear-gradient(135deg, #001a0f 0%, #003322 50%, #001a0f 100%);
+    }
+    .card:nth-child(4) .card-banner {
+      background: linear-gradient(135deg, #1a1200 0%, #332800 50%, #1a1200 100%);
     }
 
     .card-body {
@@ -112,6 +117,7 @@
     .card:nth-child(1) .genre { color: var(--accent-1); }
     .card:nth-child(2) .genre { color: var(--accent-2); }
     .card:nth-child(3) .genre { color: var(--accent-3); }
+    .card:nth-child(4) .genre { color: var(--accent-4); }
 
     .card-body .desc {
       color: var(--text-muted);
@@ -153,6 +159,7 @@
     .card:nth-child(1) .play-btn { background: var(--accent-1); }
     .card:nth-child(2) .play-btn { background: var(--accent-2); }
     .card:nth-child(3) .play-btn { background: var(--accent-3); color: #0a0a0f; }
+    .card:nth-child(4) .play-btn { background: var(--accent-4); color: #0a0a0f; }
 
     footer {
       text-align: center;
@@ -214,6 +221,21 @@
           <span class="tag">Vanilla JS</span>
         </div>
         <a class="play-btn" href="FARKLE/index.html">Play</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-banner">&#128009;</div>
+      <div class="card-body">
+        <div class="genre">Dungeon Crawler</div>
+        <h2>Dragon Cave</h2>
+        <p class="desc">Delve into a dragon's lair in this Phaser-powered dungeon crawler. Fight monsters, collect loot, and face the dragon lurking in the depths.</p>
+        <div class="tags">
+          <span class="tag">Phaser 3</span>
+          <span class="tag">TypeScript</span>
+          <span class="tag">Vite</span>
+        </div>
+        <a class="play-btn" href="Dragon%20cave/dist/index.html">Play</a>
       </div>
     </div>
 

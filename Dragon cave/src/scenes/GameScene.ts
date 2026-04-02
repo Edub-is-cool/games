@@ -38,6 +38,10 @@ export class GameScene extends Phaser.Scene {
   private levelText!: Phaser.GameObjects.Text;
   private inventoryText!: Phaser.GameObjects.Text;
 
+  // Minimap
+  private minimapTexture!: Phaser.GameObjects.RenderTexture;
+  private minimapBorder!: Phaser.GameObjects.Rectangle;
+
   constructor() {
     super({ key: 'GameScene' });
   }
@@ -48,6 +52,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(data: { floor: number; seed: number; playerStats?: any; inventory?: any }) {
+    // Reset state (scene instance is reused on restart)
+    this.turnInProgress = false;
+
     // Generate dungeon
     this.dungeon = generateDungeon(this.floor, this.seed);
     this.visibility = new VisibilityMap();
@@ -221,6 +228,20 @@ export class GameScene extends Phaser.Scene {
       backgroundColor: '#000000aa',
       padding: { x: 8, y: 4 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(102).setAlpha(0);
+
+    // Minimap (top-right corner)
+    const mmScale = 2; // pixels per tile
+    const mmW = MAP_WIDTH * mmScale;
+    const mmH = MAP_HEIGHT * mmScale;
+    const mmX = CAMERA_WIDTH - mmW - 8;
+    const mmY = 8;
+
+    this.minimapBorder = this.add.rectangle(
+      mmX + mmW / 2, mmY + mmH / 2, mmW + 4, mmH + 4, 0x444444
+    ).setScrollFactor(0).setDepth(103).setAlpha(0.8);
+
+    this.minimapTexture = this.add.renderTexture(mmX, mmY, mmW, mmH);
+    this.minimapTexture.setScrollFactor(0).setDepth(104).setAlpha(0.85);
   }
 
   updateHUD() {
@@ -284,6 +305,54 @@ export class GameScene extends Phaser.Scene {
       const vis = this.visibility.state[item.tileY]?.[item.tileX];
       item.setVisible(vis === VisState.VISIBLE);
     }
+
+    this.updateMinimap();
+  }
+
+  updateMinimap() {
+    const mmScale = 2;
+    this.minimapTexture.clear();
+
+    // Use a temporary graphics object to draw the minimap
+    const gfx = this.make.graphics();
+
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+      for (let x = 0; x < MAP_WIDTH; x++) {
+        const vis = this.visibility.state[y][x];
+        if (vis === VisState.HIDDEN) continue;
+
+        const tile = this.dungeon.tiles[y][x];
+        let color: number;
+
+        if (tile === Tile.WALL) {
+          color = vis === VisState.VISIBLE ? 0x555555 : 0x333333;
+        } else if (tile === Tile.STAIRS_DOWN) {
+          color = 0xffcc00;
+        } else {
+          color = vis === VisState.VISIBLE ? 0x888888 : 0x555555;
+        }
+
+        gfx.fillStyle(color);
+        gfx.fillRect(x * mmScale, y * mmScale, mmScale, mmScale);
+      }
+    }
+
+    // Draw enemies (only visible ones)
+    for (const enemy of this.enemies) {
+      if (enemy.isDead) continue;
+      const vis = this.visibility.state[enemy.tileY]?.[enemy.tileX];
+      if (vis === VisState.VISIBLE) {
+        gfx.fillStyle(0xff4444);
+        gfx.fillRect(enemy.tileX * mmScale, enemy.tileY * mmScale, mmScale, mmScale);
+      }
+    }
+
+    // Draw player
+    gfx.fillStyle(0x44ff44);
+    gfx.fillRect(this.player.tileX * mmScale, this.player.tileY * mmScale, mmScale, mmScale);
+
+    this.minimapTexture.draw(gfx);
+    gfx.destroy();
   }
 
   handleInput(): { dx: number; dy: number } | null {

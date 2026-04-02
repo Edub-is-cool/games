@@ -15,6 +15,7 @@
       --accent-2: #7c4dff;
       --accent-3: #00e5a0;
       --accent-4: #f0c040;
+      --accent-5: #e04080;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -70,6 +71,7 @@
     .card:nth-child(2):hover { border-color: var(--accent-2); }
     .card:nth-child(3):hover { border-color: var(--accent-3); }
     .card:nth-child(4):hover { border-color: var(--accent-4); }
+    .card:nth-child(5):hover { border-color: var(--accent-5); }
 
     .card-banner {
       height: 180px;
@@ -92,6 +94,9 @@
     }
     .card:nth-child(4) .card-banner {
       background: linear-gradient(135deg, #1a1200 0%, #332800 50%, #1a1200 100%);
+    }
+    .card:nth-child(5) .card-banner {
+      background: linear-gradient(135deg, #1a0010 0%, #330020 50%, #1a0010 100%);
     }
 
     .card-body {
@@ -118,6 +123,7 @@
     .card:nth-child(2) .genre { color: var(--accent-2); }
     .card:nth-child(3) .genre { color: var(--accent-3); }
     .card:nth-child(4) .genre { color: var(--accent-4); }
+    .card:nth-child(5) .genre { color: var(--accent-5); }
 
     .card-body .desc {
       color: var(--text-muted);
@@ -160,6 +166,7 @@
     .card:nth-child(2) .play-btn { background: var(--accent-2); }
     .card:nth-child(3) .play-btn { background: var(--accent-3); color: #0a0a0f; }
     .card:nth-child(4) .play-btn { background: var(--accent-4); color: #0a0a0f; }
+    .card:nth-child(5) .play-btn { background: var(--accent-5); }
 
     footer {
       text-align: center;
@@ -236,6 +243,21 @@
           <span class="tag">Vite</span>
         </div>
         <a class="play-btn" href="Dragon%20cave/dist/index.html">Play</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-banner">&#9749;</div>
+      <div class="card-body">
+        <div class="genre">Puzzle / Arcade</div>
+        <h2>The Jumping Cup</h2>
+        <p class="desc">A classic shell game — watch the ball, follow the cups as they shuffle, and pick the right one. Speed and difficulty ramp up each round.</p>
+        <div class="tags">
+          <span class="tag">Phaser 3</span>
+          <span class="tag">TypeScript</span>
+          <span class="tag">Vite</span>
+        </div>
+        <a class="play-btn" href="The%20Jumping%20Cup/dist/index.html">Play</a>
       </div>
     </div>
 

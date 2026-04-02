@@ -1,0 +1,17 @@
+{
+  "name": "the-jumping-cup",
+  "version": "1.0.0",
+  "description": "A follow-the-cup shell game",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "phaser": "^3.90.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "vite": "^8.0.3"
+  }
+}

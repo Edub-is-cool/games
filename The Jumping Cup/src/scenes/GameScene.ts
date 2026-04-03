@@ -316,13 +316,6 @@ export class GameScene extends Phaser.Scene {
       cupB.graphic.setPosition(cupB.x, CUP_Y);
       cupB.zone.setPosition(cupB.x, CUP_Y - CUP_HEIGHT / 2);
 
-      // Track ball
-      if (this.ballCupIndex === a) {
-        this.ballCupIndex = b;
-      } else if (this.ballCupIndex === b) {
-        this.ballCupIndex = a;
-      }
-
       onComplete();
     });
   }

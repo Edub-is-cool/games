@@ -6,10 +6,11 @@ const CUP_HEIGHT = 130;
 const CUP_SPACING = 160;
 const CUP_Y = 300;
 const BALL_RADIUS = 18;
-const BALL_Y = CUP_Y + CUP_HEIGHT / 2 + BALL_RADIUS + 5;
+const BALL_Y = CUP_Y + BALL_RADIUS + 5;
 
 interface Cup {
   graphic: Phaser.GameObjects.Graphics;
+  zone: Phaser.GameObjects.Zone;
   x: number;
   index: number;
 }
@@ -23,6 +24,7 @@ export class GameScene extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private roundText!: Phaser.GameObjects.Text;
   private messageText!: Phaser.GameObjects.Text;
+  private gameOverGroup!: Phaser.GameObjects.Container;
   private shuffling = false;
   private cupsDown = false;
 
@@ -31,6 +33,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
+    this.cups = [];
     this.score = 0;
     this.round = 1;
     this.shuffling = false;
@@ -63,7 +66,7 @@ export class GameScene extends Phaser.Scene {
     // Table surface
     this.add.graphics()
       .fillStyle(0x3a2a15, 1)
-      .fillRoundedRect(50, CUP_Y + CUP_HEIGHT / 2 + 10, 700, 30, 8);
+      .fillRoundedRect(50, CUP_Y + 10, 700, 30, 8);
 
     // Create ball
     this.ball = this.add.graphics();
@@ -74,20 +77,45 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < CUP_COUNT; i++) {
       const x = startX + i * CUP_SPACING;
       const graphic = this.add.graphics();
-      this.drawCup(graphic, x, CUP_Y - CUP_HEIGHT);
-      graphic.setInteractive(
-        new Phaser.Geom.Rectangle(x - CUP_WIDTH / 2, CUP_Y - CUP_HEIGHT, CUP_WIDTH, CUP_HEIGHT),
-        Phaser.Geom.Rectangle.Contains
-      );
-      graphic.on('pointerdown', () => this.onCupClick(i));
-      graphic.on('pointerover', () => {
-        if (!this.shuffling && this.cupsDown) {
-          graphic.setAlpha(0.85);
-        }
-      });
-      graphic.on('pointerout', () => graphic.setAlpha(1));
-      this.cups.push({ graphic, x, index: i });
+      this.drawCup(graphic, 0, 0);
+      graphic.setPosition(x, CUP_Y);
+
+      // Use a Zone for hit detection — it moves with its position properly
+      const zone = this.add.zone(x, CUP_Y - CUP_HEIGHT / 2, CUP_WIDTH + 20, CUP_HEIGHT + 30)
+        .setInteractive({ useHandCursor: true });
+      zone.on('pointerdown', () => this.onCupClick(i));
+
+      this.cups.push({ graphic, zone, x, index: i });
     }
+
+    // Game over overlay (hidden initially)
+    this.gameOverGroup = this.add.container(400, 300).setVisible(false).setDepth(10);
+
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.75);
+    bg.fillRoundedRect(-200, -100, 400, 200, 16);
+    this.gameOverGroup.add(bg);
+
+    const goText = this.add.text(0, -50, 'Game Over!', {
+      fontSize: '40px',
+      color: '#e74c3c',
+      fontFamily: 'Georgia, serif',
+    }).setOrigin(0.5);
+    this.gameOverGroup.add(goText);
+
+    const finalScore = this.add.text(0, 0, '', {
+      fontSize: '26px',
+      color: '#ffffff',
+    }).setOrigin(0.5);
+    finalScore.setName('finalScore');
+    this.gameOverGroup.add(finalScore);
+
+    const restart = this.add.text(0, 55, 'Tap to Retry', {
+      fontSize: '24px',
+      color: '#f1c40f',
+      fontFamily: 'Arial',
+    }).setOrigin(0.5);
+    this.gameOverGroup.add(restart);
 
     // Place ball under random cup
     this.ballCupIndex = Phaser.Math.Between(0, CUP_COUNT - 1);
@@ -97,58 +125,56 @@ export class GameScene extends Phaser.Scene {
     this.startRound();
   }
 
-  private drawCup(g: Phaser.GameObjects.Graphics, x: number, y: number) {
+  private drawCup(g: Phaser.GameObjects.Graphics, cx: number, cy: number) {
     g.clear();
 
-    // Cup body — trapezoid shape
+    // Cup drawn relative to its anchor: cx, cy is the bottom-center
     const topW = CUP_WIDTH * 0.6;
     const botW = CUP_WIDTH;
     const h = CUP_HEIGHT;
+    const top = cy - h;
 
     // Shadow
     g.fillStyle(0x000000, 0.2);
-    g.fillEllipse(x, y + h + 5, botW + 10, 16);
+    g.fillEllipse(cx, cy + 5, botW + 10, 16);
 
     // Main cup body
     g.fillStyle(0xc0392b, 1);
     g.beginPath();
-    g.moveTo(x - topW / 2, y);
-    g.lineTo(x - botW / 2, y + h);
-    g.lineTo(x + botW / 2, y + h);
-    g.lineTo(x + topW / 2, y);
+    g.moveTo(cx - topW / 2, top);
+    g.lineTo(cx - botW / 2, cy);
+    g.lineTo(cx + botW / 2, cy);
+    g.lineTo(cx + topW / 2, top);
     g.closePath();
     g.fillPath();
 
     // Rim highlight
     g.fillStyle(0xe74c3c, 1);
-    g.fillEllipse(x, y, topW, 16);
+    g.fillEllipse(cx, top, topW, 16);
 
     // Stripe decoration
     g.fillStyle(0xd44a3a, 1);
-    const stripeY = y + h * 0.35;
+    const stripeY = top + h * 0.35;
     const stripeW = topW + (botW - topW) * 0.35;
-    g.fillRect(x - stripeW / 2 + 5, stripeY, stripeW - 10, 6);
+    g.fillRect(cx - stripeW / 2 + 5, stripeY, stripeW - 10, 6);
 
     // Highlight / shine
     g.fillStyle(0xe8685a, 0.4);
     g.beginPath();
-    g.moveTo(x - topW / 2 + 8, y + 10);
-    g.lineTo(x - botW / 2 + 15, y + h - 10);
-    g.lineTo(x - botW / 2 + 25, y + h - 10);
-    g.lineTo(x - topW / 2 + 18, y + 10);
+    g.moveTo(cx - topW / 2 + 8, top + 10);
+    g.lineTo(cx - botW / 2 + 15, cy - 10);
+    g.lineTo(cx - botW / 2 + 25, cy - 10);
+    g.lineTo(cx - topW / 2 + 18, top + 10);
     g.closePath();
     g.fillPath();
   }
 
   private drawBall() {
     this.ball.clear();
-    // Shadow
     this.ball.fillStyle(0x000000, 0.25);
     this.ball.fillEllipse(0, BALL_RADIUS * 0.3, BALL_RADIUS * 2.2, BALL_RADIUS * 0.8);
-    // Ball
     this.ball.fillStyle(0xf1c40f, 1);
     this.ball.fillCircle(0, 0, BALL_RADIUS);
-    // Shine
     this.ball.fillStyle(0xf9e584, 0.7);
     this.ball.fillCircle(-5, -6, 7);
   }
@@ -158,14 +184,10 @@ export class GameScene extends Phaser.Scene {
     this.ball.setPosition(cup.x, BALL_Y);
   }
 
-  private getCupX(index: number): number {
-    return this.cups[index].x;
-  }
-
   private startRound() {
     this.shuffling = true;
     this.cupsDown = false;
-    this.messageText.setText('Watch the ball!');
+    this.messageText.setText('Watch the ball!').setColor('#ffdd57');
 
     // Show ball
     this.ball.setVisible(true);
@@ -175,8 +197,8 @@ export class GameScene extends Phaser.Scene {
     const liftDuration = 400;
     for (const cup of this.cups) {
       this.tweens.add({
-        targets: cup.graphic,
-        y: -CUP_HEIGHT * 0.6,
+        targets: [cup.graphic, cup.zone],
+        y: CUP_Y - CUP_HEIGHT * 0.6,
         duration: liftDuration,
         ease: 'Back.easeOut',
       });
@@ -187,7 +209,13 @@ export class GameScene extends Phaser.Scene {
       for (const cup of this.cups) {
         this.tweens.add({
           targets: cup.graphic,
-          y: 0,
+          y: CUP_Y,
+          duration: 350,
+          ease: 'Bounce.easeOut',
+        });
+        this.tweens.add({
+          targets: cup.zone,
+          y: CUP_Y - CUP_HEIGHT / 2,
           duration: 350,
           ease: 'Bounce.easeOut',
         });
@@ -213,7 +241,6 @@ export class GameScene extends Phaser.Scene {
         return;
       }
 
-      // Pick two different cups to swap
       let a = Phaser.Math.Between(0, CUP_COUNT - 1);
       let b = Phaser.Math.Between(0, CUP_COUNT - 2);
       if (b >= a) b++;
@@ -232,63 +259,64 @@ export class GameScene extends Phaser.Scene {
     const cupB = this.cups[b];
     const xA = cupA.x;
     const xB = cupB.x;
+    const arcHeight = 60;
 
-    // Arc height for the swap animation
-    const arcHeight = -60;
-
-    // Animate cup A to cup B's position (arc over)
+    // Animate cup A
     this.tweens.add({
-      targets: cupA.graphic,
-      x: xB - xA,
+      targets: [cupA.graphic, cupA.zone],
+      x: xB,
       duration,
       ease: 'Sine.easeInOut',
     });
     this.tweens.add({
       targets: cupA.graphic,
-      y: arcHeight,
+      y: CUP_Y - arcHeight,
+      duration: duration / 2,
+      ease: 'Sine.easeOut',
+      yoyo: true,
+    });
+    this.tweens.add({
+      targets: cupA.zone,
+      y: CUP_Y - CUP_HEIGHT / 2 - arcHeight,
       duration: duration / 2,
       ease: 'Sine.easeOut',
       yoyo: true,
     });
 
-    // Animate cup B to cup A's position (arc under)
+    // Animate cup B
     this.tweens.add({
-      targets: cupB.graphic,
-      x: xA - xB,
+      targets: [cupB.graphic, cupB.zone],
+      x: xA,
       duration,
       ease: 'Sine.easeInOut',
     });
     this.tweens.add({
       targets: cupB.graphic,
-      y: arcHeight * 0.3,
+      y: CUP_Y - arcHeight * 0.3,
+      duration: duration / 2,
+      ease: 'Sine.easeOut',
+      yoyo: true,
+    });
+    this.tweens.add({
+      targets: cupB.zone,
+      y: CUP_Y - CUP_HEIGHT / 2 - arcHeight * 0.3,
       duration: duration / 2,
       ease: 'Sine.easeOut',
       yoyo: true,
     });
 
     this.time.delayedCall(duration + 20, () => {
-      // Reset graphic positions and swap logical x positions
-      cupA.graphic.setPosition(0, 0);
-      cupB.graphic.setPosition(0, 0);
-
+      // Update logical positions
       cupA.x = xB;
       cupB.x = xA;
 
-      // Redraw cups at new positions
-      this.drawCup(cupA.graphic, cupA.x, CUP_Y - CUP_HEIGHT);
-      this.drawCup(cupB.graphic, cupB.x, CUP_Y - CUP_HEIGHT);
+      // Snap to final positions
+      cupA.graphic.setPosition(cupA.x, CUP_Y);
+      cupA.zone.setPosition(cupA.x, CUP_Y - CUP_HEIGHT / 2);
+      cupB.graphic.setPosition(cupB.x, CUP_Y);
+      cupB.zone.setPosition(cupB.x, CUP_Y - CUP_HEIGHT / 2);
 
-      // Update interactive areas
-      cupA.graphic.setInteractive(
-        new Phaser.Geom.Rectangle(cupA.x - CUP_WIDTH / 2, CUP_Y - CUP_HEIGHT, CUP_WIDTH, CUP_HEIGHT),
-        Phaser.Geom.Rectangle.Contains
-      );
-      cupB.graphic.setInteractive(
-        new Phaser.Geom.Rectangle(cupB.x - CUP_WIDTH / 2, CUP_Y - CUP_HEIGHT, CUP_WIDTH, CUP_HEIGHT),
-        Phaser.Geom.Rectangle.Contains
-      );
-
-      // Track ball position
+      // Track ball
       if (this.ballCupIndex === a) {
         this.ballCupIndex = b;
       } else if (this.ballCupIndex === b) {
@@ -310,8 +338,8 @@ export class GameScene extends Phaser.Scene {
     // Lift selected cup
     const selected = this.cups[cupIndex];
     this.tweens.add({
-      targets: selected.graphic,
-      y: -CUP_HEIGHT * 0.6,
+      targets: [selected.graphic, selected.zone],
+      y: CUP_Y - CUP_HEIGHT - 20,
       duration: 350,
       ease: 'Back.easeOut',
     });
@@ -321,7 +349,6 @@ export class GameScene extends Phaser.Scene {
       this.scoreText.setText(`Score: ${this.score}`);
       this.messageText.setText('Correct!').setColor('#2ecc71');
 
-      // Celebrate ball bounce
       this.tweens.add({
         targets: this.ball,
         y: BALL_Y - 30,
@@ -330,41 +357,67 @@ export class GameScene extends Phaser.Scene {
         repeat: 2,
         ease: 'Sine.easeOut',
       });
+
+      // Continue to next round
+      this.time.delayedCall(1800, () => {
+        this.round++;
+        this.roundText.setText(`Round: ${this.round}`);
+        this.resetCupsDown();
+        this.ballCupIndex = Phaser.Math.Between(0, CUP_COUNT - 1);
+        this.time.delayedCall(400, () => this.startRound());
+      });
     } else {
       this.messageText.setText('Wrong!').setColor('#e74c3c');
 
-      // Also lift the correct cup to show where ball was
+      // Lift correct cup to show ball
       const correct = this.cups[this.ballCupIndex];
       this.time.delayedCall(300, () => {
         this.tweens.add({
-          targets: correct.graphic,
-          y: -CUP_HEIGHT * 0.6,
+          targets: [correct.graphic, correct.zone],
+          y: CUP_Y - CUP_HEIGHT - 20,
           duration: 350,
           ease: 'Back.easeOut',
         });
       });
+
+      // Show game over
+      this.time.delayedCall(1500, () => this.showGameOver());
     }
+  }
 
-    // Next round
-    this.time.delayedCall(1800, () => {
-      this.messageText.setColor('#ffdd57');
-      this.round++;
-      this.roundText.setText(`Round: ${this.round}`);
+  private resetCupsDown() {
+    for (const cup of this.cups) {
+      this.tweens.add({
+        targets: cup.graphic,
+        y: CUP_Y,
+        duration: 300,
+        ease: 'Sine.easeIn',
+      });
+      this.tweens.add({
+        targets: cup.zone,
+        y: CUP_Y - CUP_HEIGHT / 2,
+        duration: 300,
+        ease: 'Sine.easeIn',
+      });
+    }
+  }
 
-      // Lower all cups back
-      for (const cup of this.cups) {
-        this.tweens.add({
-          targets: cup.graphic,
-          y: 0,
-          duration: 300,
-          ease: 'Sine.easeIn',
-        });
-      }
+  private showGameOver() {
+    const finalScore = this.gameOverGroup.getByName('finalScore') as Phaser.GameObjects.Text;
+    finalScore.setText(`Score: ${this.score}  |  Round: ${this.round}`);
+    this.gameOverGroup.setVisible(true);
+    this.gameOverGroup.setAlpha(0);
+    this.tweens.add({
+      targets: this.gameOverGroup,
+      alpha: 1,
+      duration: 400,
+    });
 
-      // Pick new random ball position
-      this.ballCupIndex = Phaser.Math.Between(0, CUP_COUNT - 1);
-
-      this.time.delayedCall(400, () => this.startRound());
+    // Tap anywhere to restart
+    this.time.delayedCall(500, () => {
+      this.input.once('pointerdown', () => {
+        this.scene.restart();
+      });
     });
   }
 }

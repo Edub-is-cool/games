@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emoji Battle</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <!-- Title Screen -->
+    <div id="title-screen">
+      <h1>⚔️ Emoji Battle ⚔️</h1>
+      <p class="subtitle">Build your base. Train your army. Destroy your enemy!</p>
+      <div class="instructions">
+        <h3>How to Play</h3>
+        <p><strong>Player 1 (Blue)</strong> — Left side<br>
+        <strong>Player 2 (Red)</strong> — Right side</p>
+        <p>Players take turns. On your turn:</p>
+        <ul>
+          <li>Click the <strong>Shop</strong> to buy buildings or soldiers</li>
+          <li>Click your side of the grid to place buildings</li>
+          <li>Soldiers auto-march toward the enemy base</li>
+          <li>Destroy the enemy 🏰 Castle to win!</li>
+        </ul>
+      </div>
+      <button id="start-btn" class="big-btn">Start Game</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="hidden">
+      <!-- Top HUD -->
+      <div id="hud">
+        <div id="p1-hud" class="player-hud blue">
+          <span class="player-label">🔵 Player 1</span>
+          <span class="gold">💰 <span id="p1-gold">100</span></span>
+          <span class="income">📈 +<span id="p1-income">5</span>/turn</span>
+        </div>
+        <div id="turn-info">
+          <span id="turn-label">Turn: <span id="turn-num">1</span></span>
+          <span id="current-player">🔵 Player 1's Turn</span>
+          <button id="end-turn-btn" class="btn">End Turn ⏭️</button>
+        </div>
+        <div id="p2-hud" class="player-hud red">
+          <span class="player-label">🔴 Player 2</span>
+          <span class="gold">💰 <span id="p2-gold">100</span></span>
+          <span class="income">📈 +<span id="p2-income">5</span>/turn</span>
+        </div>
+      </div>
+
+      <!-- Game Grid -->
+      <div id="grid-wrapper">
+        <canvas id="game-canvas"></canvas>
+      </div>
+
+      <!-- Shop Panel -->
+      <div id="shop-panel">
+        <h3 id="shop-title">🛒 Shop</h3>
+        <div id="shop-items"></div>
+        <div id="selected-info" class="hidden">
+          <p id="selected-name"></p>
+          <p id="selected-desc"></p>
+          <button id="cancel-btn" class="btn btn-small">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Action Log -->
+      <div id="action-log">
+        <div id="log-entries"></div>
+      </div>
+    </div>
+
+    <!-- Win Screen -->
+    <div id="win-screen" class="hidden">
+      <h1 id="win-message"></h1>
+      <button id="restart-btn" class="big-btn">Play Again</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>

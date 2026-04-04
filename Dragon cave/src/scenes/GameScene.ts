@@ -25,6 +25,7 @@ export class GameScene extends Phaser.Scene {
   private itemKeys!: Phaser.Input.Keyboard.Key[];
   private turnInProgress = false;
   private turnCount = 0;
+  private sceneEnding = false;
   private messageText!: Phaser.GameObjects.Text;
   private messageTimer?: Phaser.Time.TimerEvent;
   private perkSelectionActive = false;
@@ -62,6 +63,7 @@ export class GameScene extends Phaser.Scene {
   create(data: { floor: number; seed: number; playerStats?: any; inventory?: any; perks?: PerkId[] }) {
     this.turnInProgress = false;
     this.turnCount = 0;
+    this.sceneEnding = false;
     this.perkSelectionActive = false;
 
     this.dungeon = generateDungeon(this.floor, this.seed);
@@ -529,7 +531,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   handleInput(): { dx: number; dy: number } | null {
-    if (this.turnInProgress || this.player.isMoving || this.perkSelectionActive) return null;
+    if (this.turnInProgress || this.player.isMoving || this.perkSelectionActive || this.sceneEnding) return null;
 
     for (let i = 0; i < this.itemKeys.length; i++) {
       if (Phaser.Input.Keyboard.JustDown(this.itemKeys[i])) {
@@ -628,6 +630,7 @@ export class GameScene extends Phaser.Scene {
 
   handleCombat(enemy: Enemy) {
     this.turnInProgress = true;
+    this.turnCount++;
 
     const damage = enemy.takeDamage(this.player.attack());
     this.showDamageNumber(enemy.tileX, enemy.tileY, damage, '#ffcc00');
@@ -656,6 +659,7 @@ export class GameScene extends Phaser.Scene {
       }
 
       if (enemy.name === 'Dragon') {
+        this.sceneEnding = true;
         this.screenShake(0.02, 500);
         this.time.delayedCall(600, () => {
           this.scene.start('GameOverScene', {
@@ -667,11 +671,14 @@ export class GameScene extends Phaser.Scene {
 
       if (leveled) {
         this.showMessage(`Level up! Lv.${this.player.stats.level}`, 2000);
-        this.time.delayedCall(300, () => this.showPerkSelection());
+        // Run enemy turn first, THEN show perk selection
+        this.enemyTurn();
+        this.showPerkSelection();
+        return;
       }
     }
 
-    this.time.delayedCall(150, () => this.enemyTurn());
+    this.enemyTurn();
   }
 
   afterPlayerMove() {
@@ -732,6 +739,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   enemyTurn() {
+    if (this.sceneEnding) return;
+
     const playerPos = this.player.getPos();
     const swiftPerk = this.player.hasPerk(PerkId.SWIFT);
 
@@ -746,7 +755,11 @@ export class GameScene extends Phaser.Scene {
       // Ranged attack check
       if (enemy.behavior === EnemyBehavior.RANGED && dist > 1 && !enemy.isHidden) {
         if (enemy.hasLineOfSight(playerPos, this.dungeon.tiles)) {
-          this.handleEnemyRangedAttack(enemy);
+          const dead = this.handleEnemyRangedAttack(enemy);
+          if (dead) {
+            this.playerDeath();
+            return;
+          }
           continue;
         }
       }
@@ -787,40 +800,45 @@ export class GameScene extends Phaser.Scene {
     this.turnInProgress = false;
   }
 
-  handleEnemyRangedAttack(enemy: Enemy) {
+  /** Ranged attack: damage applied synchronously, projectile is just visual */
+  handleEnemyRangedAttack(enemy: Enemy): boolean {
     const playerPos = this.player.getPos();
 
-    // Visual: projectile line
+    // Apply damage immediately (synchronous)
+    const result = this.player.takeDamage(enemy.attackStat);
+
+    // Visual projectile (cosmetic only, no game logic in callback)
     const sx = enemy.tileX * TILE_SIZE + TILE_SIZE / 2;
     const sy = enemy.tileY * TILE_SIZE + TILE_SIZE / 2;
     const ex = playerPos.x * TILE_SIZE + TILE_SIZE / 2;
     const ey = playerPos.y * TILE_SIZE + TILE_SIZE / 2;
-
     const arrow = this.add.rectangle(sx, sy, 6, 6, 0xffaa44).setDepth(25);
     this.tweens.add({
       targets: arrow,
       x: ex, y: ey,
       duration: 150,
-      onComplete: () => {
-        arrow.destroy();
-
-        const result = this.player.takeDamage(enemy.attackStat);
-        if (result.dodged) {
-          this.showDamageNumber(this.player.tileX, this.player.tileY, 'DODGE', '#44aaff');
-        } else {
-          this.screenShake(0.004, 80);
-          this.showDamageNumber(this.player.tileX, this.player.tileY,
-            Math.max(1, enemy.attackStat - this.player.stats.defense - this.player.inventory.defenseBonus),
-            '#ff8844');
-          this.showMessage(`${enemy.name} shoots you!`);
-        }
-        this.updateHUD();
-        if (result.dead) this.playerDeath();
-      },
+      onComplete: () => arrow.destroy(),
     });
+
+    if (result.dodged) {
+      this.showDamageNumber(this.player.tileX, this.player.tileY, 'DODGE', '#44aaff');
+      this.showMessage(`Dodged ${enemy.name}'s arrow!`);
+    } else {
+      this.screenShake(0.004, 80);
+      this.showDamageNumber(this.player.tileX, this.player.tileY,
+        Math.max(1, enemy.attackStat - this.player.stats.defense - this.player.inventory.defenseBonus),
+        '#ff8844');
+      this.showMessage(`${enemy.name} shoots you!`);
+    }
+    this.updateHUD();
+
+    return result.dead;
   }
 
   playerDeath() {
+    if (this.sceneEnding) return; // Prevent double death
+    this.sceneEnding = true;
+    this.turnInProgress = true;
     this.screenShake(0.015, 300);
     this.time.delayedCall(500, () => {
       this.scene.start('GameOverScene', {

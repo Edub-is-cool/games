@@ -17,6 +17,7 @@
       --accent-3: #00e5a0;
       --accent-4: #f0c040;
       --accent-5: #e04080;
+      --accent-6: #40a0ff;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -73,6 +74,7 @@
     .card:nth-child(3):hover { border-color: var(--accent-3); }
     .card:nth-child(4):hover { border-color: var(--accent-4); }
     .card:nth-child(5):hover { border-color: var(--accent-5); }
+    .card:nth-child(6):hover { border-color: var(--accent-6); }
 
     .card-banner {
       height: 180px;
@@ -98,6 +100,9 @@
     }
     .card:nth-child(5) .card-banner {
       background: linear-gradient(135deg, #1a0010 0%, #330020 50%, #1a0010 100%);
+    }
+    .card:nth-child(6) .card-banner {
+      background: linear-gradient(135deg, #001020 0%, #002040 50%, #001020 100%);
     }
 
     .card-body {
@@ -125,6 +130,7 @@
     .card:nth-child(3) .genre { color: var(--accent-3); }
     .card:nth-child(4) .genre { color: var(--accent-4); }
     .card:nth-child(5) .genre { color: var(--accent-5); }
+    .card:nth-child(6) .genre { color: var(--accent-6); }
 
     .card-body .desc {
       color: var(--text-muted);
@@ -168,6 +174,7 @@
     .card:nth-child(3) .play-btn { background: var(--accent-3); color: #0a0a0f; }
     .card:nth-child(4) .play-btn { background: var(--accent-4); color: #0a0a0f; }
     .card:nth-child(5) .play-btn { background: var(--accent-5); }
+    .card:nth-child(6) .play-btn { background: var(--accent-6); }
 
     footer {
       text-align: center;
@@ -259,6 +266,22 @@
           <span class="tag">Vite</span>
         </div>
         <a class="play-btn" href="The%20Jumping%20Cup/dist/index.html">Play</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-banner">&#9876;&#65039;</div>
+      <div class="card-body">
+        <div class="genre">Strategy / Multiplayer</div>
+        <h2>Emoji Battle</h2>
+        <p class="desc">A 2-player turn-based strategy game. Build your base with emoji buildings, train soldiers, and send them to destroy your opponent's castle.</p>
+        <div class="tags">
+          <span class="tag">HTML5</span>
+          <span class="tag">CSS3</span>
+          <span class="tag">Canvas</span>
+          <span class="tag">Vanilla JS</span>
+        </div>
+        <a class="play-btn" href="emoji-battle/index.html">Play</a>
       </div>
     </div>
 

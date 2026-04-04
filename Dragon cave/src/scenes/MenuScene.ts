@@ -54,6 +54,12 @@ export class MenuScene extends Phaser.Scene {
       color: '#666666',
     }).setOrigin(0.5);
 
+    this.add.text(cx, cy + 160, 'Break cracked walls  |  Find keys for locked doors', {
+      fontSize: '14px',
+      fontFamily: 'monospace',
+      color: '#555555',
+    }).setOrigin(0.5);
+
     // Start prompt
     const startText = this.add.text(cx, cy + 190, '[ Press SPACE or ENTER to start ]', {
       fontSize: '20px',

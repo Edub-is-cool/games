@@ -28,6 +28,14 @@ export const COLORS = {
   HEALTH_BAR: 0x44bb44,
   HEALTH_BAR_BG: 0x333333,
   XP_BAR: 0x4488ff,
+  TRAP_SPIKE: 0x664444,
+  TRAP_POISON: 0x446644,
+  DOOR_LOCKED: 0x886622,
+  CRACKED_WALL: 0x2a2222,
+  KEY: 0xffdd44,
+  RING: 0x44dddd,
+  TORCH: 0xff8844,
+  SCROLL: 0xddddaa,
 };
 
 export enum Tile {
@@ -35,6 +43,10 @@ export enum Tile {
   FLOOR = 1,
   WALL = 2,
   STAIRS_DOWN = 3,
+  TRAP_SPIKE = 4,
+  TRAP_POISON = 5,
+  DOOR_LOCKED = 6,
+  CRACKED_WALL = 7,
 }
 
 export interface Point {

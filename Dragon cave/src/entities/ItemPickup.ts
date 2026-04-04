@@ -9,11 +9,11 @@ export class ItemPickup {
   item: Item;
   picked = false;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, floor: number) {
+  constructor(scene: Phaser.Scene, x: number, y: number, floor: number, forceType?: ItemType, isSecretRoom = false) {
     this.tileX = x;
     this.tileY = y;
 
-    const type = getRandomItemType(floor);
+    const type = forceType ?? getRandomItemType(floor, isSecretRoom);
     this.item = createItem(type);
 
     const px = x * TILE_SIZE + TILE_SIZE / 2;
@@ -41,6 +41,15 @@ export class ItemPickup {
 
   setVisible(visible: boolean) {
     this.sprite.setVisible(visible && !this.picked);
+  }
+
+  /** For treasure sense perk — show through fog with a glow */
+  setGlowing(glowing: boolean) {
+    if (this.picked) return;
+    if (glowing) {
+      this.sprite.setAlpha(0.5);
+      this.sprite.setVisible(true);
+    }
   }
 
   getPos(): Point {

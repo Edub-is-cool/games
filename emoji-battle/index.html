@@ -15,9 +15,9 @@
       <p class="subtitle">Build your base. Train your army. Destroy your enemy!</p>
       <div class="instructions">
         <h3>How to Play</h3>
-        <p>Real-time strategy! Both players act at the same time.</p>
+        <p>Real-time strategy! Build fast and overwhelm your enemy!</p>
         <ul>
-          <li>You earn 💰 gold every 10 seconds</li>
+          <li>You earn 💰 gold every few seconds from buildings</li>
           <li>Buy buildings and soldiers from the <strong>Shop</strong></li>
           <li>Click your side of the grid to place buildings</li>
           <li>Soldiers auto-march and fight in real-time</li>
@@ -25,6 +25,7 @@
         </ul>
       </div>
       <div class="mode-select">
+        <button id="start-tutorial-btn" class="big-btn tutorial-btn">Tutorial 📖</button>
         <button id="start-bot-btn" class="big-btn">vs Bot 🤖</button>
         <button id="start-pvp-btn" class="big-btn pvp-btn">vs Friend 👥</button>
         <button id="start-online-btn" class="big-btn online-btn">Online 🌐</button>
@@ -76,17 +77,16 @@
         <div id="p1-hud" class="player-hud blue">
           <span class="player-label" id="p1-label">🔵 Player 1</span>
           <span class="gold">💰 <span id="p1-gold">100</span></span>
-          <span class="income">📈 +<span id="p1-income">5</span>/turn</span>
+          <span class="income">📈 +<span id="p1-income">5</span>/tick</span>
         </div>
-        <div id="turn-info">
-          <span id="turn-label">Turn: <span id="turn-num">1</span></span>
-          <span id="current-player">🔵 Player 1's Turn</span>
-          <button id="end-turn-btn" class="btn">End Turn ⏭️</button>
+        <div id="center-info">
+          <span id="timer-label">⏱️ <span id="game-timer">0:00</span></span>
+          <span id="next-income-label">Next 💰 in <span id="next-income">8</span>s</span>
         </div>
         <div id="p2-hud" class="player-hud red">
           <span class="player-label" id="p2-label">🔴 Player 2</span>
           <span class="gold">💰 <span id="p2-gold">100</span></span>
-          <span class="income">📈 +<span id="p2-income">5</span>/turn</span>
+          <span class="income">📈 +<span id="p2-income">5</span>/tick</span>
         </div>
       </div>
 
@@ -118,6 +118,21 @@
       <button id="restart-btn" class="big-btn">Play Again</button>
     </div>
   </div>
+
+    <!-- Tutorial Overlay -->
+    <div id="tutorial-overlay" class="hidden">
+      <div id="tutorial-box">
+        <div id="tutorial-step-num"></div>
+        <h3 id="tutorial-title"></h3>
+        <p id="tutorial-text"></p>
+        <div id="tutorial-buttons">
+          <button id="tutorial-prev" class="btn btn-small">Back</button>
+          <button id="tutorial-next" class="btn">Next</button>
+          <button id="tutorial-skip" class="btn btn-small" style="margin-left:auto;">Skip Tutorial</button>
+        </div>
+      </div>
+      <div id="tutorial-highlight"></div>
+    </div>
 
   <script src="game.js"></script>
 </body>

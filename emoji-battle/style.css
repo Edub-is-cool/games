@@ -258,25 +258,15 @@ body {
 
 .player-label { font-weight: bold; }
 
-#turn-info {
+#center-info {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.3rem;
 }
 
-#turn-label { font-size: 0.85rem; color: #aaa; }
-#current-player { font-weight: bold; font-size: 1.1rem; }
-
-#end-turn-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-#shop-panel.not-my-turn {
-  opacity: 0.4;
-  pointer-events: none;
-}
+#timer-label { font-size: 1.1rem; font-weight: bold; color: #ffd700; }
+#next-income-label { font-size: 0.8rem; color: #aaa; }
 
 /* Grid area */
 #grid-wrapper {
@@ -415,3 +405,102 @@ body {
 }
 
 .gold-flash { animation: goldFlash 0.4s ease-out; }
+
+/* Tutorial button */
+.tutorial-btn {
+  background: linear-gradient(135deg, #ff6b9d, #c44dff) !important;
+  color: #fff !important;
+}
+
+/* Tutorial Overlay */
+#tutorial-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+#tutorial-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+#tutorial-box {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #1e1e3a;
+  border: 2px solid #ffd700;
+  border-radius: 16px;
+  padding: 1.2rem 1.5rem;
+  max-width: 500px;
+  width: 90%;
+  z-index: 1002;
+  pointer-events: auto;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);
+}
+
+#tutorial-step-num {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 0.3rem;
+}
+
+#tutorial-box h3 {
+  color: #ffd700;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+#tutorial-box p {
+  color: #ccc;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+
+#tutorial-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+#tutorial-highlight {
+  position: absolute;
+  border: 3px solid #ffd700;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 20px rgba(255, 215, 0, 0.1);
+  z-index: 1001;
+  pointer-events: none;
+  transition: all 0.4s ease;
+  display: none;
+}
+
+@keyframes tutorialPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
+  50% { box-shadow: 0 0 35px rgba(255, 215, 0, 0.8); }
+}
+
+#tutorial-highlight.visible {
+  display: block;
+  animation: tutorialPulse 1.5s ease-in-out infinite;
+}
+
+/* Allow clicks through to highlighted element */
+#tutorial-overlay.allow-click::before {
+  pointer-events: none;
+}
+
+#tutorial-overlay.allow-click #tutorial-highlight {
+  pointer-events: none;
+}

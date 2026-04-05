@@ -11,6 +11,10 @@ body {
   overflow: hidden;
   height: 100vh;
   width: 100vw;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #game-container {
@@ -120,7 +124,7 @@ body {
 }
 
 .btn {
-  padding: 0.4rem 1rem;
+  padding: 0.5rem 1.2rem;
   border: none;
   border-radius: 8px;
   background: #ffd700;
@@ -128,7 +132,9 @@ body {
   font-weight: bold;
   cursor: pointer;
   font-size: 0.9rem;
+  min-height: 44px;
   transition: transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:hover { transform: scale(1.05); }
@@ -267,6 +273,10 @@ body {
 
 #timer-label { font-size: 1.1rem; font-weight: bold; color: #ffd700; }
 #next-income-label { font-size: 0.8rem; color: #aaa; }
+#turn-label { font-size: 0.85rem; color: #aaa; }
+#current-player { font-weight: bold; font-size: 1.1rem; }
+#end-turn-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#shop-panel.not-my-turn { opacity: 0.4; pointer-events: none; }
 
 /* Grid area */
 #grid-wrapper {
@@ -283,6 +293,7 @@ body {
   border-radius: 4px;
   cursor: pointer;
   image-rendering: auto;
+  touch-action: none;
 }
 
 /* Shop */
@@ -313,14 +324,16 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.4rem 0.6rem;
+  padding: 0.5rem 0.7rem;
   background: rgba(255, 255, 255, 0.06);
   border: 2px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
   min-width: 70px;
+  min-height: 44px;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .shop-item:hover {

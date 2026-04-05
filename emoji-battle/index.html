@@ -77,16 +77,21 @@
         <div id="p1-hud" class="player-hud blue">
           <span class="player-label" id="p1-label">🔵 Player 1</span>
           <span class="gold">💰 <span id="p1-gold">100</span></span>
-          <span class="income">📈 +<span id="p1-income">5</span>/tick</span>
+          <span class="income">📈 +<span id="p1-income">5</span><span id="p1-income-unit">/tick</span></span>
         </div>
         <div id="center-info">
-          <span id="timer-label">⏱️ <span id="game-timer">0:00</span></span>
-          <span id="next-income-label">Next 💰 in <span id="next-income">8</span>s</span>
+          <!-- Real-time HUD (bot/online) -->
+          <span id="timer-label" class="hidden">⏱️ <span id="game-timer">0:00</span></span>
+          <span id="next-income-label" class="hidden">Next 💰 in <span id="next-income">8</span>s</span>
+          <!-- Turn-based HUD (pvp) -->
+          <span id="turn-label" class="hidden">Turn: <span id="turn-num">1</span></span>
+          <span id="current-player" class="hidden">🔵 Player 1's Turn</span>
+          <button id="end-turn-btn" class="btn hidden">End Turn ⏭️</button>
         </div>
         <div id="p2-hud" class="player-hud red">
           <span class="player-label" id="p2-label">🔴 Player 2</span>
           <span class="gold">💰 <span id="p2-gold">100</span></span>
-          <span class="income">📈 +<span id="p2-income">5</span>/tick</span>
+          <span class="income">📈 +<span id="p2-income">5</span><span id="p2-income-unit">/tick</span></span>
         </div>
       </div>
 

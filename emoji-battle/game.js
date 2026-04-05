@@ -41,6 +41,8 @@ function createPlayer(id) {
   return { id, gold: 100, income: 5, buildings: [], units: [] };
 }
 
+function isRealTime() { return game && game.mode !== 'pvp'; }
+
 function initGame(mode, difficulty) {
   game = {
     mode, difficulty,
@@ -51,6 +53,7 @@ function initGame(mode, difficulty) {
     effects: [],
     log: [],
     winner: null,
+    // Real-time state
     startTime: performance.now(),
     lastIncome: 0,
     lastUnitMove: 0,
@@ -58,6 +61,9 @@ function initGame(mode, difficulty) {
     lastTowerAttack: 0,
     lastBotAction: 0,
     lastShopRefresh: 0,
+    // Turn-based state (pvp only)
+    currentPlayer: 0,
+    turn: 1,
   };
 
   for (let r = 0; r < GRID_ROWS; r++) {
@@ -70,7 +76,18 @@ function initGame(mode, difficulty) {
 
   if (mode === 'bot' || mode === 'tutorial') game.log = ['Game started! Build fast — the bot is coming! 🤖'];
   else if (mode === 'online') game.log = [net.isHost ? 'Connected! You are 🔵 (left).' : 'Connected! You are 🔴 (right).'];
-  else game.log = ['Game started! Both players act at the same time!'];
+  else game.log = ['Game started! 🔵 Player 1 goes first.'];
+
+  // Show/hide HUD elements based on mode
+  const rt = mode !== 'pvp';
+  document.getElementById('timer-label').classList.toggle('hidden', !rt);
+  document.getElementById('next-income-label').classList.toggle('hidden', !rt);
+  document.getElementById('turn-label').classList.toggle('hidden', rt);
+  document.getElementById('current-player').classList.toggle('hidden', rt);
+  document.getElementById('end-turn-btn').classList.toggle('hidden', rt);
+  document.getElementById('p1-income-unit').textContent = rt ? '/tick' : '/turn';
+  document.getElementById('p2-income-unit').textContent = rt ? '/tick' : '/turn';
+  document.getElementById('shop-panel').classList.remove('not-my-turn');
 }
 
 // ============================================================
@@ -172,6 +189,10 @@ function addLog(msg) {
 
 function tickGame() {
   if (!game || game.phase !== 'play') return;
+
+  // PvP is turn-based — no real-time ticks
+  if (game.mode === 'pvp') return;
+
   const t = gameTime();
 
   // Income
@@ -213,6 +234,117 @@ function tickGame() {
   }
 
   cleanupDead();
+}
+
+// ============================================================
+// PVP TURN LOGIC
+// ============================================================
+
+function pvpEndTurn() {
+  if (!game || game.mode !== 'pvp' || game.phase !== 'play') return;
+  const pi = game.currentPlayer;
+
+  // Towers fire
+  allTowerAttacksFor(pi);
+  // Soldiers move
+  moveUnitsFor(pi);
+  // Soldiers attack
+  allUnitAttacksFor(pi);
+  cleanupDead();
+
+  if (game.phase === 'over') return;
+
+  // Switch player
+  game.currentPlayer = 1 - game.currentPlayer;
+  if (game.currentPlayer === 0) game.turn++;
+
+  // Income for next player
+  const next = game.players[game.currentPlayer];
+  next.gold += next.income;
+  game.selected = null;
+
+  addLog(`Turn ${game.turn}: ${game.currentPlayer === 0 ? '🔵' : '🔴'} Player ${game.currentPlayer + 1}'s turn (+${next.income} 💰)`);
+  updatePvpUI();
+  buildShop();
+}
+
+function moveUnitsFor(pi) {
+  const dir = pi === 0 ? 1 : -1;
+  const sorted = game.players[pi].units.filter(u => u.hp > 0).sort((a, b) => (b.col - a.col) * dir);
+  for (const u of sorted) {
+    if (hasAdjacentEnemy(u, pi)) continue;
+    for (let step = 0; step < u.speed; step++) {
+      const nc = u.col + dir;
+      if (inBounds(u.row, nc) && !cellBlocksUnit(u.row, nc, pi)) {
+        u.col = nc; rebuildGrid();
+      } else {
+        let moved = false;
+        for (const dr of [-1, 1]) {
+          const nr = u.row + dr;
+          if (inBounds(nr, nc) && !cellBlocksUnit(nr, nc, pi)) {
+            u.row = nr; u.col = nc; rebuildGrid(); moved = true; break;
+          }
+        }
+        if (!moved) break;
+      }
+    }
+  }
+}
+
+function allUnitAttacksFor(pi) {
+  const enemy = game.players[1 - pi];
+  for (const u of game.players[pi].units) {
+    if (u.hp <= 0) continue;
+    const range = u.range || 1;
+    let target = null, tt = null, td = Infinity;
+    for (const eu of enemy.units) {
+      if (eu.hp <= 0) continue;
+      const d = dist(u.row, u.col, eu.row, eu.col);
+      if (d <= range && d < td) { target = eu; tt = 'unit'; td = d; }
+    }
+    for (const eb of enemy.buildings) {
+      if (eb.hp <= 0) continue;
+      const d = dist(u.row, u.col, eb.row, eb.col);
+      if (d <= range && d < td) { target = eb; tt = 'building'; td = d; }
+    }
+    if (target) {
+      target.hp -= u.attack;
+      addEffect('💥', target.row, target.col);
+      if (target.hp <= 0) {
+        const emoji = tt === 'unit' ? UNITS[target.type].emoji : BUILDINGS[target.type].emoji;
+        addLog(`${pLabel(pi)} ${UNITS[u.type].emoji} destroyed ${emoji}!`);
+        if (tt === 'building' && target.type === 'castle') { game.phase = 'over'; game.winner = pi; }
+        if (tt === 'building' && BUILDINGS[target.type].income > 0) game.players[1 - pi].income -= BUILDINGS[target.type].income;
+      }
+    }
+  }
+}
+
+function allTowerAttacksFor(pi) {
+  const enemy = game.players[1 - pi];
+  for (const b of game.players[pi].buildings) {
+    if (b.hp <= 0) continue;
+    const def = BUILDINGS[b.type];
+    if (!def.attack) continue;
+    let closest = null, cd = Infinity;
+    for (const eu of enemy.units) {
+      if (eu.hp <= 0) continue;
+      const d = dist(b.row, b.col, eu.row, eu.col);
+      if (d <= def.range && d < cd) { closest = eu; cd = d; }
+    }
+    if (closest) {
+      closest.hp -= def.attack;
+      addEffect('💥', closest.row, closest.col);
+      if (closest.hp <= 0) addLog(`${pLabel(pi)} Tower destroyed ${UNITS[closest.type].emoji}!`);
+    }
+  }
+}
+
+function updatePvpUI() {
+  const cp = game.currentPlayer;
+  document.getElementById('turn-num').textContent = game.turn;
+  document.getElementById('current-player').textContent = `${cp === 0 ? '🔵' : '🔴'} Player ${cp + 1}'s Turn`;
+  document.getElementById('shop-panel').classList.remove('not-my-turn');
 }
 
 function hasAdjacentEnemy(u, pi) {
@@ -649,9 +781,15 @@ function updateHUD() {
   document.getElementById('p2-gold').textContent = game.players[1].gold;
   document.getElementById('p2-income').textContent = game.players[1].income;
 
-  const elapsed = Math.floor(gameTime());
-  document.getElementById('game-timer').textContent = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`;
-  document.getElementById('next-income').textContent = Math.max(0, Math.ceil(INCOME_INTERVAL - (gameTime() - game.lastIncome)));
+  if (game.mode === 'pvp') {
+    document.getElementById('turn-num').textContent = game.turn;
+    const cp = game.currentPlayer;
+    document.getElementById('current-player').textContent = `${cp === 0 ? '🔵' : '🔴'} Player ${cp + 1}'s Turn`;
+  } else {
+    const elapsed = Math.floor(gameTime());
+    document.getElementById('game-timer').textContent = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`;
+    document.getElementById('next-income').textContent = Math.max(0, Math.ceil(INCOME_INTERVAL - (gameTime() - game.lastIncome)));
+  }
 
   if (game.mode === 'bot' || game.mode === 'tutorial') {
     document.getElementById('p1-label').textContent = '🔵 You';
@@ -675,6 +813,7 @@ function updateLog() {
 function myPlayerIndex() {
   if (game.mode === 'online') return net.myIndex;
   if (game.mode === 'bot' || game.mode === 'tutorial') return 0;
+  if (game.mode === 'pvp') return game.currentPlayer;
   return null;
 }
 
@@ -754,10 +893,22 @@ function updateSelectedInfo() {
 // INPUT
 // ============================================================
 
-canvas.addEventListener('click', (e) => {
+let lastTapTime = 0;
+function handleCanvasTap(e) {
+  // Prevent double-fire from touch + click
+  const now = Date.now();
+  if (e.type === 'click' && now - lastTapTime < 400) return;
+  if (e.type === 'touchstart') { lastTapTime = now; e.preventDefault(); }
+
   if (!game || game.phase !== 'play') return;
+  let cx, cy;
+  if (e.touches) {
+    cx = e.touches[0].clientX; cy = e.touches[0].clientY;
+  } else {
+    cx = e.clientX; cy = e.clientY;
+  }
   const rect = canvas.getBoundingClientRect(), cs = cellSize();
-  const col = Math.floor((e.clientX - rect.left) / cs), row = Math.floor((e.clientY - rect.top) / cs);
+  const col = Math.floor((cx - rect.left) / cs), row = Math.floor((cy - rect.top) / cs);
   if (!inBounds(row, col)) return;
 
   // Placing a building
@@ -823,8 +974,13 @@ canvas.addEventListener('click', (e) => {
     const b = game.players[infoCell.player].buildings[infoCell.entityIdx], def = BUILDINGS[b.type];
     addLog(`${def.emoji} ${def.name} — HP: ${b.hp}/${b.maxHp}`);
   }
-});
+}
 
+// Use both click and touchstart for maximum compatibility
+canvas.addEventListener('click', handleCanvasTap);
+canvas.addEventListener('touchstart', handleCanvasTap, { passive: false });
+
+document.getElementById('end-turn-btn').addEventListener('click', pvpEndTurn);
 document.getElementById('cancel-btn').addEventListener('click', () => {
   if (game) { game.selected = null; updateSelectedInfo(); }
 });
@@ -903,6 +1059,11 @@ document.getElementById('lobby-back-btn').addEventListener('click', () => { clea
 document.getElementById('restart-btn').addEventListener('click', backToTitle);
 window.addEventListener('resize', () => { if (game) resizeCanvas(); });
 document.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && game && game.mode === 'pvp' && game.phase === 'play') {
+    if (document.activeElement?.tagName === 'INPUT') return;
+    e.preventDefault();
+    pvpEndTurn();
+  }
   if (e.key === 'Escape' && game) { game.selected = null; updateSelectedInfo(); }
 });
 

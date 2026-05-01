@@ -113,7 +113,7 @@ let game = null;
 let net = { peer: null, conn: null, isHost: false, myIndex: 0, roomCode: null };
 
 function createPlayer(id) {
-  return { id, gold: 100, income: 5, buildings: [], units: [], alive: true, alliances: {} };
+  return { id, gold: 100, income: 5, buildings: [], units: [], alive: true, alliances: {}, attackTarget: null, username: null };
 }
 
 function isRealTime() { return game && game.mode !== 'pvp'; }
@@ -295,6 +295,17 @@ function rebuildGrid() {
 // BUILDINGS & UNITS
 // ============================================================
 
+const BUILD_RADIUS = 3;
+
+function canBuildAt(pi, row, col) {
+  // Must be within BUILD_RADIUS of an existing building
+  for (const b of game.players[pi].buildings) {
+    if (b.hp <= 0) continue;
+    if (dist(row, col, b.row, b.col) <= BUILD_RADIUS) return true;
+  }
+  return false;
+}
+
 function placeBuilding(pi, type, row, col) {
   const def = BUILDINGS[type];
   const b = { type, row, col, hp: def.hp, maxHp: def.hp };
@@ -455,26 +466,11 @@ function pvpEndTurn() {
 }
 
 function moveUnitsFor(pi) {
-  const dir = pi === 0 ? 1 : -1;
-  const sorted = game.players[pi].units.filter(u => u.hp > 0).sort((a, b) => (b.col - a.col) * dir);
-  for (const u of sorted) {
+  const units = game.players[pi].units.filter(u => u.hp > 0);
+  for (const u of units) {
     if (u.heals > 0 && !hasAdjacentEnemy(u, pi)) continue;
     if (hasAdjacentEnemy(u, pi)) continue;
-    for (let step = 0; step < u.speed; step++) {
-      const nc = u.col + dir;
-      if (inBounds(u.row, nc) && !cellBlocksUnit(u.row, nc, pi, u)) {
-        u.col = nc; rebuildGrid();
-      } else {
-        let moved = false;
-        for (const dr of [-1, 1]) {
-          const nr = u.row + dr;
-          if (inBounds(nr, nc) && !cellBlocksUnit(nr, nc, pi, u)) {
-            u.row = nr; u.col = nc; rebuildGrid(); moved = true; break;
-          }
-        }
-        if (!moved) break;
-      }
-    }
+    moveUnitTowardEnemy(u, pi);
   }
 }
 
@@ -550,52 +546,77 @@ function hasAdjacentEnemy(u, pi) {
   return false;
 }
 
-function getMoveDirection(p) {
-  // Move toward the nearest enemy castle
-  const mySpawn = game.spawns[p];
-  let nearestEnemy = null, nearestDist = Infinity;
+// Get the target enemy for a player (can be set via attack target selector)
+function getAttackTarget(p) {
+  const target = game.players[p].attackTarget;
+  // If target is set and alive, use it
+  if (target != null && target !== p && game.players[target] && game.players[target].alive && isEnemy(p, target)) {
+    return target;
+  }
+  // Otherwise find nearest enemy
+  let nearest = -1, nearestDist = Infinity;
   for (let ep = 0; ep < game.numPlayers; ep++) {
     if (!isEnemy(p, ep) || !game.players[ep].alive) continue;
     const castle = game.players[ep].buildings.find(b => b.type === 'castle' && b.hp > 0);
     if (castle) {
-      const d = dist(mySpawn.row, mySpawn.col, castle.row, castle.col);
-      if (d < nearestDist) { nearestDist = d; nearestEnemy = castle; }
+      const spawn = game.spawns[p];
+      const d = dist(spawn.row, spawn.col, castle.row, castle.col);
+      if (d < nearestDist) { nearestDist = d; nearest = ep; }
     }
   }
-  if (!nearestEnemy) return { dr: 0, dc: 1 };
-  return {
-    dr: nearestEnemy.row > mySpawn.row ? 1 : nearestEnemy.row < mySpawn.row ? -1 : 0,
-    dc: nearestEnemy.col > mySpawn.col ? 1 : nearestEnemy.col < mySpawn.col ? -1 : 0,
-  };
+  return nearest >= 0 ? nearest : -1;
+}
+
+// Move a single unit toward the target enemy's castle
+function moveUnitTowardEnemy(u, p) {
+  const targetPi = getAttackTarget(p);
+  if (targetPi < 0) return;
+
+  // Find the target castle or nearest enemy building
+  let goal = game.players[targetPi].buildings.find(b => b.type === 'castle' && b.hp > 0);
+  if (!goal) goal = game.players[targetPi].buildings.find(b => b.hp > 0);
+  if (!goal) {
+    // No buildings left, target enemy units
+    const eu = game.players[targetPi].units.find(eu => eu.hp > 0);
+    if (eu) goal = eu;
+    else return;
+  }
+
+  for (let step = 0; step < u.speed; step++) {
+    const dr = goal.row > u.row ? 1 : goal.row < u.row ? -1 : 0;
+    const dc = goal.col > u.col ? 1 : goal.col < u.col ? -1 : 0;
+
+    // Try to move in the best direction toward goal
+    const moves = [];
+    if (dc !== 0) moves.push({ r: u.row, c: u.col + dc });
+    if (dr !== 0) moves.push({ r: u.row + dr, c: u.col });
+    if (dc !== 0 && dr !== 0) moves.push({ r: u.row + dr, c: u.col + dc });
+    // Sideways fallbacks
+    if (dc === 0) { moves.push({ r: u.row, c: u.col + 1 }); moves.push({ r: u.row, c: u.col - 1 }); }
+    if (dr === 0) { moves.push({ r: u.row + 1, c: u.col }); moves.push({ r: u.row - 1, c: u.col }); }
+
+    let moved = false;
+    for (const m of moves) {
+      if (inBounds(m.r, m.c) && !cellBlocksUnit(m.r, m.c, p, u)) {
+        u.row = m.r;
+        u.col = m.c;
+        rebuildGrid();
+        moved = true;
+        break;
+      }
+    }
+    if (!moved) break;
+  }
 }
 
 function moveAllUnits() {
   for (let p = 0; p < game.numPlayers; p++) {
     if (!game.players[p].alive) continue;
-    const dir = getMoveDirection(p).dc || (p === 0 ? 1 : -1);
-    const sorted = game.players[p].units.filter(u => u.hp > 0).sort((a, b) => (b.col - a.col) * dir);
-    for (const u of sorted) {
-      // Healers don't advance past friendly territory
-      if (u.heals > 0 && !hasAdjacentEnemy(u, p)) {
-        // Stay near army but don't rush forward
-        continue;
-      }
+    const units = game.players[p].units.filter(u => u.hp > 0);
+    for (const u of units) {
+      if (u.heals > 0 && !hasAdjacentEnemy(u, p)) continue;
       if (hasAdjacentEnemy(u, p)) continue;
-      for (let step = 0; step < u.speed; step++) {
-        const nc = u.col + dir;
-        if (inBounds(u.row, nc) && !cellBlocksUnit(u.row, nc, p, u)) {
-          u.col = nc; rebuildGrid();
-        } else {
-          let moved = false;
-          for (const dr of [-1, 1]) {
-            const nr = u.row + dr;
-            if (inBounds(nr, nc) && !cellBlocksUnit(nr, nc, p, u)) {
-              u.row = nr; u.col = nc; rebuildGrid(); moved = true; break;
-            }
-          }
-          if (!moved) break;
-        }
-      }
+      moveUnitTowardEnemy(u, p);
     }
   }
 }
@@ -806,6 +827,7 @@ function findBotBuildCellFor(botIdx, type) {
     for (let c = 0; c < GRID_COLS; c++) {
       if (cellOccupied(r, c) || terrainBlocks(r, c)) continue;
       if (!playerTerritory(botIdx, c, r)) continue;
+      if (!canBuildAt(botIdx, r, c)) continue;
       const dc = dist(r, c, castle.row, castle.col);
       let score;
       if (isDefense) {
@@ -872,7 +894,15 @@ function handleNetMessage(raw) {
   if (data.type === 'start') {
     document.getElementById('lobby-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
+    const myUsername = (document.getElementById('username-input').value || '').trim() || 'Guest';
     initGame('online'); resizeCanvas(); buildShop(); if (!animFrameId) startRenderLoop();
+    game.players[1].username = myUsername; // I am player 1 (joiner)
+    if (data.username) game.players[0].username = data.username; // Host's name
+    netSend({ type: 'username', username: myUsername });
+  }
+  if (data.type === 'username' && net.isHost && game) {
+    game.players[1].username = data.username;
+    addLog(`${PLAYER_COLORS[1].name} ${data.username} joined!`);
   }
 }
 
@@ -881,7 +911,7 @@ function handleRemoteAction(action, fromPlayer) {
   const player = game.players[fromPlayer];
   if (action.kind === 'build') {
     const def = BUILDINGS[action.type];
-    if (playerTerritory(fromPlayer, action.col, action.row) && !cellOccupied(action.row, action.col) && player.gold >= def.cost) {
+    if (playerTerritory(fromPlayer, action.col, action.row) && !cellOccupied(action.row, action.col) && canBuildAt(fromPlayer, action.row, action.col) && player.gold >= def.cost) {
       placeBuilding(fromPlayer, action.type, action.row, action.col);
       player.gold -= def.cost; addLog(`${pLabel(fromPlayer)} Built ${def.emoji}`);
     }
@@ -922,8 +952,10 @@ function hostGame() {
     conn.on('open', () => {
       document.getElementById('lobby-screen').classList.add('hidden');
       document.getElementById('game-screen').classList.remove('hidden');
+      const username = (document.getElementById('username-input').value || '').trim() || 'Host';
       initGame('online'); resizeCanvas(); buildShop(); if (!animFrameId) startRenderLoop();
-      startBroadcasting(); netSend({ type: 'start' }); setTimeout(() => broadcastState(), 300);
+      game.players[0].username = username;
+      startBroadcasting(); netSend({ type: 'start', username }); setTimeout(() => broadcastState(), 300);
     });
   });
   net.peer.on('error', (err) => { if (err.type === 'unavailable-id') showLobbyError('Room code in use.'); else showLobbyError('Error: ' + err.message); });
@@ -999,7 +1031,7 @@ function drawGrid() {
 
       // Base terrain color
       ctx.fillStyle = terrain.color;
-      ctx.globalAlpha = light ? 0.35 : 0.25;
+      ctx.globalAlpha = light ? 0.85 : 0.7;
       ctx.fillRect(x, y, cs, cs);
       ctx.globalAlpha = 1;
 
@@ -1038,9 +1070,36 @@ function drawGrid() {
   if (game && game.selected) {
     if (game.selected.kind === 'shop_building') {
       const pi = game.selected.forPlayer;
-      for (let r = 0; r < GRID_ROWS; r++)
-        for (let c = 0; c < GRID_COLS; c++)
-          if (playerTerritory(pi, c, r) && !cellOccupied(r, c)) { ctx.fillStyle = 'rgba(255,215,0,0.1)'; ctx.fillRect(c * cs, r * cs, cs, cs); }
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          const inTerritory = playerTerritory(pi, c, r);
+          const inRange = canBuildAt(pi, r, c);
+          if (inTerritory && inRange && !cellOccupied(r, c)) {
+            ctx.fillStyle = 'rgba(255,215,0,0.15)';
+            ctx.fillRect(c * cs, r * cs, cs, cs);
+          } else if (inTerritory && !inRange && !cellOccupied(r, c)) {
+            // Show build radius border — dim cells outside range
+            ctx.fillStyle = 'rgba(255,50,50,0.08)';
+            ctx.fillRect(c * cs, r * cs, cs, cs);
+          }
+        }
+      }
+      // Draw build radius border outline
+      ctx.strokeStyle = 'rgba(255,215,0,0.5)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 3]);
+      for (let r = 0; r < GRID_ROWS; r++) {
+        for (let c = 0; c < GRID_COLS; c++) {
+          if (!canBuildAt(pi, r, c)) continue;
+          // Draw border edges where adjacent cell is NOT in range
+          const x = c * cs, y = r * cs;
+          if (c === 0 || !canBuildAt(pi, r, c - 1)) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + cs); ctx.stroke(); }
+          if (c === GRID_COLS - 1 || !canBuildAt(pi, r, c + 1)) { ctx.beginPath(); ctx.moveTo(x + cs, y); ctx.lineTo(x + cs, y + cs); ctx.stroke(); }
+          if (r === 0 || !canBuildAt(pi, r - 1, c)) { ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + cs, y); ctx.stroke(); }
+          if (r === GRID_ROWS - 1 || !canBuildAt(pi, r + 1, c)) { ctx.beginPath(); ctx.moveTo(x, y + cs); ctx.lineTo(x + cs, y + cs); ctx.stroke(); }
+        }
+      }
+      ctx.setLineDash([]);
     }
     if (game.selected.kind === 'shop_unit') {
       // Highlight the required building type the player can click
@@ -1132,15 +1191,17 @@ function updateHUD() {
     document.getElementById('next-income').textContent = Math.max(0, Math.ceil(INCOME_INTERVAL - (gameTime() - game.lastIncome)));
   }
 
+  const p1Name = game.players[0].username || 'Player 1';
+  const p2Name = game.players[1].username || 'Player 2';
   if (game.mode === 'bot' || game.mode === 'tutorial') {
-    document.getElementById('p1-label').textContent = '🔵 You';
+    document.getElementById('p1-label').textContent = `🔵 ${game.players[0].username || 'You'}`;
     document.getElementById('p2-label').textContent = game.players[1].alive ? '🔴 Bot 1' : '🔴 Dead';
   } else if (game.mode === 'online') {
-    document.getElementById('p1-label').innerHTML = net.myIndex === 0 ? '🔵 You <span class="you-tag">YOU</span>' : '🔵 Opponent';
-    document.getElementById('p2-label').innerHTML = net.myIndex === 1 ? '🔴 You <span class="you-tag">YOU</span>' : '🔴 Opponent';
+    document.getElementById('p1-label').innerHTML = net.myIndex === 0 ? `🔵 ${p1Name} <span class="you-tag">YOU</span>` : `🔵 ${p1Name}`;
+    document.getElementById('p2-label').innerHTML = net.myIndex === 1 ? `🔴 ${p2Name} <span class="you-tag">YOU</span>` : `🔴 ${p2Name}`;
   } else {
-    document.getElementById('p1-label').textContent = '🔵 Player 1';
-    document.getElementById('p2-label').textContent = '🔴 Player 2';
+    document.getElementById('p1-label').textContent = `🔵 ${p1Name}`;
+    document.getElementById('p2-label').textContent = `🔴 ${p2Name}`;
   }
 
   // Update diplomacy panel
@@ -1151,6 +1212,7 @@ function updateHUD() {
 function updateDiplomacyPanel() {
   const panel = document.getElementById('diplomacy-panel');
   if (!panel || !game || game.numPlayers < 3) return;
+  panel.classList.remove('hidden');
   const pi = myPlayerIndex();
   if (pi === null) return;
 
@@ -1158,27 +1220,53 @@ function updateDiplomacyPanel() {
   if (!content) return;
   content.innerHTML = '';
 
+  // Attack target selector
+  const targetHeader = document.createElement('div');
+  targetHeader.className = 'diplo-row';
+  targetHeader.innerHTML = '<span><strong>Attack Target:</strong></span>';
+  content.appendChild(targetHeader);
+
   for (let i = 0; i < game.numPlayers; i++) {
     if (i === pi || !game.players[i].alive) continue;
+    const isTarget = game.players[pi].attackTarget === i;
     const status = areAllied(pi, i) ? 'Allied' : 'Enemy';
     const color = PLAYER_COLORS[i].name;
+    const pName = game.players[i].username || `Player ${i + 1}`;
     const row = document.createElement('div');
     row.className = 'diplo-row';
-    row.innerHTML = `<span>${color} P${i + 1}: <strong>${status}</strong></span>`;
+    row.innerHTML = `<span>${color} ${pName}: <strong>${status}</strong>${isTarget ? ' 🎯' : ''}</span>`;
+
+    const btnGroup = document.createElement('div');
+    btnGroup.style.display = 'flex';
+    btnGroup.style.gap = '0.3rem';
+
+    // Attack button
+    if (isEnemy(pi, i)) {
+      const atkBtn = document.createElement('button');
+      atkBtn.className = 'btn btn-small';
+      atkBtn.textContent = isTarget ? '🎯 Target' : 'Attack';
+      atkBtn.style.background = isTarget ? '#c44' : '#666';
+      atkBtn.addEventListener('click', () => { game.players[pi].attackTarget = i; addLog(`${pLabel(pi)} targeting ${pLabel(i)}! 🎯`); });
+      btnGroup.appendChild(atkBtn);
+    }
+
+    // Diplomacy button
     if (!areAllied(pi, i)) {
       const btn = document.createElement('button');
       btn.className = 'btn btn-small';
-      btn.textContent = 'Offer Alliance';
+      btn.textContent = 'Ally';
+      btn.style.background = '#3a3';
       btn.addEventListener('click', () => offerAlliance(pi, i));
-      row.appendChild(btn);
+      btnGroup.appendChild(btn);
     } else {
       const btn = document.createElement('button');
       btn.className = 'btn btn-small';
-      btn.textContent = 'Break Alliance';
+      btn.textContent = 'Break';
       btn.style.background = '#a33';
       btn.addEventListener('click', () => breakAlliance(pi, i));
-      row.appendChild(btn);
+      btnGroup.appendChild(btn);
     }
+    row.appendChild(btnGroup);
     content.appendChild(row);
   }
 }
@@ -1328,6 +1416,7 @@ function handleCanvasTap(e) {
     const type = game.selected.type, def = BUILDINGS[type];
     if (!playerTerritory(pi, col, row)) { addLog("Can't build on enemy territory!"); return; }
     if (cellOccupied(row, col)) { addLog(terrainBlocks(row, col) ? "Can't build on this terrain!" : 'Cell is occupied!'); return; }
+    if (!canBuildAt(pi, row, col)) { addLog("Too far! Must build within 3 tiles of a building."); return; }
     if (player.gold < def.cost) { addLog('Not enough gold!'); return; }
 
     if (game.mode === 'online' && !net.isHost) {
@@ -1420,6 +1509,12 @@ function startNewGame(mode, difficulty, numPlayers) {
   document.getElementById('lobby-screen').classList.add('hidden');
   document.getElementById('game-screen').classList.remove('hidden');
   initGame(mode, difficulty || 'medium', numPlayers || 2);
+
+  // Set username for player 0
+  const usernameEl = document.getElementById('bot-username-input') || document.getElementById('username-input');
+  const username = usernameEl ? usernameEl.value.trim() : '';
+  if (username) game.players[0].username = username;
+
   resizeCanvas(); buildShop();
   if (!animFrameId) startRenderLoop();
 }

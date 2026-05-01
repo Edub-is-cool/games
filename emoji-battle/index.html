@@ -32,6 +32,10 @@
         <button id="start-online-btn" class="big-btn online-btn">Online 🌐</button>
       </div>
       <div class="difficulty-select hidden" id="difficulty-select">
+        <div class="username-inline">
+          <label for="bot-username-input">Username:</label>
+          <input type="text" id="bot-username-input" placeholder="Your name" maxlength="16" autocomplete="off" spellcheck="false">
+        </div>
         <p>Number of players:</p>
         <div class="player-count-buttons">
           <button class="btn pcount-btn active" data-count="2">2 Players</button>
@@ -51,6 +55,10 @@
     <div id="lobby-screen" class="hidden">
       <h1>🌐 Online Multiplayer</h1>
       <p class="subtitle" id="lobby-status">Choose an option</p>
+      <div id="username-row" class="lobby-box" style="margin-bottom:1rem;">
+        <p>Your username:</p>
+        <input type="text" id="username-input" placeholder="Enter username" maxlength="16" autocomplete="off" spellcheck="false" value="">
+      </div>
       <div id="lobby-choices">
         <button id="host-btn" class="big-btn">Create Room 🏠</button>
         <button id="join-btn" class="big-btn pvp-btn">Join Room 🚪</button>

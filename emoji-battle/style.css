@@ -447,6 +447,36 @@ body {
   box-shadow: 0 0 10px rgba(255, 140, 0, 0.4);
 }
 
+/* Username inputs */
+#username-input, #bot-username-input {
+  font-size: 1.2rem;
+  padding: 0.5rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  text-align: center;
+  width: 200px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#username-input:focus, #bot-username-input:focus { border-color: #ffd700; }
+#username-input::placeholder, #bot-username-input::placeholder { color: rgba(255, 255, 255, 0.25); }
+
+.username-inline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.username-inline label {
+  color: #aaa;
+  font-size: 0.95rem;
+}
+
 /* Diplomacy Panel */
 #diplomacy-panel {
   position: absolute;

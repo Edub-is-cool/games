@@ -10,11 +10,15 @@ body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
   overflow: hidden;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   touch-action: manipulation;
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+  position: fixed;
+  top: 0;
+  left: 0;
 }
 
 #game-container {
@@ -304,6 +308,8 @@ body {
   cursor: pointer;
   image-rendering: auto;
   touch-action: none;
+  -webkit-touch-callout: none;
+  -ms-touch-action: none;
 }
 
 /* Shop */

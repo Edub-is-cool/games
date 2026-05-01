@@ -1334,7 +1334,10 @@ function buildShop() {
       const el = document.createElement('div');
       el.className = 'shop-item' + (!canAfford ? ' disabled' : '');
       el.innerHTML = `<span class="shop-emoji">${def.emoji}</span><span class="shop-name">${def.name}</span><span class="shop-cost">💰 ${def.cost}</span>`;
-      if (canAfford) el.addEventListener('click', () => selectShopItem('shop_building', key, playerIdx));
+      if (canAfford) {
+        el.addEventListener('click', () => selectShopItem('shop_building', key, playerIdx));
+        el.addEventListener('touchend', (e) => { e.preventDefault(); selectShopItem('shop_building', key, playerIdx); }, { passive: false });
+      }
       container.appendChild(el);
     }
 
@@ -1350,7 +1353,10 @@ function buildShop() {
       const el = document.createElement('div');
       el.className = 'shop-item' + (disabled ? ' disabled' : '');
       el.innerHTML = `<span class="shop-emoji">${def.emoji}</span><span class="shop-name">${def.name}${!canTrain ? ' (' + reqEmoji + ')' : ''}</span><span class="shop-cost">💰 ${def.cost}</span>`;
-      if (!disabled) el.addEventListener('click', () => selectShopItem('shop_unit', key, playerIdx));
+      if (!disabled) {
+        el.addEventListener('click', () => selectShopItem('shop_unit', key, playerIdx));
+        el.addEventListener('touchend', (e) => { e.preventDefault(); selectShopItem('shop_unit', key, playerIdx); }, { passive: false });
+      }
       container.appendChild(el);
     }
 
@@ -1397,17 +1403,29 @@ function handleCanvasTap(e) {
   // Prevent double-fire from touch + click
   const now = Date.now();
   if (e.type === 'click' && now - lastTapTime < 400) return;
-  if (e.type === 'touchstart') { lastTapTime = now; e.preventDefault(); }
+  if (e.type === 'touchstart' || e.type === 'touchend') {
+    lastTapTime = now;
+    e.preventDefault();
+    e.stopPropagation();
+  }
 
   if (!game || game.phase !== 'play') return;
   let cx, cy;
-  if (e.touches) {
+  if (e.type === 'touchend' && e.changedTouches && e.changedTouches.length > 0) {
+    cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY;
+  } else if (e.touches && e.touches.length > 0) {
     cx = e.touches[0].clientX; cy = e.touches[0].clientY;
   } else {
     cx = e.clientX; cy = e.clientY;
   }
-  const rect = canvas.getBoundingClientRect(), cs = cellSize();
-  const col = Math.floor((cx - rect.left) / cs), row = Math.floor((cy - rect.top) / cs);
+  const rect = canvas.getBoundingClientRect();
+  // Use display size ratio for correct touch mapping
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const canvasX = (cx - rect.left) * scaleX;
+  const canvasY = (cy - rect.top) * scaleY;
+  const cs = cellSize();
+  const col = Math.floor(canvasX / cs), row = Math.floor(canvasY / cs);
   if (!inBounds(row, col)) return;
 
   // Placing a building
@@ -1478,9 +1496,12 @@ function handleCanvasTap(e) {
   }
 }
 
-// Use both click and touchstart for maximum compatibility
+// Use both click and touch for maximum compatibility (touchend is more reliable on iPad)
 canvas.addEventListener('click', handleCanvasTap);
-canvas.addEventListener('touchstart', handleCanvasTap, { passive: false });
+canvas.addEventListener('touchend', handleCanvasTap, { passive: false });
+// Prevent scrolling/zooming when touching canvas
+canvas.addEventListener('touchstart', (e) => { e.preventDefault(); }, { passive: false });
+canvas.addEventListener('touchmove', (e) => { e.preventDefault(); }, { passive: false });
 
 document.getElementById('end-turn-btn').addEventListener('click', pvpEndTurn);
 document.getElementById('cancel-btn').addEventListener('click', () => {

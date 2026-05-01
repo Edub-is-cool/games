@@ -32,6 +32,12 @@
         <button id="start-online-btn" class="big-btn online-btn">Online 🌐</button>
       </div>
       <div class="difficulty-select hidden" id="difficulty-select">
+        <p>Number of players:</p>
+        <div class="player-count-buttons">
+          <button class="btn pcount-btn active" data-count="2">2 Players</button>
+          <button class="btn pcount-btn" data-count="3">3 Players</button>
+          <button class="btn pcount-btn" data-count="4">4 Players</button>
+        </div>
         <p>Select difficulty:</p>
         <div class="diff-buttons">
           <button class="btn diff-btn" data-diff="easy">Easy 😊</button>
@@ -94,6 +100,16 @@
           <span class="gold">💰 <span id="p2-gold">100</span></span>
           <span class="income">📈 +<span id="p2-income">5</span><span id="p2-income-unit">/tick</span></span>
         </div>
+        <div id="p3-hud" class="player-hud green hidden">
+          <span class="player-label" id="p3-label">🟢 Player 3</span>
+          <span class="gold">💰 <span id="p3-gold">100</span></span>
+          <span class="income">📈 +<span id="p3-income">5</span>/tick</span>
+        </div>
+        <div id="p4-hud" class="player-hud yellow hidden">
+          <span class="player-label" id="p4-label">🟡 Player 4</span>
+          <span class="gold">💰 <span id="p4-gold">100</span></span>
+          <span class="income">📈 +<span id="p4-income">5</span>/tick</span>
+        </div>
       </div>
 
       <!-- Game Grid -->
@@ -115,6 +131,12 @@
       <!-- Action Log -->
       <div id="action-log">
         <div id="log-entries"></div>
+      </div>
+
+      <!-- Diplomacy Panel -->
+      <div id="diplomacy-panel" class="hidden">
+        <h4>🤝 Diplomacy</h4>
+        <div id="diplomacy-content"></div>
       </div>
     </div>
 

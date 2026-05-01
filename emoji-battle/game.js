@@ -2,8 +2,8 @@
 // Emoji Battle — Real-time Strategy: Bot + Local PvP + Online
 // ============================================================
 
-const GRID_COLS = 26;
-const GRID_ROWS = 14;
+const GRID_COLS = 36;
+const GRID_ROWS = 20;
 const CELL_PX = 48;
 const DIVIDER_COL = GRID_COLS / 2;
 
@@ -12,7 +12,63 @@ const INCOME_INTERVAL = 8;
 const UNIT_MOVE_INTERVAL = 1.2;
 const UNIT_ATTACK_INTERVAL = 0.9;
 const TOWER_ATTACK_INTERVAL = 1.4;
-const BOT_ACTION_INTERVAL = 2.5;
+const BOT_ACTION_INTERVAL = 1.8;
+
+// --- Terrain ---
+const TERRAIN = {
+  grass:    { emoji: '', color: '#2d5a1b', name: 'Grass' },
+  water:    { emoji: '🌊', color: '#1a3a6b', name: 'Water', blocked: true },
+  mountain: { emoji: '⛰️', color: '#4a4a4a', name: 'Mountain', blocked: true },
+  snow:     { emoji: '', color: '#c8d8e8', name: 'Snow' },
+  desert:   { emoji: '', color: '#c4a44a', name: 'Desert' },
+  forest:   { emoji: '🌲', color: '#1a4a1a', name: 'Forest' },
+};
+
+let terrainMap = [];
+
+function generateTerrain() {
+  terrainMap = [];
+  // Simple noise-based terrain using multiple random seeds
+  const seed1 = Math.random() * 1000;
+  const seed2 = Math.random() * 1000;
+
+  for (let r = 0; r < GRID_ROWS; r++) {
+    terrainMap[r] = [];
+    for (let c = 0; c < GRID_COLS; c++) {
+      // Simple pseudo-noise
+      const nx = Math.sin(seed1 + c * 0.4 + r * 0.1) * Math.cos(seed2 + r * 0.3 + c * 0.05);
+      const ny = Math.cos(seed1 + r * 0.5 + c * 0.2) * Math.sin(seed2 + c * 0.4 + r * 0.15);
+      const val = (nx + ny) / 2;
+
+      // Keep cells near castles as grass (starting areas)
+      const spawns = game.spawns || [{ row: Math.floor(GRID_ROWS / 2), col: 2 }, { row: Math.floor(GRID_ROWS / 2), col: GRID_COLS - 3 }];
+      let nearSpawn = false;
+      for (const s of spawns) {
+        if (Math.abs(r - s.row) + Math.abs(c - s.col) <= 4) { nearSpawn = true; break; }
+      }
+      if (nearSpawn) {
+        terrainMap[r][c] = 'grass';
+        continue;
+      }
+
+      if (val < -0.6) terrainMap[r][c] = 'water';
+      else if (val < -0.35) terrainMap[r][c] = 'desert';
+      else if (val > 0.6) terrainMap[r][c] = 'mountain';
+      else if (val > 0.4) terrainMap[r][c] = 'snow';
+      else if (val > 0.2 && Math.random() < 0.4) terrainMap[r][c] = 'forest';
+      else terrainMap[r][c] = 'grass';
+    }
+  }
+}
+
+function terrainAt(r, c) {
+  if (!terrainMap[r]) return TERRAIN.grass;
+  return TERRAIN[terrainMap[r][c]] || TERRAIN.grass;
+}
+
+function terrainBlocks(r, c) {
+  return terrainAt(r, c).blocked === true;
+}
 
 // --- Definitions ---
 const BUILDINGS = {
@@ -20,39 +76,125 @@ const BUILDINGS = {
   house:    { emoji: '🏠', name: 'House',     cost: 30, hp: 10, income: 5,  desc: '+5 💰 per tick' },
   wall:     { emoji: '🧱', name: 'Wall',      cost: 15, hp: 25, income: 0,  desc: 'Blocks enemies' },
   tower:    { emoji: '🗼', name: 'Tower',     cost: 50, hp: 15, income: 0,  desc: 'Shoots nearby enemies (2 dmg)', range: 2, attack: 2 },
+  fortress: { emoji: '🏯', name: 'Fortress',  cost: 90, hp: 30, income: 0,  desc: 'Strong tower (4 dmg, 3 range)', range: 3, attack: 4 },
   barracks: { emoji: '⚔️',  name: 'Barracks',  cost: 40, hp: 15, income: 0,  desc: 'Required to train soldiers' },
+  stable:   { emoji: '🐎', name: 'Stable',    cost: 55, hp: 12, income: 0,  desc: 'Required for cavalry & chariots' },
   farm:     { emoji: '🌾', name: 'Farm',      cost: 25, hp: 8,  income: 3,  desc: '+3 💰 per tick' },
   mine:     { emoji: '⛏️',  name: 'Mine',      cost: 60, hp: 10, income: 10, desc: '+10 💰 per tick' },
+  market:   { emoji: '🏪', name: 'Market',    cost: 45, hp: 10, income: 7,  desc: '+7 💰 per tick' },
+  temple:   { emoji: '⛪', name: 'Temple',    cost: 75, hp: 12, income: 0,  desc: 'Heals nearby units each tick', healRange: 2, healAmount: 2 },
+  workshop: { emoji: '🔨', name: 'Workshop',  cost: 65, hp: 12, income: 0,  desc: 'Required for siege units' },
 };
 
 const UNITS = {
-  swordsman: { emoji: '🗡️', name: 'Swordsman', cost: 20, hp: 8,  attack: 3, speed: 1, desc: 'Basic melee fighter' },
-  archer:    { emoji: '🏹', name: 'Archer',    cost: 30, hp: 5,  attack: 2, speed: 1, desc: 'Ranged (2 tiles)', range: 2 },
-  cavalry:   { emoji: '🐴', name: 'Cavalry',   cost: 45, hp: 10, attack: 4, speed: 2, desc: 'Fast & strong' },
-  knight:    { emoji: '🛡️', name: 'Knight',    cost: 55, hp: 18, attack: 2, speed: 1, desc: 'Tanky defender' },
-  wizard:    { emoji: '🧙', name: 'Wizard',    cost: 70, hp: 6,  attack: 6, speed: 1, desc: 'High damage caster', range: 3 },
+  swordsman: { emoji: '🗡️', name: 'Swordsman', cost: 20, hp: 8,  attack: 3, speed: 1, desc: 'Basic melee fighter', requires: 'barracks' },
+  archer:    { emoji: '🏹', name: 'Archer',    cost: 30, hp: 5,  attack: 2, speed: 1, desc: 'Ranged (2 tiles)', range: 2, requires: 'barracks' },
+  cavalry:   { emoji: '🐴', name: 'Cavalry',   cost: 45, hp: 10, attack: 4, speed: 2, desc: 'Fast & strong', requires: 'stable' },
+  knight:    { emoji: '🛡️', name: 'Knight',    cost: 55, hp: 18, attack: 2, speed: 1, desc: 'Tanky defender', requires: 'barracks' },
+  wizard:    { emoji: '🧙', name: 'Wizard',    cost: 70, hp: 6,  attack: 6, speed: 1, desc: 'High damage caster', range: 3, requires: 'barracks' },
+  assassin:  { emoji: '🥷', name: 'Assassin',  cost: 50, hp: 5,  attack: 7, speed: 2, desc: 'Fast & deadly, fragile', requires: 'barracks' },
+  berserker: { emoji: '🪓', name: 'Berserker', cost: 35, hp: 12, attack: 5, speed: 1, desc: 'Raging fighter', requires: 'barracks' },
+  healer:    { emoji: '💚', name: 'Healer',    cost: 40, hp: 4,  attack: 0, speed: 1, desc: 'Heals nearby allies (no attack)', range: 2, heals: 2, requires: 'temple' },
+  chariot:   { emoji: '🏇', name: 'Chariot',   cost: 65, hp: 14, attack: 5, speed: 2, desc: 'Armored fast unit', requires: 'stable' },
+  catapult:  { emoji: '💣', name: 'Catapult',  cost: 80, hp: 8,  attack: 8, speed: 1, desc: 'Siege — huge damage, slow', range: 4, requires: 'workshop' },
+  dragon:    { emoji: '🐉', name: 'Dragon',    cost: 120, hp: 20, attack: 7, speed: 1, desc: 'Flying beast, ignores terrain', range: 2, flying: true, requires: 'workshop' },
 };
+
+// --- Player Colors ---
+const PLAYER_COLORS = [
+  { name: '🔵', color: '#4488ff', bg: 'rgba(30,80,200,' },
+  { name: '🔴', color: '#ff4444', bg: 'rgba(200,40,40,' },
+  { name: '🟢', color: '#44cc44', bg: 'rgba(40,180,40,' },
+  { name: '🟡', color: '#ffcc00', bg: 'rgba(200,180,0,' },
+];
 
 // --- State ---
 let game = null;
 let net = { peer: null, conn: null, isHost: false, myIndex: 0, roomCode: null };
 
 function createPlayer(id) {
-  return { id, gold: 100, income: 5, buildings: [], units: [] };
+  return { id, gold: 100, income: 5, buildings: [], units: [], alive: true, alliances: {} };
 }
 
 function isRealTime() { return game && game.mode !== 'pvp'; }
 
-function initGame(mode, difficulty) {
+// Diplomacy: check if two players are allied
+function areAllied(pi1, pi2) {
+  if (pi1 === pi2) return true;
+  if (!game) return false;
+  return game.players[pi1].alliances[pi2] === 'ally' && game.players[pi2].alliances[pi1] === 'ally';
+}
+
+function isEnemy(pi1, pi2) {
+  return pi1 !== pi2 && !areAllied(pi1, pi2);
+}
+
+function generateSpawnPositions(numPlayers) {
+  const spawns = [];
+  const MIN_DIST = 6;
+  const margin = 2;
+
+  for (let i = 0; i < numPlayers; i++) {
+    let attempts = 0;
+    let pos;
+    while (attempts < 200) {
+      let row, col;
+      if (numPlayers === 2) {
+        // 2 players: left vs right
+        row = margin + Math.floor(Math.random() * (GRID_ROWS - margin * 2));
+        col = i === 0
+          ? margin + Math.floor(Math.random() * 5)
+          : GRID_COLS - margin - 1 - Math.floor(Math.random() * 5);
+      } else if (numPlayers === 3) {
+        // 3 players: corners + side
+        if (i === 0) { row = margin + Math.floor(Math.random() * 4); col = margin + Math.floor(Math.random() * 4); }
+        else if (i === 1) { row = margin + Math.floor(Math.random() * 4); col = GRID_COLS - margin - 1 - Math.floor(Math.random() * 4); }
+        else { row = GRID_ROWS - margin - 1 - Math.floor(Math.random() * 4); col = Math.floor(GRID_COLS / 2) - 2 + Math.floor(Math.random() * 4); }
+      } else {
+        // 4 players: corners
+        if (i === 0) { row = margin + Math.floor(Math.random() * 4); col = margin + Math.floor(Math.random() * 4); }
+        else if (i === 1) { row = margin + Math.floor(Math.random() * 4); col = GRID_COLS - margin - 1 - Math.floor(Math.random() * 4); }
+        else if (i === 2) { row = GRID_ROWS - margin - 1 - Math.floor(Math.random() * 4); col = margin + Math.floor(Math.random() * 4); }
+        else { row = GRID_ROWS - margin - 1 - Math.floor(Math.random() * 4); col = GRID_COLS - margin - 1 - Math.floor(Math.random() * 4); }
+      }
+
+      // Ensure minimum distance from all other spawns
+      let valid = true;
+      for (const s of spawns) {
+        if (Math.abs(s.row - row) + Math.abs(s.col - col) < MIN_DIST) { valid = false; break; }
+      }
+      if (valid) { pos = { row, col }; break; }
+      attempts++;
+    }
+    if (!pos) {
+      // Fallback positions
+      const fallbacks = [
+        { row: 3, col: 3 }, { row: 3, col: GRID_COLS - 4 },
+        { row: GRID_ROWS - 4, col: 3 }, { row: GRID_ROWS - 4, col: GRID_COLS - 4 }
+      ];
+      pos = fallbacks[i];
+    }
+    spawns.push(pos);
+  }
+  return spawns;
+}
+
+function initGame(mode, difficulty, numPlayers) {
+  const playerCount = numPlayers || 2;
+  const players = [];
+  for (let i = 0; i < playerCount; i++) players.push(createPlayer(i + 1));
+
   game = {
     mode, difficulty,
-    players: [createPlayer(1), createPlayer(2)],
+    players,
+    numPlayers: playerCount,
     phase: 'play',
     selected: null,
     grid: [],
     effects: [],
     log: [],
     winner: null,
+    diplomacyOffers: [], // pending alliance offers
     // Real-time state
     startTime: performance.now(),
     lastIncome: 0,
@@ -71,11 +213,18 @@ function initGame(mode, difficulty) {
     for (let c = 0; c < GRID_COLS; c++) game.grid[r][c] = null;
   }
 
-  placeBuilding(0, 'castle', Math.floor(GRID_ROWS / 2), 2);
-  placeBuilding(1, 'castle', Math.floor(GRID_ROWS / 2), GRID_COLS - 3);
+  // Random spawn positions with minimum 6 blocks apart
+  const spawns = generateSpawnPositions(playerCount);
+  game.spawns = spawns;
 
-  if (mode === 'bot' || mode === 'tutorial') game.log = ['Game started! Build fast — the bot is coming! 🤖'];
-  else if (mode === 'online') game.log = [net.isHost ? 'Connected! You are 🔵 (left).' : 'Connected! You are 🔴 (right).'];
+  generateTerrain();
+
+  for (let i = 0; i < playerCount; i++) {
+    placeBuilding(i, 'castle', spawns[i].row, spawns[i].col);
+  }
+
+  if (mode === 'bot' || mode === 'tutorial') game.log = [`Game started! ${playerCount > 2 ? playerCount + ' players! ' : ''}Build fast — the bots are coming! 🤖`];
+  else if (mode === 'online') game.log = [net.isHost ? 'Connected! You are 🔵.' : `Connected! You are ${PLAYER_COLORS[net.myIndex].name}.`];
   else game.log = ['Game started! 🔵 Player 1 goes first.'];
 
   // Show/hide HUD elements based on mode
@@ -88,6 +237,14 @@ function initGame(mode, difficulty) {
   document.getElementById('p1-income-unit').textContent = rt ? '/tick' : '/turn';
   document.getElementById('p2-income-unit').textContent = rt ? '/tick' : '/turn';
   document.getElementById('shop-panel').classList.remove('not-my-turn');
+  // Show/hide extra player HUDs
+  const p3hud = document.getElementById('p3-hud');
+  const p4hud = document.getElementById('p4-hud');
+  if (p3hud) p3hud.classList.toggle('hidden', playerCount < 3);
+  if (p4hud) p4hud.classList.toggle('hidden', playerCount < 4);
+  // Show diplomacy panel in multiplayer
+  const diploPanel = document.getElementById('diplomacy-panel');
+  if (diploPanel) diploPanel.classList.toggle('hidden', playerCount < 3);
 }
 
 // ============================================================
@@ -95,15 +252,28 @@ function initGame(mode, difficulty) {
 // ============================================================
 
 function inBounds(r, c) { return r >= 0 && r < GRID_ROWS && c >= 0 && c < GRID_COLS; }
-function playerTerritory(pi, col) { return pi === 0 ? col < DIVIDER_COL : col >= DIVIDER_COL; }
-function cellOccupied(r, c) { return game.grid[r][c] !== null; }
+function playerTerritory(pi, col, row) {
+  if (!game || game.numPlayers <= 2) {
+    return pi === 0 ? col < DIVIDER_COL : col >= DIVIDER_COL;
+  }
+  // Multi-player: territory is closest to your castle
+  const spawn = game.spawns[pi];
+  const myDist = Math.abs(row - spawn.row) + Math.abs(col - spawn.col);
+  for (let i = 0; i < game.numPlayers; i++) {
+    if (i === pi || !game.players[i].alive) continue;
+    const other = game.spawns[i];
+    if (Math.abs(row - other.row) + Math.abs(col - other.col) < myDist) return false;
+  }
+  return true;
+}
+function cellOccupied(r, c) { return game.grid[r][c] !== null || terrainBlocks(r, c); }
 
 // Returns true if a unit owned by playerIdx can move into (r,c)
-function cellBlocksUnit(r, c, playerIdx) {
+function cellBlocksUnit(r, c, playerIdx, unit) {
+  if (terrainBlocks(r, c) && !(unit && unit.flying)) return true;
   const cell = game.grid[r][c];
-  if (!cell) return false; // empty — not blocked
-  if (cell.entityType === 'unit') return true; // all units block movement
-  // Buildings: friendly buildings are walkable, enemy buildings block
+  if (!cell) return false;
+  if (cell.entityType === 'unit') return true;
   return cell.player !== playerIdx;
 }
 
@@ -111,7 +281,7 @@ function rebuildGrid() {
   for (let r = 0; r < GRID_ROWS; r++)
     for (let c = 0; c < GRID_COLS; c++)
       game.grid[r][c] = null;
-  for (let p = 0; p < 2; p++) {
+  for (let p = 0; p < game.numPlayers; p++) {
     game.players[p].buildings.forEach((b, i) => {
       if (b.hp > 0) game.grid[b.row][b.col] = { player: p, entityType: 'building', entityIdx: i };
     });
@@ -139,25 +309,33 @@ function countBuildings(pi, type) {
 }
 
 function hasBarracks(pi) { return countBuildings(pi, 'barracks') > 0; }
+function hasBuilding(pi, type) { return countBuildings(pi, type) > 0; }
+function canTrainUnit(pi, unitType) {
+  const req = UNITS[unitType].requires;
+  if (!req) return hasBarracks(pi);
+  return countBuildings(pi, req) > 0;
+}
 
-// spawnUnit: spawns near a specific barracks, or if none given, picks a random one
-function spawnUnit(pi, type, barracks) {
+// spawnUnit: spawns near a specific building, or if none given, picks a random one of the required type
+function spawnUnit(pi, type, spawnBuilding) {
   const def = UNITS[type];
-  // If no barracks specified, pick a random alive one
-  if (!barracks) {
-    const allBarracks = game.players[pi].buildings.filter(b => b.type === 'barracks' && b.hp > 0);
-    if (allBarracks.length === 0) return null;
-    barracks = allBarracks[Math.floor(Math.random() * allBarracks.length)];
+  const reqType = def.requires || 'barracks';
+  if (!spawnBuilding) {
+    const candidates = game.players[pi].buildings.filter(b => b.type === reqType && b.hp > 0);
+    if (candidates.length === 0) return null;
+    spawnBuilding = candidates[Math.floor(Math.random() * candidates.length)];
   }
   const dirs = [[-1,0],[1,0],[0,-1],[0,1],[-1,-1],[-1,1],[1,-1],[1,1]];
   for (const [dr, dc] of dirs) {
-    const nr = barracks.row + dr, nc = barracks.col + dc;
-    if (inBounds(nr, nc) && !cellBlocksUnit(nr, nc, pi)) {
+    const nr = spawnBuilding.row + dr, nc = spawnBuilding.col + dc;
+    if (inBounds(nr, nc) && !cellBlocksUnit(nr, nc, pi, def)) {
       const u = {
         type, row: nr, col: nc,
         hp: def.hp, maxHp: def.hp,
         attack: def.attack, speed: def.speed,
         range: def.range || 1,
+        flying: def.flying || false,
+        heals: def.heals || 0,
       };
       game.players[pi].units.push(u);
       rebuildGrid();
@@ -176,8 +354,8 @@ function gameTime() { return (performance.now() - game.startTime) / 1000; }
 function dist(r1, c1, r2, c2) { return Math.abs(r1 - r2) + Math.abs(c1 - c2); }
 
 function pLabel(idx) {
-  if (game.mode === 'bot' || game.mode === 'tutorial') return idx === 0 ? '🔵' : '🤖';
-  return idx === 0 ? '🔵' : '🔴';
+  if ((game.mode === 'bot' || game.mode === 'tutorial') && idx !== 0) return '🤖';
+  return PLAYER_COLORS[idx] ? PLAYER_COLORS[idx].name : '⬜';
 }
 
 function addEffect(emoji, row, col) { game.effects.push({ emoji, row, col, ttl: 15 }); }
@@ -198,8 +376,8 @@ function tickGame() {
   // Income
   if (t - game.lastIncome >= INCOME_INTERVAL) {
     game.lastIncome = t;
-    for (let p = 0; p < 2; p++) game.players[p].gold += game.players[p].income;
-    addLog(`💰 Income! +${game.players[0].income} / +${game.players[1].income}`);
+    for (let p = 0; p < game.numPlayers; p++) if (game.players[p].alive) game.players[p].gold += game.players[p].income;
+    addLog(`💰 Income tick!`);
   }
 
   // Move units
@@ -218,13 +396,17 @@ function tickGame() {
   if (t - game.lastTowerAttack >= TOWER_ATTACK_INTERVAL) {
     game.lastTowerAttack = t;
     allTowerAttacks();
+    healTick();
   }
 
-  // Bot
+  // Bot(s)
   if ((game.mode === 'bot' || game.mode === 'tutorial') && t - game.lastBotAction >= BOT_ACTION_INTERVAL) {
     game.lastBotAction = t;
-    if (game.mode === 'bot') botTick();
-    else tutorialBotTick();
+    if (game.mode === 'bot') {
+      for (let bp = 1; bp < game.numPlayers; bp++) {
+        if (game.players[bp].alive) botTickFor(bp);
+      }
+    } else tutorialBotTick();
   }
 
   // Refresh shop every 2 seconds so affordability updates with income
@@ -254,8 +436,12 @@ function pvpEndTurn() {
 
   if (game.phase === 'over') return;
 
-  // Switch player
-  game.currentPlayer = 1 - game.currentPlayer;
+  // Switch player (cycle through alive players)
+  let nextP = (game.currentPlayer + 1) % game.numPlayers;
+  while (!game.players[nextP].alive && nextP !== game.currentPlayer) {
+    nextP = (nextP + 1) % game.numPlayers;
+  }
+  game.currentPlayer = nextP;
   if (game.currentPlayer === 0) game.turn++;
 
   // Income for next player
@@ -263,7 +449,7 @@ function pvpEndTurn() {
   next.gold += next.income;
   game.selected = null;
 
-  addLog(`Turn ${game.turn}: ${game.currentPlayer === 0 ? '🔵' : '🔴'} Player ${game.currentPlayer + 1}'s turn (+${next.income} 💰)`);
+  addLog(`Turn ${game.turn}: ${PLAYER_COLORS[game.currentPlayer].name} Player ${game.currentPlayer + 1}'s turn (+${next.income} 💰)`);
   updatePvpUI();
   buildShop();
 }
@@ -272,16 +458,17 @@ function moveUnitsFor(pi) {
   const dir = pi === 0 ? 1 : -1;
   const sorted = game.players[pi].units.filter(u => u.hp > 0).sort((a, b) => (b.col - a.col) * dir);
   for (const u of sorted) {
+    if (u.heals > 0 && !hasAdjacentEnemy(u, pi)) continue;
     if (hasAdjacentEnemy(u, pi)) continue;
     for (let step = 0; step < u.speed; step++) {
       const nc = u.col + dir;
-      if (inBounds(u.row, nc) && !cellBlocksUnit(u.row, nc, pi)) {
+      if (inBounds(u.row, nc) && !cellBlocksUnit(u.row, nc, pi, u)) {
         u.col = nc; rebuildGrid();
       } else {
         let moved = false;
         for (const dr of [-1, 1]) {
           const nr = u.row + dr;
-          if (inBounds(nr, nc) && !cellBlocksUnit(nr, nc, pi)) {
+          if (inBounds(nr, nc) && !cellBlocksUnit(nr, nc, pi, u)) {
             u.row = nr; u.col = nc; rebuildGrid(); moved = true; break;
           }
         }
@@ -292,20 +479,23 @@ function moveUnitsFor(pi) {
 }
 
 function allUnitAttacksFor(pi) {
-  const enemy = game.players[1 - pi];
   for (const u of game.players[pi].units) {
     if (u.hp <= 0) continue;
+    if (u.heals > 0) continue; // healers don't attack
     const range = u.range || 1;
-    let target = null, tt = null, td = Infinity;
-    for (const eu of enemy.units) {
-      if (eu.hp <= 0) continue;
-      const d = dist(u.row, u.col, eu.row, eu.col);
-      if (d <= range && d < td) { target = eu; tt = 'unit'; td = d; }
-    }
-    for (const eb of enemy.buildings) {
-      if (eb.hp <= 0) continue;
-      const d = dist(u.row, u.col, eb.row, eb.col);
-      if (d <= range && d < td) { target = eb; tt = 'building'; td = d; }
+    let target = null, tt = null, td = Infinity, targetPi = -1;
+    for (let ep = 0; ep < game.numPlayers; ep++) {
+      if (!isEnemy(pi, ep)) continue;
+      for (const eu of game.players[ep].units) {
+        if (eu.hp <= 0) continue;
+        const d = dist(u.row, u.col, eu.row, eu.col);
+        if (d <= range && d < td) { target = eu; tt = 'unit'; td = d; targetPi = ep; }
+      }
+      for (const eb of game.players[ep].buildings) {
+        if (eb.hp <= 0) continue;
+        const d = dist(u.row, u.col, eb.row, eb.col);
+        if (d <= range && d < td) { target = eb; tt = 'building'; td = d; targetPi = ep; }
+      }
     }
     if (target) {
       target.hp -= u.attack;
@@ -313,24 +503,26 @@ function allUnitAttacksFor(pi) {
       if (target.hp <= 0) {
         const emoji = tt === 'unit' ? UNITS[target.type].emoji : BUILDINGS[target.type].emoji;
         addLog(`${pLabel(pi)} ${UNITS[u.type].emoji} destroyed ${emoji}!`);
-        if (tt === 'building' && target.type === 'castle') { game.phase = 'over'; game.winner = pi; }
-        if (tt === 'building' && BUILDINGS[target.type].income > 0) game.players[1 - pi].income -= BUILDINGS[target.type].income;
+        if (tt === 'building' && target.type === 'castle') { eliminatePlayer(targetPi, pi); }
+        if (tt === 'building' && BUILDINGS[target.type].income > 0) game.players[targetPi].income -= BUILDINGS[target.type].income;
       }
     }
   }
 }
 
 function allTowerAttacksFor(pi) {
-  const enemy = game.players[1 - pi];
   for (const b of game.players[pi].buildings) {
     if (b.hp <= 0) continue;
     const def = BUILDINGS[b.type];
     if (!def.attack) continue;
     let closest = null, cd = Infinity;
-    for (const eu of enemy.units) {
-      if (eu.hp <= 0) continue;
-      const d = dist(b.row, b.col, eu.row, eu.col);
-      if (d <= def.range && d < cd) { closest = eu; cd = d; }
+    for (let ep = 0; ep < game.numPlayers; ep++) {
+      if (!isEnemy(pi, ep)) continue;
+      for (const eu of game.players[ep].units) {
+        if (eu.hp <= 0) continue;
+        const d = dist(b.row, b.col, eu.row, eu.col);
+        if (d <= def.range && d < cd) { closest = eu; cd = d; }
+      }
     }
     if (closest) {
       closest.hp -= def.attack;
@@ -348,29 +540,56 @@ function updatePvpUI() {
 }
 
 function hasAdjacentEnemy(u, pi) {
-  const enemy = game.players[1 - pi];
-  for (const eu of enemy.units)
-    if (eu.hp > 0 && dist(u.row, u.col, eu.row, eu.col) <= 1) return true;
-  for (const eb of enemy.buildings)
-    if (eb.hp > 0 && dist(u.row, u.col, eb.row, eb.col) <= 1) return true;
+  for (let ep = 0; ep < game.numPlayers; ep++) {
+    if (!isEnemy(pi, ep)) continue;
+    for (const eu of game.players[ep].units)
+      if (eu.hp > 0 && dist(u.row, u.col, eu.row, eu.col) <= 1) return true;
+    for (const eb of game.players[ep].buildings)
+      if (eb.hp > 0 && dist(u.row, u.col, eb.row, eb.col) <= 1) return true;
+  }
   return false;
 }
 
+function getMoveDirection(p) {
+  // Move toward the nearest enemy castle
+  const mySpawn = game.spawns[p];
+  let nearestEnemy = null, nearestDist = Infinity;
+  for (let ep = 0; ep < game.numPlayers; ep++) {
+    if (!isEnemy(p, ep) || !game.players[ep].alive) continue;
+    const castle = game.players[ep].buildings.find(b => b.type === 'castle' && b.hp > 0);
+    if (castle) {
+      const d = dist(mySpawn.row, mySpawn.col, castle.row, castle.col);
+      if (d < nearestDist) { nearestDist = d; nearestEnemy = castle; }
+    }
+  }
+  if (!nearestEnemy) return { dr: 0, dc: 1 };
+  return {
+    dr: nearestEnemy.row > mySpawn.row ? 1 : nearestEnemy.row < mySpawn.row ? -1 : 0,
+    dc: nearestEnemy.col > mySpawn.col ? 1 : nearestEnemy.col < mySpawn.col ? -1 : 0,
+  };
+}
+
 function moveAllUnits() {
-  for (let p = 0; p < 2; p++) {
-    const dir = p === 0 ? 1 : -1;
+  for (let p = 0; p < game.numPlayers; p++) {
+    if (!game.players[p].alive) continue;
+    const dir = getMoveDirection(p).dc || (p === 0 ? 1 : -1);
     const sorted = game.players[p].units.filter(u => u.hp > 0).sort((a, b) => (b.col - a.col) * dir);
     for (const u of sorted) {
+      // Healers don't advance past friendly territory
+      if (u.heals > 0 && !hasAdjacentEnemy(u, p)) {
+        // Stay near army but don't rush forward
+        continue;
+      }
       if (hasAdjacentEnemy(u, p)) continue;
       for (let step = 0; step < u.speed; step++) {
         const nc = u.col + dir;
-        if (inBounds(u.row, nc) && !cellBlocksUnit(u.row, nc, p)) {
+        if (inBounds(u.row, nc) && !cellBlocksUnit(u.row, nc, p, u)) {
           u.col = nc; rebuildGrid();
         } else {
           let moved = false;
           for (const dr of [-1, 1]) {
             const nr = u.row + dr;
-            if (inBounds(nr, nc) && !cellBlocksUnit(nr, nc, p)) {
+            if (inBounds(nr, nc) && !cellBlocksUnit(nr, nc, p, u)) {
               u.row = nr; u.col = nc; rebuildGrid(); moved = true; break;
             }
           }
@@ -382,60 +601,72 @@ function moveAllUnits() {
 }
 
 function allUnitAttacks() {
-  for (let p = 0; p < 2; p++) {
-    const enemy = game.players[1 - p];
+  for (let p = 0; p < game.numPlayers; p++) {
+    if (!game.players[p].alive) continue;
+    allUnitAttacksFor(p);
+  }
+}
+
+function allTowerAttacks() {
+  for (let p = 0; p < game.numPlayers; p++) {
+    if (!game.players[p].alive) continue;
+    allTowerAttacksFor(p);
+  }
+}
+
+function eliminatePlayer(pi, killerPi) {
+  game.players[pi].alive = false;
+  addLog(`${pLabel(killerPi)} destroyed ${pLabel(pi)}'s Castle! ${pLabel(pi)} eliminated!`);
+  // Check if only one player (or one alliance) remains
+  const alivePlayers = game.players.filter(p => p.alive);
+  if (alivePlayers.length <= 1) {
+    game.phase = 'over';
+    game.winner = killerPi;
+  } else if (game.numPlayers > 2) {
+    // Check if all remaining alive players are allied with each other
+    const aliveIndices = game.players.map((p, i) => p.alive ? i : -1).filter(i => i >= 0);
+    let allAllied = true;
+    for (let i = 0; i < aliveIndices.length && allAllied; i++) {
+      for (let j = i + 1; j < aliveIndices.length && allAllied; j++) {
+        if (!areAllied(aliveIndices[i], aliveIndices[j])) allAllied = false;
+      }
+    }
+    if (allAllied) { game.phase = 'over'; game.winner = killerPi; }
+  }
+}
+
+function healTick() {
+  for (let p = 0; p < game.numPlayers; p++) {
+    if (!game.players[p].alive) continue;
+    // Temple healing
+    for (const b of game.players[p].buildings) {
+      if (b.hp <= 0 || !BUILDINGS[b.type].healRange) continue;
+      const range = BUILDINGS[b.type].healRange;
+      const amount = BUILDINGS[b.type].healAmount;
+      for (const u of game.players[p].units) {
+        if (u.hp <= 0 || u.hp >= u.maxHp) continue;
+        if (dist(b.row, b.col, u.row, u.col) <= range) {
+          u.hp = Math.min(u.maxHp, u.hp + amount);
+          addEffect('💚', u.row, u.col);
+        }
+      }
+    }
+    // Healer units
     for (const u of game.players[p].units) {
-      if (u.hp <= 0) continue;
-      const range = u.range || 1;
-      let target = null, tt = null, td = Infinity;
-      for (const eu of enemy.units) {
-        if (eu.hp <= 0) continue;
-        const d = dist(u.row, u.col, eu.row, eu.col);
-        if (d <= range && d < td) { target = eu; tt = 'unit'; td = d; }
-      }
-      for (const eb of enemy.buildings) {
-        if (eb.hp <= 0) continue;
-        const d = dist(u.row, u.col, eb.row, eb.col);
-        if (d <= range && d < td) { target = eb; tt = 'building'; td = d; }
-      }
-      if (target) {
-        target.hp -= u.attack;
-        addEffect('💥', target.row, target.col);
-        if (target.hp <= 0) {
-          const emoji = tt === 'unit' ? UNITS[target.type].emoji : BUILDINGS[target.type].emoji;
-          addLog(`${pLabel(p)} ${UNITS[u.type].emoji} destroyed ${emoji}!`);
-          if (tt === 'building' && target.type === 'castle') { game.phase = 'over'; game.winner = p; }
-          if (tt === 'building' && BUILDINGS[target.type].income > 0) game.players[1 - p].income -= BUILDINGS[target.type].income;
+      if (u.hp <= 0 || !u.heals) continue;
+      for (const ally of game.players[p].units) {
+        if (ally === u || ally.hp <= 0 || ally.hp >= ally.maxHp) continue;
+        if (dist(u.row, u.col, ally.row, ally.col) <= (u.range || 1)) {
+          ally.hp = Math.min(ally.maxHp, ally.hp + u.heals);
+          addEffect('💚', ally.row, ally.col);
         }
       }
     }
   }
 }
 
-function allTowerAttacks() {
-  for (let p = 0; p < 2; p++) {
-    const enemy = game.players[1 - p];
-    for (const b of game.players[p].buildings) {
-      if (b.hp <= 0) continue;
-      const def = BUILDINGS[b.type];
-      if (!def.attack) continue;
-      let closest = null, cd = Infinity;
-      for (const eu of enemy.units) {
-        if (eu.hp <= 0) continue;
-        const d = dist(b.row, b.col, eu.row, eu.col);
-        if (d <= def.range && d < cd) { closest = eu; cd = d; }
-      }
-      if (closest) {
-        closest.hp -= def.attack;
-        addEffect('💥', closest.row, closest.col);
-        if (closest.hp <= 0) addLog(`${pLabel(p)} Tower destroyed ${UNITS[closest.type].emoji}!`);
-      }
-    }
-  }
-}
-
 function cleanupDead() {
-  for (let p = 0; p < 2; p++)
+  for (let p = 0; p < game.numPlayers; p++)
     game.players[p].units = game.players[p].units.filter(u => u.hp > 0);
   rebuildGrid();
   if (game.phase === 'over') showWinScreen();
@@ -445,29 +676,69 @@ function cleanupDead() {
 // BOT AI
 // ============================================================
 
-function botTick() {
-  const bot = game.players[1];
-  const diff = game.difficulty;
-  const aggression = diff === 'easy' ? 0.3 : diff === 'medium' ? 0.55 : 0.75;
+function botTick() { botTickFor(1); }
 
-  if (!hasBarracks(1) && bot.gold >= 40) {
-    botBuild('barracks');
+function botTickFor(botIdx) {
+  const bot = game.players[botIdx];
+  if (!bot.alive) return;
+  const diff = game.difficulty;
+  const aggression = diff === 'easy' ? 0.4 : diff === 'medium' ? 0.7 : 0.9;
+  const multiTrain = diff === 'easy' ? 1 : diff === 'medium' ? 2 : 3;
+
+  // Hard bot gets gold bonus
+  if (diff === 'hard') bot.gold += 5;
+  if (diff === 'medium') bot.gold += 2;
+
+  // Strategic building priorities
+  if (!hasBarracks(botIdx) && bot.gold >= 40) {
+    botBuildFor(botIdx, 'barracks');
+  } else if (countBuildings(botIdx, 'barracks') < 2 && diff !== 'easy' && bot.gold >= 40) {
+    botBuildFor(botIdx, 'barracks');
+  } else if (!hasBuilding(botIdx, 'stable') && bot.gold >= 55 && diff !== 'easy') {
+    botBuildFor(botIdx, 'stable');
+  } else if (!hasBuilding(botIdx, 'workshop') && bot.gold >= 65 && diff !== 'easy') {
+    botBuildFor(botIdx, 'workshop');
+  } else if (!hasBuilding(botIdx, 'temple') && bot.gold >= 75 && diff === 'hard') {
+    botBuildFor(botIdx, 'temple');
   } else if (Math.random() < 0.5) {
-    for (const type of shuffle(['house', 'farm', 'mine', 'house', 'farm'])) {
-      if (bot.gold >= BUILDINGS[type].cost) { botBuild(type); break; }
+    const econ = diff === 'hard'
+      ? ['mine', 'market', 'mine', 'house', 'farm']
+      : ['house', 'farm', 'mine', 'market', 'house', 'farm'];
+    for (const type of shuffle(econ)) {
+      if (bot.gold >= BUILDINGS[type].cost) { botBuildFor(botIdx, type); break; }
     }
   } else {
-    for (const type of shuffle(['tower', 'wall', 'tower'])) {
-      if (bot.gold >= BUILDINGS[type].cost) { botBuild(type); break; }
+    const defense = diff === 'hard'
+      ? ['fortress', 'tower', 'fortress', 'wall', 'temple']
+      : ['tower', 'wall', 'fortress', 'tower', 'temple'];
+    for (const type of shuffle(defense)) {
+      if (bot.gold >= BUILDINGS[type].cost) { botBuildFor(botIdx, type); break; }
     }
   }
 
-  if (hasBarracks(1) && Math.random() < aggression) {
-    const priority = getUnitPriority(diff);
-    for (const type of priority) {
-      if (bot.gold >= UNITS[type].cost) {
-        const unit = spawnUnit(1, type);
-        if (unit) { bot.gold -= UNITS[type].cost; addLog(`🤖 Trained ${UNITS[type].emoji}`); }
+  // Train multiple units per tick at higher difficulties
+  for (let i = 0; i < multiTrain; i++) {
+    if (Math.random() < aggression) {
+      const priority = getUnitPriority(diff);
+      for (const type of priority) {
+        if (bot.gold >= UNITS[type].cost && canTrainUnit(botIdx, type)) {
+          const unit = spawnUnit(botIdx, type);
+          if (unit) { bot.gold -= UNITS[type].cost; addLog(`🤖 Trained ${UNITS[type].emoji}`); }
+          break;
+        }
+      }
+    }
+  }
+
+  // Bot diplomacy: hard bots may ally with each other against the human in 3+ player games
+  if (diff === 'hard' && game.numPlayers > 2 && Math.random() < 0.1) {
+    for (let other = 1; other < game.numPlayers; other++) {
+      if (other === botIdx || !game.players[other].alive) continue;
+      if (other === 0) continue; // don't ally with human
+      if (!areAllied(botIdx, other)) {
+        game.players[botIdx].alliances[other] = 'ally';
+        game.players[other].alliances[botIdx] = 'ally';
+        addLog(`🤖 Bots ${pLabel(botIdx)} & ${pLabel(other)} formed an alliance!`);
         break;
       }
     }
@@ -487,19 +758,35 @@ function tutorialBotTick() {
   }
 }
 
-function botBuild(type) {
-  const bot = game.players[1];
+function botBuild(type) { botBuildFor(1, type); }
+
+function botBuildFor(botIdx, type) {
+  const bot = game.players[botIdx];
   if (bot.gold < BUILDINGS[type].cost) return;
-  const cell = findBotBuildCell(type);
-  if (cell) { placeBuilding(1, type, cell.row, cell.col); bot.gold -= BUILDINGS[type].cost; addLog(`🤖 Built ${BUILDINGS[type].emoji}`); }
+  const cell = findBotBuildCellFor(botIdx, type);
+  if (cell) { placeBuilding(botIdx, type, cell.row, cell.col); bot.gold -= BUILDINGS[type].cost; addLog(`🤖 Built ${BUILDINGS[type].emoji}`); }
 }
 
 function getUnitPriority(diff) {
-  if (diff === 'easy') return shuffle(['swordsman', 'swordsman', 'archer']);
-  if (diff === 'medium') return shuffle(['swordsman', 'archer', 'cavalry', 'knight']);
+  if (diff === 'easy') return shuffle(['swordsman', 'swordsman', 'archer', 'berserker']);
+  if (diff === 'medium') return shuffle(['swordsman', 'archer', 'cavalry', 'knight', 'assassin', 'chariot', 'berserker']);
+  // Hard bot: smart composition based on game state
+  const botUnits = game.players[1].units.filter(u => u.hp > 0);
   const eu = game.players[0].units.filter(u => u.hp > 0).length;
-  if (eu > 5) return ['knight', 'wizard', 'cavalry'];
-  return ['cavalry', 'swordsman', 'wizard', 'archer', 'knight'];
+  const hasTanks = botUnits.filter(u => u.type === 'knight' || u.type === 'chariot').length;
+  const hasDps = botUnits.filter(u => u.type === 'wizard' || u.type === 'dragon' || u.type === 'catapult').length;
+
+  // Prioritize siege if enemy has lots of buildings
+  const enemyBuildings = game.players[0].buildings.filter(b => b.hp > 0).length;
+  if (enemyBuildings > 6) return ['catapult', 'dragon', 'cavalry', 'assassin', 'knight'];
+  // Need tanks to soak damage
+  if (hasTanks < 2) return ['knight', 'chariot', 'cavalry', 'berserker', 'wizard'];
+  // Need DPS behind tanks
+  if (hasDps < 2) return ['dragon', 'wizard', 'catapult', 'assassin', 'cavalry'];
+  // Overwhelm with numbers if enemy has few units
+  if (eu < 3) return ['cavalry', 'assassin', 'berserker', 'chariot', 'swordsman'];
+  // Default balanced composition
+  return shuffle(['dragon', 'cavalry', 'assassin', 'wizard', 'catapult', 'knight', 'chariot', 'berserker']);
 }
 
 function shuffle(arr) {
@@ -508,18 +795,26 @@ function shuffle(arr) {
   return a;
 }
 
-function findBotBuildCell(type) {
-  const castle = game.players[1].buildings.find(b => b.type === 'castle' && b.hp > 0);
+function findBotBuildCell(type) { return findBotBuildCellFor(1, type); }
+
+function findBotBuildCellFor(botIdx, type) {
+  const castle = game.players[botIdx].buildings.find(b => b.type === 'castle' && b.hp > 0);
   if (!castle) return null;
-  const isDefense = type === 'wall' || type === 'tower';
+  const isDefense = type === 'wall' || type === 'tower' || type === 'fortress';
   const candidates = [];
   for (let r = 0; r < GRID_ROWS; r++) {
-    for (let c = DIVIDER_COL; c < GRID_COLS; c++) {
-      if (cellOccupied(r, c)) continue;
-      const dc = dist(r, c, castle.row, castle.col), df = c - DIVIDER_COL;
+    for (let c = 0; c < GRID_COLS; c++) {
+      if (cellOccupied(r, c) || terrainBlocks(r, c)) continue;
+      if (!playerTerritory(botIdx, c, r)) continue;
+      const dc = dist(r, c, castle.row, castle.col);
       let score;
-      if (isDefense) { score = 100 - df * 10 + Math.random() * 5; if (type === 'wall' && df <= 2) score += 20; if (type === 'tower' && df >= 1 && df <= 3) score += 15; }
-      else { score = 100 - dc * 5 + df * 3 + Math.random() * 5; }
+      if (isDefense) {
+        // Place defenses between castle and nearest enemy
+        score = 100 - dc * 3 + Math.random() * 5;
+        if (dc <= 3) score += 20;
+      } else {
+        score = 100 - dc * 5 + Math.random() * 5;
+      }
       candidates.push({ row: r, col: c, score });
     }
   }
@@ -545,9 +840,10 @@ function getSerializableState() {
     players: game.players.map(p => ({
       id: p.id, gold: p.gold, income: p.income,
       buildings: p.buildings.map(b => ({ type: b.type, row: b.row, col: b.col, hp: b.hp, maxHp: b.maxHp })),
-      units: p.units.map(u => ({ type: u.type, row: u.row, col: u.col, hp: u.hp, maxHp: u.maxHp, attack: u.attack, speed: u.speed, range: u.range })),
+      units: p.units.map(u => ({ type: u.type, row: u.row, col: u.col, hp: u.hp, maxHp: u.maxHp, attack: u.attack, speed: u.speed, range: u.range, flying: u.flying, heals: u.heals })),
     })),
     phase: game.phase, winner: game.winner, log: game.log, lastIncome: game.lastIncome,
+    terrainMap: terrainMap,
   };
 }
 
@@ -557,6 +853,7 @@ function applyState(state) {
   game.winner = state.winner;
   game.log = state.log;
   game.lastIncome = state.lastIncome;
+  if (state.terrainMap) terrainMap = state.terrainMap;
   game.selected = null;
   rebuildGrid();
   if (game.phase === 'over') showWinScreen();
@@ -584,14 +881,14 @@ function handleRemoteAction(action, fromPlayer) {
   const player = game.players[fromPlayer];
   if (action.kind === 'build') {
     const def = BUILDINGS[action.type];
-    if (playerTerritory(fromPlayer, action.col) && !cellOccupied(action.row, action.col) && player.gold >= def.cost) {
+    if (playerTerritory(fromPlayer, action.col, action.row) && !cellOccupied(action.row, action.col) && player.gold >= def.cost) {
       placeBuilding(fromPlayer, action.type, action.row, action.col);
       player.gold -= def.cost; addLog(`${pLabel(fromPlayer)} Built ${def.emoji}`);
     }
   }
   if (action.kind === 'train') {
     const def = UNITS[action.type];
-    if (player.gold >= def.cost && hasBarracks(fromPlayer)) {
+    if (player.gold >= def.cost && canTrainUnit(fromPlayer, action.type)) {
       // Find the barracks at the specified location, or pick any
       let barracks = null;
       if (action.barracksRow != null && action.barracksCol != null) {
@@ -698,33 +995,62 @@ function drawGrid() {
   for (let r = 0; r < GRID_ROWS; r++) {
     for (let c = 0; c < GRID_COLS; c++) {
       const x = c * cs, y = r * cs, light = (r + c) % 2 === 0;
-      ctx.fillStyle = c < DIVIDER_COL
-        ? (light ? 'rgba(30,80,200,0.12)' : 'rgba(30,80,200,0.06)')
-        : (light ? 'rgba(200,40,40,0.12)' : 'rgba(200,40,40,0.06)');
+      const terrain = terrainAt(r, c);
+
+      // Base terrain color
+      ctx.fillStyle = terrain.color;
+      ctx.globalAlpha = light ? 0.35 : 0.25;
       ctx.fillRect(x, y, cs, cs);
+      ctx.globalAlpha = 1;
+
+      // Territorial overlay — color by nearest player
+      if (game && game.spawns) {
+        const teamAlpha = light ? 0.08 : 0.04;
+        let closestP = 0, closestD = Infinity;
+        for (let pi = 0; pi < game.numPlayers; pi++) {
+          if (!game.players[pi].alive) continue;
+          const s = game.spawns[pi];
+          const d = Math.abs(r - s.row) + Math.abs(c - s.col);
+          if (d < closestD) { closestD = d; closestP = pi; }
+        }
+        ctx.fillStyle = (PLAYER_COLORS[closestP].bg || 'rgba(100,100,100,') + teamAlpha + ')';
+        ctx.fillRect(x, y, cs, cs);
+      }
+
+      // Draw terrain emoji for blocking/notable terrain
+      if (terrain.emoji) {
+        ctx.font = `${Math.floor(cs * 0.4)}px serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.globalAlpha = 0.6;
+        ctx.fillText(terrain.emoji, x + cs / 2, y + cs / 2);
+        ctx.globalAlpha = 1;
+      }
+
       ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.strokeRect(x, y, cs, cs);
     }
   }
 
-  ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
-  ctx.beginPath(); ctx.moveTo(DIVIDER_COL * cs, 0); ctx.lineTo(DIVIDER_COL * cs, canvas.height); ctx.stroke(); ctx.setLineDash([]);
+  if (game && game.numPlayers <= 2) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
+    ctx.beginPath(); ctx.moveTo(DIVIDER_COL * cs, 0); ctx.lineTo(DIVIDER_COL * cs, canvas.height); ctx.stroke(); ctx.setLineDash([]);
+  }
 
   if (game && game.selected) {
     if (game.selected.kind === 'shop_building') {
       const pi = game.selected.forPlayer;
       for (let r = 0; r < GRID_ROWS; r++)
         for (let c = 0; c < GRID_COLS; c++)
-          if (playerTerritory(pi, c) && !cellOccupied(r, c)) { ctx.fillStyle = 'rgba(255,215,0,0.1)'; ctx.fillRect(c * cs, r * cs, cs, cs); }
+          if (playerTerritory(pi, c, r) && !cellOccupied(r, c)) { ctx.fillStyle = 'rgba(255,215,0,0.1)'; ctx.fillRect(c * cs, r * cs, cs, cs); }
     }
     if (game.selected.kind === 'shop_unit') {
-      // Highlight barracks the player can click
+      // Highlight the required building type the player can click
       const pi = game.selected.forPlayer;
+      const reqType = UNITS[game.selected.type].requires || 'barracks';
       game.players[pi].buildings.forEach(b => {
-        if (b.type === 'barracks' && b.hp > 0) {
+        if (b.type === reqType && b.hp > 0) {
           ctx.strokeStyle = '#ffd700';
           ctx.lineWidth = 3;
           ctx.strokeRect(b.col * cs + 2, b.row * cs + 2, cs - 4, cs - 4);
-          // Glow effect
           ctx.fillStyle = 'rgba(255,215,0,0.15)';
           ctx.fillRect(b.col * cs, b.row * cs, cs, cs);
         }
@@ -737,7 +1063,7 @@ function drawGrid() {
   const fontSize = Math.floor(cs * 0.6);
   ctx.font = `${fontSize}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
 
-  for (let p = 0; p < 2; p++) {
+  for (let p = 0; p < game.numPlayers; p++) {
     game.players[p].buildings.forEach(b => {
       if (b.hp <= 0) return;
       ctx.fillText(BUILDINGS[b.type].emoji, b.col * cs + cs / 2, b.row * cs + cs / 2);
@@ -747,7 +1073,7 @@ function drawGrid() {
       if (u.hp <= 0) return;
       ctx.fillText(UNITS[u.type].emoji, u.col * cs + cs / 2, u.row * cs + cs / 2);
       drawHpBar(u.col * cs, u.row * cs + cs - 6, cs, 4, u.hp, u.maxHp, p);
-      ctx.fillStyle = p === 0 ? '#4488ff' : '#ff4444';
+      ctx.fillStyle = PLAYER_COLORS[p] ? PLAYER_COLORS[p].color : '#888';
       ctx.beginPath(); ctx.arc(u.col * cs + 6, u.row * cs + 6, 3, 0, Math.PI * 2); ctx.fill();
     });
   }
@@ -764,7 +1090,8 @@ function drawHpBar(x, y, w, h, hp, maxHp, pi) {
   const pct = Math.max(0, hp / maxHp), barW = w * 0.8, barX = x + (w - barW) / 2;
   ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(barX, y, barW, h);
   ctx.fillStyle = pct > 0.5 ? '#4f4' : pct > 0.25 ? '#ff4' : '#f44'; ctx.fillRect(barX, y, barW * pct, h);
-  ctx.strokeStyle = pi === 0 ? 'rgba(30,100,255,0.5)' : 'rgba(255,50,50,0.5)'; ctx.lineWidth = 0.5; ctx.strokeRect(barX, y, barW, h);
+  const pc = PLAYER_COLORS[pi];
+  ctx.strokeStyle = pc ? pc.color + '80' : 'rgba(128,128,128,0.5)'; ctx.lineWidth = 0.5; ctx.strokeRect(barX, y, barW, h);
 }
 
 function render() { drawGrid(); tickGame(); updateHUD(); animFrameId = requestAnimationFrame(render); }
@@ -781,10 +1108,24 @@ function updateHUD() {
   document.getElementById('p2-gold').textContent = game.players[1].gold;
   document.getElementById('p2-income').textContent = game.players[1].income;
 
+  // Extra player HUDs
+  const p3hud = document.getElementById('p3-hud');
+  const p4hud = document.getElementById('p4-hud');
+  if (p3hud && game.numPlayers >= 3) {
+    document.getElementById('p3-gold').textContent = game.players[2].gold;
+    document.getElementById('p3-income').textContent = game.players[2].income;
+    document.getElementById('p3-label').textContent = game.players[2].alive ? '🟢 Bot 2' : '🟢 Dead';
+  }
+  if (p4hud && game.numPlayers >= 4) {
+    document.getElementById('p4-gold').textContent = game.players[3].gold;
+    document.getElementById('p4-income').textContent = game.players[3].income;
+    document.getElementById('p4-label').textContent = game.players[3].alive ? '🟡 Bot 3' : '🟡 Dead';
+  }
+
   if (game.mode === 'pvp') {
     document.getElementById('turn-num').textContent = game.turn;
     const cp = game.currentPlayer;
-    document.getElementById('current-player').textContent = `${cp === 0 ? '🔵' : '🔴'} Player ${cp + 1}'s Turn`;
+    document.getElementById('current-player').textContent = `${PLAYER_COLORS[cp].name} Player ${cp + 1}'s Turn`;
   } else {
     const elapsed = Math.floor(gameTime());
     document.getElementById('game-timer').textContent = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`;
@@ -793,7 +1134,7 @@ function updateHUD() {
 
   if (game.mode === 'bot' || game.mode === 'tutorial') {
     document.getElementById('p1-label').textContent = '🔵 You';
-    document.getElementById('p2-label').textContent = '🤖 Bot';
+    document.getElementById('p2-label').textContent = game.players[1].alive ? '🔴 Bot 1' : '🔴 Dead';
   } else if (game.mode === 'online') {
     document.getElementById('p1-label').innerHTML = net.myIndex === 0 ? '🔵 You <span class="you-tag">YOU</span>' : '🔵 Opponent';
     document.getElementById('p2-label').innerHTML = net.myIndex === 1 ? '🔴 You <span class="you-tag">YOU</span>' : '🔴 Opponent';
@@ -802,12 +1143,79 @@ function updateHUD() {
     document.getElementById('p2-label').textContent = '🔴 Player 2';
   }
 
+  // Update diplomacy panel
+  updateDiplomacyPanel();
   updateLog();
+}
+
+function updateDiplomacyPanel() {
+  const panel = document.getElementById('diplomacy-panel');
+  if (!panel || !game || game.numPlayers < 3) return;
+  const pi = myPlayerIndex();
+  if (pi === null) return;
+
+  const content = document.getElementById('diplomacy-content');
+  if (!content) return;
+  content.innerHTML = '';
+
+  for (let i = 0; i < game.numPlayers; i++) {
+    if (i === pi || !game.players[i].alive) continue;
+    const status = areAllied(pi, i) ? 'Allied' : 'Enemy';
+    const color = PLAYER_COLORS[i].name;
+    const row = document.createElement('div');
+    row.className = 'diplo-row';
+    row.innerHTML = `<span>${color} P${i + 1}: <strong>${status}</strong></span>`;
+    if (!areAllied(pi, i)) {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-small';
+      btn.textContent = 'Offer Alliance';
+      btn.addEventListener('click', () => offerAlliance(pi, i));
+      row.appendChild(btn);
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-small';
+      btn.textContent = 'Break Alliance';
+      btn.style.background = '#a33';
+      btn.addEventListener('click', () => breakAlliance(pi, i));
+      row.appendChild(btn);
+    }
+    content.appendChild(row);
+  }
+}
+
+function offerAlliance(from, to) {
+  if (!game) return;
+  // In bot mode, bots decide randomly whether to accept
+  if (game.mode === 'bot' && to !== 0) {
+    const accept = Math.random() < 0.5;
+    if (accept) {
+      game.players[from].alliances[to] = 'ally';
+      game.players[to].alliances[from] = 'ally';
+      addLog(`${pLabel(from)} & ${pLabel(to)} formed an alliance! 🤝`);
+    } else {
+      addLog(`${pLabel(to)} rejected the alliance offer!`);
+    }
+  } else {
+    game.players[from].alliances[to] = 'ally';
+    // In PvP the other player needs to accept too
+    if (game.players[to].alliances[from] === 'ally') {
+      addLog(`${pLabel(from)} & ${pLabel(to)} formed an alliance! 🤝`);
+    } else {
+      addLog(`${pLabel(from)} offered alliance to ${pLabel(to)}...`);
+    }
+  }
+}
+
+function breakAlliance(from, to) {
+  if (!game) return;
+  game.players[from].alliances[to] = null;
+  game.players[to].alliances[from] = null;
+  addLog(`${pLabel(from)} broke their alliance with ${pLabel(to)}! ⚔️`);
 }
 
 function updateLog() {
   const el = document.getElementById('log-entries');
-  if (game) el.innerHTML = game.log.slice(0, 3).map(l => `<span class="log-entry">${l}</span>`).join('');
+  if (game) el.innerHTML = game.log.slice(0, 4).map(l => `<span class="log-entry">${l}</span>`).join('');
 }
 
 function myPlayerIndex() {
@@ -846,13 +1254,14 @@ function buildShop() {
     sep.style.cssText = 'width:2px;background:rgba(255,255,255,0.15);align-self:stretch;margin:0 0.3rem;';
     container.appendChild(sep);
 
-    const canTrain = hasBarracks(playerIdx);
     for (const [key, def] of Object.entries(UNITS)) {
       const canAfford = player.gold >= def.cost;
+      const canTrain = canTrainUnit(playerIdx, key);
       const disabled = !canAfford || !canTrain;
+      const reqEmoji = def.requires ? BUILDINGS[def.requires].emoji : '⚔️';
       const el = document.createElement('div');
       el.className = 'shop-item' + (disabled ? ' disabled' : '');
-      el.innerHTML = `<span class="shop-emoji">${def.emoji}</span><span class="shop-name">${def.name}${!canTrain ? ' (⚔️)' : ''}</span><span class="shop-cost">💰 ${def.cost}</span>`;
+      el.innerHTML = `<span class="shop-emoji">${def.emoji}</span><span class="shop-name">${def.name}${!canTrain ? ' (' + reqEmoji + ')' : ''}</span><span class="shop-cost">💰 ${def.cost}</span>`;
       if (!disabled) el.addEventListener('click', () => selectShopItem('shop_unit', key, playerIdx));
       container.appendChild(el);
     }
@@ -884,8 +1293,10 @@ function updateSelectedInfo() {
     document.getElementById('selected-desc').textContent = def.desc + ' — Click your territory to place.';
   } else if (game.selected.kind === 'shop_unit') {
     const def = UNITS[game.selected.type];
+    const reqType = def.requires || 'barracks';
+    const reqDef = BUILDINGS[reqType];
     document.getElementById('selected-name').textContent = `${def.emoji} ${def.name}`;
-    document.getElementById('selected-desc').textContent = def.desc + ' — Click a ⚔️ Barracks to train here.';
+    document.getElementById('selected-desc').textContent = def.desc + ` — Click a ${reqDef.emoji} ${reqDef.name} to train here.`;
   }
 }
 
@@ -915,8 +1326,8 @@ function handleCanvasTap(e) {
   if (game.selected && game.selected.kind === 'shop_building') {
     const pi = game.selected.forPlayer, player = game.players[pi];
     const type = game.selected.type, def = BUILDINGS[type];
-    if (!playerTerritory(pi, col)) { addLog("Can't build on enemy territory!"); return; }
-    if (cellOccupied(row, col)) { addLog('Cell is occupied!'); return; }
+    if (!playerTerritory(pi, col, row)) { addLog("Can't build on enemy territory!"); return; }
+    if (cellOccupied(row, col)) { addLog(terrainBlocks(row, col) ? "Can't build on this terrain!" : 'Cell is occupied!'); return; }
     if (player.gold < def.cost) { addLog('Not enough gold!'); return; }
 
     if (game.mode === 'online' && !net.isHost) {
@@ -931,20 +1342,22 @@ function handleCanvasTap(e) {
     return;
   }
 
-  // Training a unit — click on a barracks to spawn there
+  // Training a unit — click on a required building to spawn there
   if (game.selected && game.selected.kind === 'shop_unit') {
     const pi = game.selected.forPlayer, player = game.players[pi];
     const unitType = game.selected.type, def = UNITS[unitType];
+    const reqType = def.requires || 'barracks';
+    const reqEmoji = BUILDINGS[reqType].emoji;
     const cell = game.grid[row][col];
 
-    // Must click on one of your barracks
+    // Must click on one of your required buildings
     if (!cell || cell.player !== pi || cell.entityType !== 'building') {
-      addLog('Click one of your ⚔️ Barracks to train there!');
+      addLog(`Click one of your ${reqEmoji} ${BUILDINGS[reqType].name} to train there!`);
       return;
     }
     const building = player.buildings[cell.entityIdx];
-    if (building.type !== 'barracks' || building.hp <= 0) {
-      addLog('Click one of your ⚔️ Barracks to train there!');
+    if (building.type !== reqType || building.hp <= 0) {
+      addLog(`Click one of your ${reqEmoji} ${BUILDINGS[reqType].name} to train there!`);
       return;
     }
     if (player.gold < def.cost) { addLog('Not enough gold!'); return; }
@@ -996,17 +1409,17 @@ function showWinScreen() {
   stopBroadcasting();
   const w = game.winner;
   let msg;
-  if (game.mode === 'bot' || game.mode === 'tutorial') msg = w === 0 ? '🎉 You Win!' : '🤖 Bot Wins!';
+  if (game.mode === 'bot' || game.mode === 'tutorial') msg = w === 0 ? '🎉 You Win!' : `🤖 ${pLabel(w)} Bot Wins!`;
   else if (game.mode === 'online') msg = w === net.myIndex ? '🎉 You Win!' : '😔 You Lost!';
-  else msg = `${w === 0 ? '🔵' : '🔴'} Player ${w + 1} Wins! 🎉`;
+  else msg = `${PLAYER_COLORS[w].name} Player ${w + 1} Wins! 🎉`;
   document.getElementById('win-message').textContent = msg;
 }
 
-function startNewGame(mode, difficulty) {
+function startNewGame(mode, difficulty, numPlayers) {
   document.getElementById('title-screen').classList.add('hidden');
   document.getElementById('lobby-screen').classList.add('hidden');
   document.getElementById('game-screen').classList.remove('hidden');
-  initGame(mode, difficulty || 'medium');
+  initGame(mode, difficulty || 'medium', numPlayers || 2);
   resizeCanvas(); buildShop();
   if (!animFrameId) startRenderLoop();
 }
@@ -1036,7 +1449,15 @@ document.getElementById('start-online-btn').addEventListener('click', () => {
   document.getElementById('lobby-status').textContent = 'Choose an option';
   showLobbyError('');
 });
-document.querySelectorAll('.diff-btn').forEach(btn => { btn.addEventListener('click', () => startNewGame('bot', btn.dataset.diff)); });
+let selectedPlayerCount = 2;
+document.querySelectorAll('.pcount-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pcount-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPlayerCount = parseInt(btn.dataset.count);
+  });
+});
+document.querySelectorAll('.diff-btn').forEach(btn => { btn.addEventListener('click', () => startNewGame('bot', btn.dataset.diff, selectedPlayerCount)); });
 document.getElementById('host-btn').addEventListener('click', hostGame);
 document.getElementById('join-btn').addEventListener('click', () => {
   document.getElementById('lobby-choices').classList.add('hidden');
@@ -1083,7 +1504,7 @@ const TUTORIAL_STEPS = [
   { title: 'Step 3: Train a Soldier 🗡️', text: 'Now click 🗡️ Swordsman in the shop, then <strong>click your ⚔️ Barracks</strong> on the grid to spawn the soldier there. Try it now!', highlight: '#shop-panel', allowClick: true, waitFor: 'train_unit' },
   { title: 'Soldiers March Automatically!', text: 'Your soldiers march toward the enemy <strong>in real-time</strong>. They\'ll attack any enemy they get close to — units and buildings alike!', highlight: '#game-canvas', allowClick: false },
   { title: 'Defense: Walls & Towers', text: '🧱 <strong>Walls</strong> block enemies with high HP. 🗼 <strong>Towers</strong> automatically shoot enemies within 2 tiles. Use them to protect your Castle!', highlight: '#shop-panel', allowClick: false },
-  { title: 'Unit Types', text: '🗡️ <strong>Swordsman</strong> — cheap melee<br>🏹 <strong>Archer</strong> — ranged (2 tiles)<br>🐴 <strong>Cavalry</strong> — fast & strong<br>🛡️ <strong>Knight</strong> — tanky<br>🧙 <strong>Wizard</strong> — high damage, long range', highlight: null, allowClick: false },
+  { title: 'Unit Types', text: '🗡️ <strong>Swordsman</strong> — cheap melee<br>🏹 <strong>Archer</strong> — ranged<br>🐴 <strong>Cavalry</strong> — fast (needs Stable)<br>🛡️ <strong>Knight</strong> — tanky<br>🧙 <strong>Wizard</strong> — high damage<br>🥷 <strong>Assassin</strong> — deadly & fast<br>🪓 <strong>Berserker</strong> — raging fighter<br>💣 <strong>Catapult</strong> — siege (needs Workshop)<br>🐉 <strong>Dragon</strong> — flies over terrain!', highlight: null, allowClick: false },
   { title: 'How to Win 🏆', text: 'Destroy the enemy\'s 🏰 <strong>Castle</strong>! Build economy early, train a big army, and overwhelm your opponent. The game never pauses — act fast! Good luck!', highlight: null, allowClick: false },
 ];
 
@@ -1156,8 +1577,8 @@ placeBuilding = function(pi, type, row, col) {
 };
 
 const _origSpawnUnit = spawnUnit;
-spawnUnit = function(pi, type) {
-  const result = _origSpawnUnit(pi, type);
+spawnUnit = function(pi, type, building) {
+  const result = _origSpawnUnit(pi, type, building);
   if (pi === 0 && result) tutorialAction('train_unit');
   return result;
 };

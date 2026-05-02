@@ -16,9 +16,6 @@ body {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
-  position: fixed;
-  top: 0;
-  left: 0;
 }
 
 #game-container {
@@ -28,6 +25,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .hidden { display: none !important; }
@@ -37,6 +35,10 @@ body {
   text-align: center;
   max-width: 600px;
   padding: 2rem;
+  overflow-y: auto;
+  max-height: 100%;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
 }
 
 #title-screen h1, #lobby-screen h1 {
@@ -321,6 +323,8 @@ body {
   background: rgba(0, 0, 0, 0.5);
   border-top: 2px solid rgba(255, 255, 255, 0.1);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
   flex-shrink: 0;
 }
 
@@ -366,6 +370,16 @@ body {
 .shop-item.disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+.shop-item.demolish-btn {
+  border-color: rgba(255, 80, 80, 0.4);
+  background: rgba(255, 50, 50, 0.1);
+}
+
+.shop-item.demolish-btn:hover {
+  border-color: #ff5555;
+  background: rgba(255, 50, 50, 0.2);
 }
 
 .shop-emoji { font-size: 1.5rem; }

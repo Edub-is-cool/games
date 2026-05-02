@@ -1115,6 +1115,26 @@ function drawGrid() {
         }
       });
     }
+    if (game.selected.kind === 'demolish') {
+      // Highlight own buildings and units in red
+      const pi = game.selected.forPlayer;
+      game.players[pi].buildings.forEach(b => {
+        if (b.hp <= 0 || b.type === 'castle') return;
+        ctx.strokeStyle = '#ff5555';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(b.col * cs + 2, b.row * cs + 2, cs - 4, cs - 4);
+        ctx.fillStyle = 'rgba(255,50,50,0.15)';
+        ctx.fillRect(b.col * cs, b.row * cs, cs, cs);
+      });
+      game.players[pi].units.forEach(u => {
+        if (u.hp <= 0) return;
+        ctx.strokeStyle = '#ff5555';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(u.col * cs + 2, u.row * cs + 2, cs - 4, cs - 4);
+        ctx.fillStyle = 'rgba(255,50,50,0.15)';
+        ctx.fillRect(u.col * cs, u.row * cs, cs, cs);
+      });
+    }
   }
 
   if (!game) return;
@@ -1366,6 +1386,17 @@ function buildShop() {
       container.appendChild(div);
     }
   }
+
+  // Demolish button
+  const sep = document.createElement('div');
+  sep.style.cssText = 'width:2px;background:rgba(255,100,100,0.3);align-self:stretch;margin:0 0.3rem;';
+  container.appendChild(sep);
+  const demolishEl = document.createElement('div');
+  demolishEl.className = 'shop-item demolish-btn';
+  demolishEl.innerHTML = `<span class="shop-emoji">🗑️</span><span class="shop-name">Demolish</span><span class="shop-cost">50% back</span>`;
+  demolishEl.addEventListener('click', selectDemolish);
+  demolishEl.addEventListener('touchend', (e) => { e.preventDefault(); selectDemolish(); }, { passive: false });
+  container.appendChild(demolishEl);
 }
 
 function selectShopItem(kind, type, playerIdx) {
@@ -1374,7 +1405,16 @@ function selectShopItem(kind, type, playerIdx) {
   }
   game.selected = { kind, type, forPlayer: playerIdx };
   updateSelectedInfo();
-  // For units, player must now click a barracks on the grid to spawn
+}
+
+function selectDemolish() {
+  const pi = myPlayerIndex();
+  if (pi === null) return;
+  if (game.selected && game.selected.kind === 'demolish') {
+    game.selected = null; updateSelectedInfo(); return;
+  }
+  game.selected = { kind: 'demolish', forPlayer: pi };
+  updateSelectedInfo();
 }
 
 function updateSelectedInfo() {
@@ -1391,6 +1431,9 @@ function updateSelectedInfo() {
     const reqDef = BUILDINGS[reqType];
     document.getElementById('selected-name').textContent = `${def.emoji} ${def.name}`;
     document.getElementById('selected-desc').textContent = def.desc + ` — Click a ${reqDef.emoji} ${reqDef.name} to train here.`;
+  } else if (game.selected.kind === 'demolish') {
+    document.getElementById('selected-name').textContent = '🗑️ Demolish';
+    document.getElementById('selected-desc').textContent = 'Click your own building or unit to destroy it (refunds 50% cost).';
   }
 }
 
@@ -1482,6 +1525,35 @@ function handleCanvasTap(e) {
       }
     }
     game.selected = null; buildShop(); updateSelectedInfo();
+    return;
+  }
+
+  // Demolish mode
+  if (game.selected && game.selected.kind === 'demolish') {
+    const pi = game.selected.forPlayer;
+    const cell = game.grid[row][col];
+    if (!cell || cell.player !== pi) { addLog('Click your own building or unit to demolish!'); return; }
+    if (cell.entityType === 'building') {
+      const b = game.players[pi].buildings[cell.entityIdx];
+      if (b.type === 'castle') { addLog("Can't demolish your Castle!"); return; }
+      const def = BUILDINGS[b.type];
+      const refund = Math.floor(def.cost * 0.5);
+      if (def.income > 0) game.players[pi].income -= def.income;
+      b.hp = 0;
+      game.players[pi].gold += refund;
+      addLog(`🗑️ Demolished ${def.emoji} (+${refund} 💰 refund)`);
+      rebuildGrid();
+    } else if (cell.entityType === 'unit') {
+      const u = game.players[pi].units[cell.entityIdx];
+      const def = UNITS[u.type];
+      const refund = Math.floor(def.cost * 0.5);
+      u.hp = 0;
+      game.players[pi].gold += refund;
+      game.players[pi].units = game.players[pi].units.filter(u => u.hp > 0);
+      addLog(`🗑️ Dismissed ${def.emoji} (+${refund} 💰 refund)`);
+      rebuildGrid();
+    }
+    game.selected = null; updateSelectedInfo(); buildShop();
     return;
   }
 

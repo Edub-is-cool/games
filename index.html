@@ -75,6 +75,7 @@
     .card:nth-child(4):hover { border-color: var(--accent-4); }
     .card:nth-child(5):hover { border-color: var(--accent-5); }
     .card:nth-child(6):hover { border-color: var(--accent-6); }
+    .card:nth-child(7):hover { border-color: var(--accent-1); }
 
     .card-banner {
       height: 180px;
@@ -104,6 +105,9 @@
     .card:nth-child(6) .card-banner {
       background: linear-gradient(135deg, #001020 0%, #002040 50%, #001020 100%);
     }
+    .card:nth-child(7) .card-banner {
+      background: linear-gradient(135deg, #1a0a00 0%, #2d1200 50%, #1a0a00 100%);
+    }
 
     .card-body {
       padding: 1.5rem;
@@ -131,6 +135,7 @@
     .card:nth-child(4) .genre { color: var(--accent-4); }
     .card:nth-child(5) .genre { color: var(--accent-5); }
     .card:nth-child(6) .genre { color: var(--accent-6); }
+    .card:nth-child(7) .genre { color: var(--accent-1); }
 
     .card-body .desc {
       color: var(--text-muted);
@@ -175,6 +180,7 @@
     .card:nth-child(4) .play-btn { background: var(--accent-4); color: #0a0a0f; }
     .card:nth-child(5) .play-btn { background: var(--accent-5); }
     .card:nth-child(6) .play-btn { background: var(--accent-6); }
+    .card:nth-child(7) .play-btn { background: var(--accent-1); }
 
     footer {
       text-align: center;
@@ -282,6 +288,22 @@
           <span class="tag">Vanilla JS</span>
         </div>
         <a class="play-btn" href="emoji-battle/index.html">Play</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-banner">&#127919;</div>
+      <div class="card-body">
+        <div class="genre">Battle Royale / .io</div>
+        <h2>Royale</h2>
+        <p class="desc">A top-down 3D battle royale. Drop into a shrinking zone, grab loot, and outlast everyone else. Short matches, pick-up-and-play multiplayer.</p>
+        <div class="tags">
+          <span class="tag">Three.js</span>
+          <span class="tag">TypeScript</span>
+          <span class="tag">Vite</span>
+          <span class="tag">PartyKit</span>
+        </div>
+        <a class="play-btn" href="royale/client/dist/index.html">Play</a>
       </div>
     </div>
 

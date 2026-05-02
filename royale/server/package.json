@@ -1,0 +1,17 @@
+{
+  "name": "@royale/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "partykit dev",
+    "deploy": "partykit deploy"
+  },
+  "dependencies": {
+    "@royale/shared": "*",
+    "partykit": "^0.0.111"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

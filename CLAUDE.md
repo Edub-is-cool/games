@@ -12,6 +12,7 @@ A collection of browser-playable games, published via a static landing page.
 | `FARKLE/`      | Farkle             | Vanilla HTML/CSS/JS          |
 | `Dragon cave/` | Dragon Cave        | Phaser 3, TypeScript, Vite   |
 | `emoji-battle/`| Emoji Battle       | Vanilla HTML/CSS/JS + Canvas |
+| `royale/`      | Royale             | Three.js, TypeScript, Vite, PartyKit |
 
 ## Structure
 ```
@@ -22,6 +23,7 @@ Games/
 ├── FARKLE/             # Static site — open index.html directly
 ├── Dragon cave/        # Phaser 3 dungeon crawler — run `npm run dev` or `npm run build`
 ├── emoji-battle/       # Static site — open index.html directly
+├── royale/             # Three.js + PartyKit battle royale — npm run dev (workspace root)
 └── CLAUDE.md
 ```
 
@@ -32,6 +34,7 @@ Games/
 - **Dark Tunnels**: Open in Godot 4.x editor, or use the web export zip
 - **Dragon Cave**: `cd "Dragon cave" && npm install && npm run dev`
 - **Emoji Battle**: Open `emoji-battle/index.html` in a browser (no build step)
+- **Royale**: `cd royale && npm install && npm run dev` (runs Vite client + PartyKit server together)
 
 ## Conventions
 - Each game is self-contained in its own directory with its own CLAUDE.md

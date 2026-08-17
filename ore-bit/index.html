@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ore-bit</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="hud">
+    <div class="hud-row">
+      <span class="label">Credits</span>
+      <span id="credits">0</span>
+    </div>
+    <div class="hud-row">
+      <span class="label">Hull</span>
+      <div class="bar"><div id="hull-bar" class="bar-fill hull"></div></div>
+    </div>
+    <div class="hud-row">
+      <span class="label">Cargo</span>
+      <div class="bar"><div id="cargo-bar" class="bar-fill cargo"></div></div>
+    </div>
+    <div class="hud-row">
+      <span class="label">Zone</span>
+      <span id="zone-name">Inner Belt</span>
+    </div>
+  </div>
+
+  <div id="controls">
+    <strong>Controls</strong>
+    <div>W / &uarr; — thrust</div>
+    <div>S / &darr; — brake</div>
+    <div>A D / &larr; &rarr; — rotate</div>
+    <div>Space — mining laser (also damages pirates)</div>
+    <div>E — dock at station</div>
+    <div>R — restart run</div>
+  </div>
+
+  <div id="dock-prompt" class="hidden">Press <kbd>E</kbd> to dock</div>
+  <div id="hazard-warning" class="hidden">&#9888; HAZARD ZONE &mdash; SHIELD INSUFFICIENT</div>
+
+  <div id="shop" class="hidden">
+    <div class="shop-panel">
+      <header>
+        <h2>Drift Station</h2>
+        <div class="credits-display">Credits: <span id="shop-credits">0</span></div>
+      </header>
+      <div class="shop-grid">
+        <section>
+          <h3>Cargo Hold</h3>
+          <div id="cargo-list" class="list"></div>
+          <button id="sell-all">Sell All</button>
+        </section>
+        <section>
+          <h3>Upgrades</h3>
+          <div id="upgrade-list" class="list"></div>
+        </section>
+      </div>
+      <button id="undock">Undock (E)</button>
+    </div>
+  </div>
+
+  <div id="game-over" class="hidden">
+    <h1>Hull breached</h1>
+    <p>Cargo lost. Credits and upgrades persist.</p>
+    <p class="muted">Final credits: <span id="final-credits">0</span></p>
+    <button id="restart-btn">New run</button>
+  </div>
+
+  <canvas id="game"></canvas>
+  <script src="game.js"></script>
+</body>
+</html>

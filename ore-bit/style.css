@@ -1,0 +1,373 @@
+:root {
+  --bg: #05060d;
+  --panel: rgba(10, 14, 28, 0.78);
+  --panel-solid: #0a0e1c;
+  --border: rgba(120, 180, 255, 0.25);
+  --text: #d8e2ff;
+  --muted: #7a8cb8;
+  --hull: #ff5577;
+  --cargo: #ffc857;
+  --accent: #5ad0ff;
+  --warn: #ff5577;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: crosshair;
+}
+
+#hud, #controls {
+  position: fixed;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  backdrop-filter: blur(6px);
+  user-select: none;
+}
+
+#hud {
+  top: 16px;
+  left: 16px;
+  min-width: 240px;
+}
+
+#controls {
+  bottom: 16px;
+  left: 16px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+#controls strong {
+  color: var(--text);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.hud-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.label {
+  color: var(--muted);
+  width: 56px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+#credits {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+#zone-name {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  width: 100%;
+  transition: width 0.15s ease;
+}
+
+.bar-fill.hull { background: var(--hull); }
+.bar-fill.cargo { background: var(--cargo); }
+
+#dock-prompt {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  backdrop-filter: blur(6px);
+  user-select: none;
+}
+
+#dock-prompt kbd {
+  background: var(--accent);
+  color: #05060d;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-weight: 600;
+  margin: 0 2px;
+}
+
+#hazard-warning {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 85, 119, 0.15);
+  border: 1px solid var(--warn);
+  color: var(--warn);
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  backdrop-filter: blur(6px);
+  user-select: none;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
+}
+
+.hidden { display: none !important; }
+
+/* --- Shop --- */
+#shop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 6, 13, 0.78);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.shop-panel {
+  background: var(--panel-solid);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  width: min(820px, 92vw);
+  max-height: 88vh;
+  overflow: auto;
+  padding: 24px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+}
+
+.shop-panel header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 14px;
+}
+
+.shop-panel h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+}
+
+.credits-display {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.credits-display span {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 18px;
+  margin-left: 4px;
+}
+
+.shop-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  gap: 18px;
+}
+
+@media (max-width: 700px) {
+  .shop-grid { grid-template-columns: 1fr; }
+}
+
+.shop-panel section h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.cargo-row, .upgrade-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.cargo-row .swatch, .upgrade-row .swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cargo-row .name, .upgrade-row .name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.cargo-row .qty {
+  color: var(--muted);
+  margin-right: 8px;
+}
+
+.cargo-row .value {
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 64px;
+  text-align: right;
+}
+
+.upgrade-row .level {
+  display: flex;
+  gap: 3px;
+  margin-right: 4px;
+}
+
+.upgrade-row .pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.upgrade-row .pip.filled {
+  background: var(--accent);
+}
+
+.upgrade-row .lv-badge {
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+.shop-panel button {
+  background: var(--accent);
+  color: #05060d;
+  border: none;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 7px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+
+.shop-panel button:hover { filter: brightness(1.1); }
+.shop-panel button:disabled {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  cursor: not-allowed;
+  filter: none;
+}
+
+#sell-all { width: 100%; }
+
+#undock {
+  display: block;
+  margin: 18px auto 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.upgrade-row button {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.cargo-empty, .upgrade-maxed {
+  color: var(--muted);
+  font-style: italic;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* --- Game over --- */
+#game-over {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 6, 13, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+#game-over h1 {
+  font-size: 42px;
+  margin: 0 0 8px;
+  color: var(--hull);
+  letter-spacing: 0.04em;
+}
+
+#game-over p {
+  margin: 4px 0;
+}
+
+#game-over .muted {
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+#game-over button {
+  background: var(--accent);
+  color: #05060d;
+  border: none;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+
+#game-over button:hover { filter: brightness(1.1); }

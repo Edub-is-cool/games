@@ -13,6 +13,7 @@ A collection of browser-playable games, published via a static landing page.
 | `Dragon cave/` | Dragon Cave        | Phaser 3, TypeScript, Vite   |
 | `emoji-battle/`| Emoji Battle       | Vanilla HTML/CSS/JS + Canvas |
 | `ore-bit/`     | Ore-bit            | Vanilla HTML/CSS/JS + Canvas |
+| `drum-pro/`    | Drum Pro           | Vanilla HTML/CSS/JS + Web Audio |
 
 ## Structure
 ```
@@ -24,6 +25,7 @@ Games/
 ├── Dragon cave/        # Phaser 3 dungeon crawler — run `npm run dev` or `npm run build`
 ├── emoji-battle/       # Static site — open index.html directly
 ├── ore-bit/            # Static site — open index.html directly
+├── drum-pro/           # Static site — open index.html directly
 └── CLAUDE.md
 ```
 
@@ -35,6 +37,7 @@ Games/
 - **Dragon Cave**: `cd "Dragon cave" && npm install && npm run dev`
 - **Emoji Battle**: Open `emoji-battle/index.html` in a browser (no build step)
 - **Ore-bit**: Open `ore-bit/index.html` in a browser (no build step)
+- **Drum Pro**: Open `drum-pro/index.html` in a browser (no build step)
 
 ## Conventions
 - Each game is self-contained in its own directory with its own CLAUDE.md

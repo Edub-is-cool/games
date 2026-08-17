@@ -19,6 +19,7 @@
       --accent-5: #e04080;
       --accent-6: #40a0ff;
       --accent-7: #6ad8ff;
+      --accent-8: #ffd23f;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -77,6 +78,7 @@
     .card:nth-child(5):hover { border-color: var(--accent-5); }
     .card:nth-child(6):hover { border-color: var(--accent-6); }
     .card:nth-child(7):hover { border-color: var(--accent-7); }
+    .card:nth-child(8):hover { border-color: var(--accent-8); }
 
     .card-banner {
       height: 180px;
@@ -109,6 +111,9 @@
     .card:nth-child(7) .card-banner {
       background: linear-gradient(135deg, #02060f 0%, #0a1a2e 50%, #02060f 100%);
     }
+    .card:nth-child(8) .card-banner {
+      background: linear-gradient(135deg, #140d02 0%, #33220a 50%, #140d02 100%);
+    }
 
     .card-body {
       padding: 1.5rem;
@@ -137,6 +142,7 @@
     .card:nth-child(5) .genre { color: var(--accent-5); }
     .card:nth-child(6) .genre { color: var(--accent-6); }
     .card:nth-child(7) .genre { color: var(--accent-7); }
+    .card:nth-child(8) .genre { color: var(--accent-8); }
 
     .card-body .desc {
       color: var(--text-muted);
@@ -182,6 +188,7 @@
     .card:nth-child(5) .play-btn { background: var(--accent-5); }
     .card:nth-child(6) .play-btn { background: var(--accent-6); }
     .card:nth-child(7) .play-btn { background: var(--accent-7); color: #0a0a0f; }
+    .card:nth-child(8) .play-btn { background: var(--accent-8); color: #0a0a0f; }
 
     footer {
       text-align: center;
@@ -304,6 +311,21 @@
           <span class="tag">Vanilla JS</span>
         </div>
         <a class="play-btn" href="ore-bit/index.html">Play</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-banner">&#129345;</div>
+      <div class="card-body">
+        <div class="genre">Music / Rhythm</div>
+        <h2>Drum Pro</h2>
+        <p class="desc">A full 2-D drum kit you can play with touch or the keyboard, plus a falling-notes mode with five grooves at four scroll speeds.</p>
+        <div class="tags">
+          <span class="tag">HTML5</span>
+          <span class="tag">Web Audio</span>
+          <span class="tag">Vanilla JS</span>
+        </div>
+        <a class="play-btn" href="drum-pro/index.html">Play</a>
       </div>
     </div>
 

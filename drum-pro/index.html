@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="A 2-D drum kit you can play with touch or keyboard, plus a falling-notes rhythm mode.">
+  <title>Drum Pro</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game"></canvas>
+
+    <div id="hud" class="hidden">
+      <div class="hud-row">
+        <div class="hud-block">
+          <div class="hud-label" id="hudChart">—</div>
+          <div class="hud-sub" id="hudSpeed">—</div>
+        </div>
+        <div class="hud-block center">
+          <div class="hud-combo" id="hudCombo"></div>
+        </div>
+        <div class="hud-block right">
+          <div class="hud-score" id="hudScore">0</div>
+          <div class="hud-sub" id="hudAcc">100.0%</div>
+        </div>
+      </div>
+      <div class="progress"><div class="progress-fill" id="hudProgress"></div></div>
+    </div>
+
+    <button id="backBtn" class="back hidden">&lsaquo; Menu</button>
+
+    <div id="boot" class="overlay">
+      <div class="panel">
+        <h1>Drum <span>Pro</span></h1>
+        <p class="tagline">A full kit in your browser. Tap the drums, or play the keys.</p>
+        <button class="btn primary big" id="bootBtn">Tap to start</button>
+        <p class="fine">Sound starts on your first tap &middot; headphones recommended</p>
+      </div>
+    </div>
+
+    <div id="menu" class="overlay hidden">
+      <div class="panel">
+        <h1>Drum <span>Pro</span></h1>
+        <div class="btn-col">
+          <button class="btn primary big" data-go="free">Free Play</button>
+          <button class="btn ghost big" data-go="select">Falling Notes</button>
+        </div>
+        <div class="keymap" id="keymap"></div>
+      </div>
+    </div>
+
+    <div id="select" class="overlay hidden">
+      <div class="panel wide">
+        <h2>Falling Notes</h2>
+        <div class="field-label">Pattern</div>
+        <div class="chart-list" id="chartList"></div>
+        <div class="field-label">Speed <span class="hint">— how fast notes fall. Timing windows stay the same.</span></div>
+        <div class="pill-row" id="speedRow"></div>
+        <button class="btn primary big" id="startBtn">Start</button>
+      </div>
+    </div>
+
+    <div id="results" class="overlay hidden">
+      <div class="panel">
+        <h2 id="resTitle">Results</h2>
+        <div class="grade" id="resGrade">A</div>
+        <div class="res-stats" id="resStats"></div>
+        <div class="res-best" id="resBest"></div>
+        <div class="btn-row">
+          <button class="btn primary" id="retryBtn">Retry</button>
+          <button class="btn ghost" id="resMenuBtn">Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="kit.js"></script>
+  <script src="charts.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

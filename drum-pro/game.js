@@ -14,7 +14,7 @@
   const W_LATE = 0.16;            // past this, the note is gone
 
   const SPEEDS = [
-    { name: 'Slow',   px: 300 },
+    { name: 'Slow',   px: 145 },
     { name: 'Normal', px: 470 },
     { name: 'Fast',   px: 680 },
     { name: 'Insane', px: 950 },

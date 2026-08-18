@@ -9,17 +9,17 @@ const Kit = (() => {
   const FLOOR = 622;
 
   const PIECES = {
-    crash:    { id: 'crash',    lane: 'crash',    name: 'Crash',     key: 'l', keyLabel: 'L', color: '#ff9de0',
+    crash:    { id: 'crash',    lane: 'crash',    name: 'Crash',     key: 'a', keyLabel: 'A', color: '#ff9de0',
                 type: 'cymbal', x: 170, y: 150, rx: 98,  ry: 30 },
-    ride:     { id: 'ride',     lane: 'ride',     name: 'Ride',      key: 'k', keyLabel: 'K', color: '#7ef0b8',
+    ride:     { id: 'ride',     lane: 'ride',     name: 'Ride',      key: 'l', keyLabel: 'L', color: '#7ef0b8',
                 type: 'cymbal', x: 835, y: 175, rx: 108, ry: 33 },
-    hihat:    { id: 'hihat',    lane: 'hihat',    name: 'Hi-Hat',    key: 'a', keyLabel: 'A', color: '#ffd23f',
+    hihat:    { id: 'hihat',    lane: 'hihat',    name: 'Hi-Hat',    key: 'd', keyLabel: 'D', color: '#ffd23f',
                 type: 'hihat',  x: 345, y: 215, rx: 72,  ry: 23 },
-    highTom:  { id: 'highTom',  lane: 'highTom',  name: 'High Tom',  key: 'd', keyLabel: 'D', color: '#4dd2ff',
+    highTom:  { id: 'highTom',  lane: 'highTom',  name: 'High Tom',  key: 'f', keyLabel: 'F', color: '#4dd2ff',
                 type: 'drum',   x: 430, y: 330, r: 64 },
-    midTom:   { id: 'midTom',   lane: 'midTom',   name: 'Mid Tom',   key: 'f', keyLabel: 'F', color: '#5b8cff',
+    midTom:   { id: 'midTom',   lane: 'midTom',   name: 'Mid Tom',   key: 'j', keyLabel: 'J', color: '#5b8cff',
                 type: 'drum',   x: 578, y: 318, r: 72 },
-    floorTom: { id: 'floorTom', lane: 'floorTom', name: 'Floor Tom', key: 'j', keyLabel: 'J', color: '#a06bff',
+    floorTom: { id: 'floorTom', lane: 'floorTom', name: 'Floor Tom', key: 'k', keyLabel: 'K', color: '#a06bff',
                 type: 'drum',   x: 795, y: 432, r: 86 },
     snare:    { id: 'snare',    lane: 'snare',    name: 'Snare',     key: 's', keyLabel: 'S', color: '#ff5470',
                 type: 'drum',   x: 262, y: 440, r: 80 },
@@ -32,8 +32,9 @@ const Kit = (() => {
   // Front to back, for hit testing where shapes overlap.
   const HIT_ORDER = ['snare', 'floorTom', 'midTom', 'highTom', 'kick', 'hihat', 'ride', 'crash'];
 
-  // Lanes read left-to-right in the same order the pieces appear on the kit, so
-  // the falling-note highway is spatially honest.
+  // Lanes read left-to-right in the same order the pieces appear on the kit —
+  // and the keys run A S D F / J K L across the home row in that same order, so
+  // the highway, the kit, and your fingers all line up.
   const LANES = ['crash', 'snare', 'hihat', 'highTom', 'kick', 'midTom', 'floorTom', 'ride']
     .map((id) => PIECES[id]);
 
@@ -46,7 +47,7 @@ const Kit = (() => {
 
   const KEYS = {};
   Object.values(PIECES).forEach((p) => { KEYS[p.key] = p.id; });
-  KEYS.q = 'hihatOpen';   // same pad, foot off the pedal
+  KEYS.e = 'hihatOpen';   // same pad, foot off the pedal — sits directly above D
 
   function laneOf(pieceId) {
     return pieceId === 'hihatOpen' ? 'hihat' : pieceId;
@@ -256,7 +257,7 @@ const Kit = (() => {
     if (isHat) {
       g.font = '600 11px ui-monospace, Menlo, monospace';
       g.globalAlpha = 0.75;
-      g.fillText('Q = open', p.x, y + 22);
+      g.fillText('E = open', p.x, y + 22);
     }
     g.restore();
   }

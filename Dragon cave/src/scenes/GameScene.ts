@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { TILE_SIZE, Tile, MAP_WIDTH, MAP_HEIGHT, COLORS, CAMERA_WIDTH, CAMERA_HEIGHT } from '../utils/constants';
+import { makeStoneTexture, makeRadialTexture } from '../utils/textures';
 import { generateDungeon, DungeonData } from '../systems/dungeon';
 import { VisibilityMap, VisState } from '../systems/visibility';
 import { getEnemyTypes, getDragonBoss, xpToNextLevel, getRandomPerks, PerkId, EnemyBehavior } from '../systems/combat';
@@ -19,6 +20,7 @@ export class GameScene extends Phaser.Scene {
   private enemies: Enemy[] = [];
   private items: ItemPickup[] = [];
   private floorTiles: Phaser.GameObjects.Rectangle[][] = [];
+  private torchLight!: Phaser.GameObjects.Image;
   private fogOverlay: Phaser.GameObjects.Rectangle[][] = [];
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private wasd!: Record<string, Phaser.Input.Keyboard.Key>;
@@ -144,8 +146,29 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // Stone grain across the whole map, so floors and walls stop reading as
+    // flat swatches. Sits above the tiles but below anything that moves.
+    makeStoneTexture(this);
+    this.add.tileSprite(
+      0, 0, MAP_WIDTH * TILE_SIZE, MAP_HEIGHT * TILE_SIZE, 'stone-grain',
+    ).setOrigin(0, 0)
+     .setDepth(3)
+     .setAlpha(0.5)
+     .setBlendMode(Phaser.BlendModes.MULTIPLY);
+
     // Create player
     this.player = new Player(this, this.dungeon.playerStart.x, this.dungeon.playerStart.y);
+
+    // Warm pool of torchlight around the player, under the fog layer.
+    makeRadialTexture(this, 'torch-light', [
+      [0, 'rgba(255,190,110,0.55)'],
+      [0.42, 'rgba(255,150,70,0.22)'],
+      [1, 'rgba(255,130,50,0)'],
+    ]);
+    this.torchLight = this.add.image(0, 0, 'torch-light')
+      .setDisplaySize(TILE_SIZE * 15, TILE_SIZE * 15)
+      .setDepth(15)
+      .setBlendMode(Phaser.BlendModes.ADD);
 
     if (data.playerStats) {
       this.player.stats = { ...data.playerStats };
@@ -187,6 +210,18 @@ export class GameScene extends Phaser.Scene {
     for (const spawn of this.dungeon.keySpawns) {
       this.items.push(new ItemPickup(this, spawn.x, spawn.y, this.floor, ItemType.KEY));
     }
+
+    // Screen-space vignette; depth sits under the HUD (which starts at 100).
+    makeRadialTexture(this, 'cave-vignette', [
+      [0, 'rgba(0,0,0,0)'],
+      [0.5, 'rgba(0,0,0,0)'],
+      [0.78, 'rgba(0,0,0,0.4)'],
+      [1, 'rgba(0,0,0,0.95)'],
+    ]);
+    this.add.image(CAMERA_WIDTH / 2, CAMERA_HEIGHT / 2, 'cave-vignette')
+      .setDisplaySize(CAMERA_WIDTH * 1.5, CAMERA_HEIGHT * 1.6)
+      .setScrollFactor(0)
+      .setDepth(30);
 
     // Camera
     this.cameras.main.setBackgroundColor('#000000');
@@ -561,7 +596,15 @@ export class GameScene extends Phaser.Scene {
     return { dx, dy };
   }
 
-  update() {
+  update(time: number) {
+    // Torchlight tracks the player every frame (input handling below bails out
+    // early on idle frames, so this has to come first) and flickers gently.
+    if (this.torchLight && this.player) {
+      this.torchLight.setPosition(this.player.sprite.x, this.player.sprite.y);
+      const flicker = 0.88 + Math.sin(time / 130) * 0.05 + Math.sin(time / 47) * 0.035;
+      this.torchLight.setAlpha(flicker);
+    }
+
     const input = this.handleInput();
     if (!input) return;
 

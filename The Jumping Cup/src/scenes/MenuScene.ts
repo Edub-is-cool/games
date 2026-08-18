@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { addGradientBackground, addSpotlight, addVignette } from '../Backdrop';
 
 const W = 1280;
 const H = 720;
@@ -157,25 +158,12 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private drawBackground() {
-    const bg = this.add.graphics();
-    const steps = 20;
-    for (let i = 0; i < steps; i++) {
-      const t = i / steps;
-      const r = Phaser.Math.Linear(0x1a, 0x10, t);
-      const g = Phaser.Math.Linear(0x4a, 0x2a, t);
-      const b = Phaser.Math.Linear(0x12, 0x08, t);
-      const color = (r << 16) | (g << 8) | b;
-      const y = (H / steps) * i;
-      bg.fillStyle(color, 1);
-      bg.fillRect(0, y, W, H / steps + 1);
-    }
-
-    const vignette = this.add.graphics();
-    vignette.fillStyle(0x000000, 0.15);
-    vignette.fillRect(0, 0, W, 60);
-    vignette.fillRect(0, H - 40, W, 40);
-    vignette.fillStyle(0x000000, 0.08);
-    vignette.fillRect(0, 0, 40, H);
-    vignette.fillRect(W - 40, 0, 40, H);
+    addGradientBackground(this, W, H, [
+      [0, '#1e5214'],
+      [0.55, '#16390e'],
+      [1, '#0c2008'],
+    ]);
+    addSpotlight(this, W / 2, H * 0.36, 1500, 1000, 0.34);
+    addVignette(this, W, H, 0.5);
   }
 }

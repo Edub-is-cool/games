@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { addGradientBackground, addSpotlight, addVignette } from '../Backdrop';
 import { playCorrect, playWrong, playShuffle, playLift, playSlam, playSelect } from '../SoundManager';
 
 const W = 1280;
@@ -129,32 +130,27 @@ export class GameScene extends Phaser.Scene {
     this.ballCupIndex = Phaser.Math.Between(0, this.cupCount - 1);
     this.positionBall(this.ballCupIndex);
 
+    // HUD sits above the vignette so edge darkening never touches the readouts.
+    for (const t of [this.scoreText, this.roundText, this.highScoreText,
+                     this.difficultyText, this.messageText]) {
+      t.setDepth(1100);
+    }
+
     this.startRound();
   }
 
   private drawBackground() {
-    const bg = this.add.graphics();
-    const steps = 20;
-    for (let i = 0; i < steps; i++) {
-      const t = i / steps;
-      const r = Phaser.Math.Linear(0x1a, 0x10, t);
-      const g = Phaser.Math.Linear(0x4a, 0x2a, t);
-      const b = Phaser.Math.Linear(0x12, 0x08, t);
-      const color = (r << 16) | (g << 8) | b;
-      const y = (H / steps) * i;
-      bg.fillStyle(color, 1);
-      bg.fillRect(0, y, W, H / steps + 1);
-    }
-
-    const vignette = this.add.graphics();
-    vignette.fillStyle(0x000000, 0.15);
-    vignette.fillRect(0, 0, W, 60);
-    vignette.fillRect(0, H - 40, W, 40);
-    vignette.fillStyle(0x000000, 0.08);
-    vignette.fillRect(0, 0, 40, H);
-    vignette.fillRect(W - 40, 0, 40, H);
+    addGradientBackground(this, W, H, [
+      [0, '#1e5214'],
+      [0.5, '#173a0e'],
+      [1, '#0b1e07'],
+    ]);
+    // Lamp over the table — the cups and ball read as lit objects under it.
+    addSpotlight(this, W / 2, TABLE_Y - 120, 1500, 1020, 0.4);
+    addVignette(this, W, H, 0.5);
 
     const table = this.add.graphics();
+    table.setDepth(-50);
     table.fillStyle(0x000000, 0.3);
     table.fillRoundedRect(W / 2 - 520, TABLE_Y + 18, 1040, 40, 12);
     table.fillStyle(0x5c3a1e, 1);
@@ -171,7 +167,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createGameOverOverlay() {
-    this.gameOverGroup = this.add.container(W / 2, H / 2).setVisible(false).setDepth(10);
+    this.gameOverGroup = this.add.container(W / 2, H / 2).setVisible(false).setDepth(1200);
 
     const dim = this.add.graphics();
     dim.fillStyle(0x000000, 0.6);
@@ -283,6 +279,22 @@ export class GameScene extends Phaser.Scene {
     const stripeY = top + h * 0.3;
     const stripeW = topW + (botW - topW) * 0.3;
     g.fillRect(cx - stripeW / 2 + 6, stripeY, stripeW - 12, 4);
+    g.fillStyle(0xffe9a8, 0.35);
+    g.fillRect(cx - stripeW / 2 + 6, stripeY, stripeW - 12, 1.5);
+
+    // Lit edge down the left side, where the lamp catches the plastic.
+    g.fillStyle(0xff8b7e, 0.45);
+    g.beginPath();
+    g.moveTo(cx - topW / 2, top + 4);
+    g.lineTo(cx - botW / 2, cy);
+    g.lineTo(cx - botW / 2 + 5, cy);
+    g.lineTo(cx - topW / 2 + 4, top + 4);
+    g.closePath();
+    g.fillPath();
+
+    // Rim of the mouth catches light too.
+    g.lineStyle(2, 0xffb0a4, 0.55);
+    g.strokeEllipse(cx, top, topW, 18);
 
     g.lineStyle(2, 0x8a2520, 0.6);
     g.beginPath();
@@ -301,6 +313,13 @@ export class GameScene extends Phaser.Scene {
     this.ball.fillCircle(-2, -2, BALL_RADIUS - 3);
     this.ball.fillStyle(0xfef3b0, 0.8);
     this.ball.fillCircle(-6, -7, 6);
+    this.ball.fillStyle(0xffffff, 0.9);
+    this.ball.fillCircle(-7, -8, 2.5);
+    // Bounce light along the lower-right edge.
+    this.ball.lineStyle(2, 0xffe9a0, 0.5);
+    this.ball.beginPath();
+    this.ball.arc(0, 0, BALL_RADIUS - 2, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(120));
+    this.ball.strokePath();
   }
 
   private positionBall(cupIndex: number) {

@@ -29,6 +29,7 @@ export class Player {
       0x44bb44
     );
     this.sprite.setDepth(10);
+    this.sprite.setStrokeStyle(2, 0x0f2a0f, 0.9);
   }
 
   moveTo(tx: number, ty: number, tiles: Tile[][], onComplete: () => void) {

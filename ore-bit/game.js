@@ -2,6 +2,10 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
+  // Viewport in CSS pixels. The backing store is this times the device pixel
+  // ratio, so thin hull lines and starfield don't turn to mush on retina.
+  const view = { w: window.innerWidth, h: window.innerHeight, dpr: 1 };
+
   // ===== Data =====
   const ORE_TYPES = {
     iron:       { color: '#b8b8c8', value: 5,    weight: 1, label: 'Iron' },
@@ -196,6 +200,7 @@
     docked: false,
     nearStation: false,
     stars: [],
+    deepStars: [],
     nebulae: [],
     zoneIdx: 0,
     lastDamageT: 0,
@@ -348,19 +353,26 @@
   }
 
   function spawnStars() {
-    state.stars = [];
     const tints = ['#ffffff', '#ffffff', '#ffffff', '#cfe0ff', '#cfe0ff', '#ffd9b3', '#ffb0b0'];
-    for (let i = 0; i < 700; i++) {
-      state.stars.push({
-        x: rand(-WORLD_RADIUS, WORLD_RADIUS),
-        y: rand(-WORLD_RADIUS, WORLD_RADIUS),
-        b: rand(0.25, 1),
-        size: rand(0.4, 2.0),
-        phase: rand(0, Math.PI * 2),
-        tw: rand(0.6, 1.8),
-        color: tints[Math.floor(Math.random() * tints.length)],
-      });
-    }
+    const make = (n, bMin, bMax, sMin, sMax) => {
+      const out = [];
+      for (let i = 0; i < n; i++) {
+        out.push({
+          x: rand(-WORLD_RADIUS, WORLD_RADIUS),
+          y: rand(-WORLD_RADIUS, WORLD_RADIUS),
+          b: rand(bMin, bMax),
+          size: rand(sMin, sMax),
+          phase: rand(0, Math.PI * 2),
+          tw: rand(0.6, 1.8),
+          color: tints[Math.floor(Math.random() * tints.length)],
+        });
+      }
+      return out;
+    };
+    state.stars = make(700, 0.25, 1, 0.4, 2.0);
+    // Distant field, drawn at a fraction of the camera offset so it drifts
+    // slowly behind everything else and sells the sense of motion.
+    state.deepStars = make(520, 0.12, 0.45, 0.3, 1.1);
   }
 
   function spawnNebulae() {
@@ -983,7 +995,8 @@
 
   // ===== Render =====
   function render() {
-    const w = canvas.width, h = canvas.height;
+    const w = view.w, h = view.h;
+    ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
     const ship = state.ship;
     const cam = state.camera;
     cam.x += (ship.x - cam.x) * 0.12;
@@ -992,10 +1005,11 @@
     ctx.fillStyle = '#05060d';
     ctx.fillRect(0, 0, w, h);
 
+    const t = performance.now() / 1000;
+    drawStarLayer(state.deepStars, 0.38, cam, w, h, t);
+
     ctx.save();
     ctx.translate(w / 2 - cam.x, h / 2 - cam.y);
-
-    const t = performance.now() / 1000;
 
     // nebulae
     const camLeft = cam.x - w / 2, camRight = cam.x + w / 2;
@@ -1012,13 +1026,20 @@
       ctx.fill();
     }
 
-    // stars (twinkle)
+    // stars (twinkle) — near field, moves with the world
     for (const s of state.stars) {
       if (s.x < camLeft - 2 || s.x > camRight + 2 || s.y < camTop - 2 || s.y > camBot + 2) continue;
       const tw = 0.65 + 0.35 * Math.sin(t * s.tw + s.phase);
       ctx.globalAlpha = s.b * tw;
       ctx.fillStyle = s.color;
       ctx.fillRect(s.x, s.y, s.size, s.size);
+      // The brightest few get a cheap four-point flare.
+      if (s.size > 1.55 && s.b > 0.8) {
+        ctx.globalAlpha = s.b * tw * 0.32;
+        const f = s.size * 2.6;
+        ctx.fillRect(s.x - f, s.y + s.size / 2 - 0.25, f * 2 + s.size, 0.5);
+        ctx.fillRect(s.x + s.size / 2 - 0.25, s.y - f, 0.5, f * 2 + s.size);
+      }
     }
     ctx.globalAlpha = 1;
 
@@ -1139,6 +1160,39 @@
     // off-screen indicators
     drawStationCompass(w, h, cam);
     drawPirateCompass(w, h, cam);
+
+    drawVignette(w, h);
+  }
+
+  // Parallax star pass. Drawn outside the camera transform so each layer can
+  // move at its own fraction of the camera.
+  function drawStarLayer(list, p, cam, w, h, t) {
+    if (!list || !list.length) return;
+    const ox = w / 2 - cam.x * p;
+    const oy = h / 2 - cam.y * p;
+    const left = cam.x * p - w / 2, right = cam.x * p + w / 2;
+    const top = cam.y * p - h / 2, bot = cam.y * p + h / 2;
+    for (const s of list) {
+      if (s.x < left - 2 || s.x > right + 2 || s.y < top - 2 || s.y > bot + 2) continue;
+      const tw = 0.7 + 0.3 * Math.sin(t * s.tw + s.phase);
+      ctx.globalAlpha = s.b * tw;
+      ctx.fillStyle = s.color;
+      ctx.fillRect(s.x + ox, s.y + oy, s.size, s.size);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  let vignetteCache = null;
+  function drawVignette(w, h) {
+    if (!vignetteCache || vignetteCache.w !== w || vignetteCache.h !== h) {
+      const gr = ctx.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.36,
+                                          w / 2, h / 2, Math.max(w, h) * 0.75);
+      gr.addColorStop(0, 'rgba(0,0,0,0)');
+      gr.addColorStop(1, 'rgba(0,0,0,0.55)');
+      vignetteCache = { w, h, gr };
+    }
+    ctx.fillStyle = vignetteCache.gr;
+    ctx.fillRect(0, 0, w, h);
   }
 
   function drawPirateCompass(w, h, cam) {
@@ -1454,8 +1508,13 @@
 
   // ===== Main loop =====
   function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    view.w = window.innerWidth;
+    view.h = window.innerHeight;
+    view.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(view.w * view.dpr);
+    canvas.height = Math.round(view.h * view.dpr);
+    canvas.style.width = view.w + 'px';
+    canvas.style.height = view.h + 'px';
   }
   window.addEventListener('resize', resize);
   resize();

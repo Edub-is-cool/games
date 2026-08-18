@@ -41,6 +41,60 @@ export class TerrainRenderer {
         this.addTerrainDetail(x, y, type, row, col);
       }
     }
+
+    this.blendTerrainEdges(terrain);
+  }
+
+  /**
+   * Where two terrain types meet, the grid shows as a hard staircase. Bleeding
+   * a short fade of the neighbour's colour across the seam hides the tile grid
+   * without needing per-pixel blending. Only boundary tiles cost anything.
+   */
+  private blendTerrainEdges(terrain: TerrainTile[][]) {
+    const BANDS = 3;
+    const rows = terrain.length;
+
+    for (let row = 0; row < rows; row++) {
+      const cols = terrain[row].length;
+      for (let col = 0; col < cols; col++) {
+        const type = terrain[row][col].type;
+        const x = col * TILE_SIZE;
+        const y = row * TILE_SIZE;
+
+        const neighbours: Array<[TerrainType | null, 'top' | 'bottom' | 'left' | 'right']> = [
+          [row > 0 ? terrain[row - 1][col].type : null, 'top'],
+          [row < rows - 1 ? terrain[row + 1][col].type : null, 'bottom'],
+          [col > 0 ? terrain[row][col - 1].type : null, 'left'],
+          [col < cols - 1 ? terrain[row][col + 1].type : null, 'right'],
+        ];
+
+        for (const [other, side] of neighbours) {
+          if (!other || other === type) continue;
+          const oc = TERRAIN_COLORS[other][0];
+
+          for (let b = 0; b < BANDS; b++) {
+            const t = (BANDS - b) / (BANDS + 1);
+            const alpha = t * 0.5;
+            const thickness = 2;
+            const offset = b * thickness;
+            this.graphics.fillStyle(oc, alpha);
+            if (side === 'top') this.graphics.fillRect(x, y + offset, TILE_SIZE, thickness);
+            else if (side === 'bottom') this.graphics.fillRect(x, y + TILE_SIZE - offset - thickness, TILE_SIZE, thickness);
+            else if (side === 'left') this.graphics.fillRect(x + offset, y, thickness, TILE_SIZE);
+            else this.graphics.fillRect(x + TILE_SIZE - offset - thickness, y, thickness, TILE_SIZE);
+          }
+
+          // Water sits lower than the land around it: darken the shoreline.
+          if (type === 'water' && other !== 'water') {
+            this.graphics.fillStyle(0x000000, 0.22);
+            if (side === 'top') this.graphics.fillRect(x, y, TILE_SIZE, 4);
+            else if (side === 'bottom') this.graphics.fillRect(x, y + TILE_SIZE - 4, TILE_SIZE, 4);
+            else if (side === 'left') this.graphics.fillRect(x, y, 4, TILE_SIZE);
+            else this.graphics.fillRect(x + TILE_SIZE - 4, y, 4, TILE_SIZE);
+          }
+        }
+      }
+    }
   }
 
   private addTerrainDetail(x: number, y: number, type: TerrainType, row: number, col: number) {

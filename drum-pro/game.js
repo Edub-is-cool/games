@@ -132,6 +132,7 @@
     const t = DrumAudio.time();
     DrumAudio.play(Kit.VOICE_OF[pieceId] || pieceId, t, velocity == null ? 0.9 : velocity);
     state.flashes[pieceId] = { t, v: 1 };
+    lastHitAt = t;
     // Striking the hat at all settles the other plate visually.
     if (pieceId === 'hihat') delete state.flashes.hihatOpen;
     if (pieceId === 'hihatOpen') delete state.flashes.hihat;
@@ -494,6 +495,8 @@
     g.translate(view.x, view.y);
     g.scale(view.s, view.s);
 
+    drawStageLight(t);
+
     if (state.mode === 'play') drawHighway(t);
     if (state.mode === 'free') drawFreeHint();
 
@@ -506,6 +509,24 @@
 
     if (state.mode === 'play') { drawFloaters(t); drawCountIn(t); }
     g.restore();
+  }
+
+  // Warm pool of light behind the kit, brightening for a moment on every hit —
+  // the room reacting to the drum rather than the drum lighting itself.
+  let lastHitAt = -10;
+  function drawStageLight(t) {
+    const kt = kitTransform();
+    const cx = 520 * kt.s + kt.x;
+    const cy = 430 * kt.s + kt.y;
+    const r = 620 * kt.s;
+    const pulse = Math.max(0, 1 - (t - lastHitAt) / 0.35);
+
+    const grad = g.createRadialGradient(cx, cy - r * 0.25, r * 0.05, cx, cy, r);
+    grad.addColorStop(0, 'rgba(255, 214, 130, ' + (0.11 + pulse * 0.07).toFixed(3) + ')');
+    grad.addColorStop(0.45, 'rgba(255, 180, 90, ' + (0.045 + pulse * 0.03).toFixed(3) + ')');
+    grad.addColorStop(1, 'rgba(255, 160, 70, 0)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, LW, LH);
   }
 
   function frame() {

@@ -43,6 +43,7 @@ export class Enemy {
     const py = y * TILE_SIZE + TILE_SIZE / 2;
 
     this.sprite = scene.add.rectangle(px, py, TILE_SIZE - 6, TILE_SIZE - 6, type.color);
+    this.sprite.setStrokeStyle(2, 0x120b0b, 0.85);
     this.sprite.setDepth(9);
 
     this.hpBarBg = scene.add.rectangle(px, py - TILE_SIZE / 2 - 2, TILE_SIZE - 6, 3, 0x333333);

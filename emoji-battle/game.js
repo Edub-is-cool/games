@@ -25,9 +25,11 @@ const TERRAIN = {
 };
 
 let terrainMap = [];
+let terrainVersion = 0;   // bumped whenever the map changes, to rebuild the cached backdrop
 
 function generateTerrain() {
   terrainMap = [];
+  terrainVersion++;
   // Simple noise-based terrain using multiple random seeds
   const seed1 = Math.random() * 1000;
   const seed2 = Math.random() * 1000;
@@ -1008,63 +1010,179 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 let animFrameId = null;
 
+// Board size in CSS pixels. The canvas backing store is this times the device
+// pixel ratio, so everything drawn stays sharp on high-density screens.
+const view = { w: GRID_COLS * CELL_PX, h: GRID_ROWS * CELL_PX, dpr: 1 };
+
 function resizeCanvas() {
   const wrapper = document.getElementById('grid-wrapper');
   const maxW = wrapper.clientWidth - 16, maxH = wrapper.clientHeight - 16;
   const scale = Math.min(maxW / (GRID_COLS * CELL_PX), maxH / (GRID_ROWS * CELL_PX), 1);
-  canvas.width = Math.floor(GRID_COLS * CELL_PX * scale);
-  canvas.height = Math.floor(GRID_ROWS * CELL_PX * scale);
-  canvas.style.width = canvas.width + 'px';
-  canvas.style.height = canvas.height + 'px';
+  view.w = Math.floor(GRID_COLS * CELL_PX * scale);
+  view.h = Math.floor(GRID_ROWS * CELL_PX * scale);
+  view.dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(view.w * view.dpr);
+  canvas.height = Math.round(view.h * view.dpr);
+  canvas.style.width = view.w + 'px';
+  canvas.style.height = view.h + 'px';
 }
 
-function cellSize() { return canvas.width / GRID_COLS; }
+function cellSize() { return view.w / GRID_COLS; }
 
-function drawGrid() {
+// ---- cached terrain backdrop -------------------------------------------------
+// The ground never changes during a match, so it is painted once into an
+// offscreen canvas and blitted each frame. That buys detail per tile for free.
+let terrainLayer = null;
+let terrainLayerKey = '';
+
+function buildTerrainLayer() {
   const cs = cellSize();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const off = document.createElement('canvas');
+  off.width = canvas.width;
+  off.height = canvas.height;
+  const g = off.getContext('2d');
+  g.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
 
   for (let r = 0; r < GRID_ROWS; r++) {
     for (let c = 0; c < GRID_COLS; c++) {
       const x = c * cs, y = r * cs, light = (r + c) % 2 === 0;
       const terrain = terrainAt(r, c);
+      // Deterministic per-tile jitter so the ground isn't a flat wash.
+      const n = (Math.sin(r * 12.9898 + c * 78.233) * 43758.5453) % 1;
+      const jitter = (n < 0 ? n + 1 : n);
 
-      // Base terrain color
-      ctx.fillStyle = terrain.color;
-      ctx.globalAlpha = light ? 0.85 : 0.7;
-      ctx.fillRect(x, y, cs, cs);
-      ctx.globalAlpha = 1;
+      g.fillStyle = terrain.color;
+      g.globalAlpha = (light ? 0.85 : 0.7) + jitter * 0.08;
+      g.fillRect(x, y, cs, cs);
+      g.globalAlpha = 1;
 
-      // Territorial overlay — color by nearest player
-      if (game && game.spawns) {
-        const teamAlpha = light ? 0.08 : 0.04;
+      drawTerrainTexture(g, terrain, x, y, cs, jitter);
+
+      if (terrain.emoji) {
+        g.font = Math.floor(cs * 0.4) + 'px serif';
+        g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.globalAlpha = 0.62;
+        g.fillText(terrain.emoji, x + cs / 2, y + cs / 2);
+        g.globalAlpha = 1;
+      }
+
+      g.strokeStyle = 'rgba(255,255,255,0.06)';
+      g.lineWidth = 0.5;
+      g.strokeRect(x, y, cs, cs);
+    }
+  }
+
+  // Edge darkening, so the board reads as a lit surface with depth.
+  const vig = g.createRadialGradient(view.w / 2, view.h / 2, Math.min(view.w, view.h) * 0.32,
+                                     view.w / 2, view.h / 2, Math.max(view.w, view.h) * 0.72);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,0.34)');
+  g.fillStyle = vig;
+  g.fillRect(0, 0, view.w, view.h);
+
+  terrainLayer = off;
+}
+
+// A few cheap strokes per terrain type — enough to tell tiles apart at a glance.
+function drawTerrainTexture(g, terrain, x, y, cs, jitter) {
+  g.save();
+  switch (terrain.name) {
+    case 'Water': {
+      g.strokeStyle = 'rgba(255,255,255,0.16)';
+      g.lineWidth = Math.max(1, cs * 0.035);
+      for (let i = 0; i < 2; i++) {
+        const yy = y + cs * (0.34 + i * 0.3 + jitter * 0.08);
+        g.beginPath();
+        g.moveTo(x + cs * 0.16, yy);
+        g.quadraticCurveTo(x + cs * 0.5, yy - cs * 0.09, x + cs * 0.84, yy);
+        g.stroke();
+      }
+      break;
+    }
+    case 'Mountain': {
+      g.fillStyle = 'rgba(255,255,255,0.09)';
+      g.beginPath();
+      g.moveTo(x + cs * 0.5, y + cs * 0.2);
+      g.lineTo(x + cs * 0.84, y + cs * 0.8);
+      g.lineTo(x + cs * 0.16, y + cs * 0.8);
+      g.closePath();
+      g.fill();
+      break;
+    }
+    case 'Snow': {
+      g.fillStyle = 'rgba(255,255,255,0.5)';
+      for (let i = 0; i < 3; i++) {
+        const a = jitter * 6.28 + i * 2.1;
+        g.beginPath();
+        g.arc(x + cs * (0.5 + Math.cos(a) * 0.28), y + cs * (0.5 + Math.sin(a) * 0.28), cs * 0.035, 0, Math.PI * 2);
+        g.fill();
+      }
+      break;
+    }
+    case 'Desert': {
+      g.strokeStyle = 'rgba(120,80,20,0.22)';
+      g.lineWidth = Math.max(1, cs * 0.03);
+      for (let i = 0; i < 2; i++) {
+        const yy = y + cs * (0.4 + i * 0.28);
+        g.beginPath();
+        g.moveTo(x + cs * 0.2, yy);
+        g.quadraticCurveTo(x + cs * 0.5, yy + cs * 0.08, x + cs * 0.8, yy);
+        g.stroke();
+      }
+      break;
+    }
+    case 'Forest': {
+      g.fillStyle = 'rgba(0,0,0,0.16)';
+      g.beginPath();
+      g.ellipse(x + cs * 0.5, y + cs * 0.72, cs * 0.26, cs * 0.08, 0, 0, Math.PI * 2);
+      g.fill();
+      break;
+    }
+    default: {   // grass
+      g.strokeStyle = 'rgba(255,255,255,0.07)';
+      g.lineWidth = Math.max(1, cs * 0.025);
+      const bx = x + cs * (0.3 + jitter * 0.4), by = y + cs * 0.72;
+      g.beginPath();
+      g.moveTo(bx, by);
+      g.lineTo(bx + cs * 0.05, by - cs * 0.14);
+      g.stroke();
+    }
+  }
+  g.restore();
+}
+
+function drawGrid() {
+  const cs = cellSize();
+  ctx.setTransform(view.dpr, 0, 0, view.dpr, 0, 0);
+  ctx.clearRect(0, 0, view.w, view.h);
+
+  const key = view.w + 'x' + view.h + '@' + view.dpr + '|' + terrainVersion;
+  if (!terrainLayer || terrainLayerKey !== key) {
+    buildTerrainLayer();
+    terrainLayerKey = key;
+  }
+  ctx.drawImage(terrainLayer, 0, 0, view.w, view.h);
+
+  // Territorial tint — who each tile belongs to. Redrawn live because players die.
+  if (game && game.spawns) {
+    for (let r = 0; r < GRID_ROWS; r++) {
+      for (let c = 0; c < GRID_COLS; c++) {
         let closestP = 0, closestD = Infinity;
         for (let pi = 0; pi < game.numPlayers; pi++) {
           if (!game.players[pi].alive) continue;
-          const s = game.spawns[pi];
-          const d = Math.abs(r - s.row) + Math.abs(c - s.col);
+          const sp = game.spawns[pi];
+          const d = Math.abs(r - sp.row) + Math.abs(c - sp.col);
           if (d < closestD) { closestD = d; closestP = pi; }
         }
-        ctx.fillStyle = (PLAYER_COLORS[closestP].bg || 'rgba(100,100,100,') + teamAlpha + ')';
-        ctx.fillRect(x, y, cs, cs);
+        ctx.fillStyle = (PLAYER_COLORS[closestP].bg || 'rgba(100,100,100,') + ((r + c) % 2 === 0 ? 0.09 : 0.05) + ')';
+        ctx.fillRect(c * cs, r * cs, cs, cs);
       }
-
-      // Draw terrain emoji for blocking/notable terrain
-      if (terrain.emoji) {
-        ctx.font = `${Math.floor(cs * 0.4)}px serif`;
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.globalAlpha = 0.6;
-        ctx.fillText(terrain.emoji, x + cs / 2, y + cs / 2);
-        ctx.globalAlpha = 1;
-      }
-
-      ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 0.5; ctx.strokeRect(x, y, cs, cs);
     }
   }
 
   if (game && game.numPlayers <= 2) {
     ctx.strokeStyle = 'rgba(255,255,255,0.3)'; ctx.lineWidth = 2; ctx.setLineDash([6, 4]);
-    ctx.beginPath(); ctx.moveTo(DIVIDER_COL * cs, 0); ctx.lineTo(DIVIDER_COL * cs, canvas.height); ctx.stroke(); ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(DIVIDER_COL * cs, 0); ctx.lineTo(DIVIDER_COL * cs, view.h); ctx.stroke(); ctx.setLineDash([]);
   }
 
   if (game && game.selected) {
@@ -1145,15 +1263,13 @@ function drawGrid() {
   for (let p = 0; p < game.numPlayers; p++) {
     game.players[p].buildings.forEach(b => {
       if (b.hp <= 0) return;
-      ctx.fillText(BUILDINGS[b.type].emoji, b.col * cs + cs / 2, b.row * cs + cs / 2);
+      drawPiece(BUILDINGS[b.type].emoji, b.col, b.row, cs, p, true);
       drawHpBar(b.col * cs, b.row * cs + cs - 6, cs, 4, b.hp, b.maxHp, p);
     });
     game.players[p].units.forEach(u => {
       if (u.hp <= 0) return;
-      ctx.fillText(UNITS[u.type].emoji, u.col * cs + cs / 2, u.row * cs + cs / 2);
+      drawPiece(UNITS[u.type].emoji, u.col, u.row, cs, p, false);
       drawHpBar(u.col * cs, u.row * cs + cs - 6, cs, 4, u.hp, u.maxHp, p);
-      ctx.fillStyle = PLAYER_COLORS[p] ? PLAYER_COLORS[p].color : '#888';
-      ctx.beginPath(); ctx.arc(u.col * cs + 6, u.row * cs + 6, 3, 0, Math.PI * 2); ctx.fill();
     });
   }
 
@@ -1165,12 +1281,69 @@ function drawGrid() {
   }
 }
 
+// One unit or building: owner-coloured pool of light, a contact shadow, then the
+// emoji lifted off the ground with a drop shadow.
+function drawPiece(emoji, col, row, cs, pi, isBuilding) {
+  const x = col * cs + cs / 2, y = row * cs + cs / 2;
+  const pc = PLAYER_COLORS[pi] || { color: '#888', bg: 'rgba(128,128,128,' };
+
+  const glow = ctx.createRadialGradient(x, y, cs * 0.08, x, y, cs * 0.55);
+  glow.addColorStop(0, pc.bg + (isBuilding ? 0.5 : 0.4) + ')');
+  glow.addColorStop(1, pc.bg + '0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(col * cs, row * cs, cs, cs);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.3)';
+  ctx.beginPath();
+  ctx.ellipse(x, y + cs * 0.29, cs * 0.25, cs * 0.08, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.55)';
+  ctx.shadowBlur = cs * 0.12;
+  ctx.shadowOffsetY = cs * 0.035;
+  ctx.fillText(emoji, x, y - cs * 0.05);
+  ctx.restore();
+
+  // Owner pip, ringed so it stays readable over any terrain.
+  ctx.fillStyle = pc.color;
+  ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+  ctx.lineWidth = Math.max(1, cs * 0.03);
+  ctx.beginPath();
+  ctx.arc(col * cs + cs * 0.14, row * cs + cs * 0.14, cs * 0.075, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+}
+
 function drawHpBar(x, y, w, h, hp, maxHp, pi) {
-  const pct = Math.max(0, hp / maxHp), barW = w * 0.8, barX = x + (w - barW) / 2;
-  ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.fillRect(barX, y, barW, h);
-  ctx.fillStyle = pct > 0.5 ? '#4f4' : pct > 0.25 ? '#ff4' : '#f44'; ctx.fillRect(barX, y, barW * pct, h);
+  const pct = Math.max(0, hp / maxHp), barW = w * 0.78, barX = x + (w - barW) / 2;
+  const r = h / 2;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.roundRect(barX, y, barW, h, r);
+  ctx.fillStyle = 'rgba(0,0,0,0.62)';
+  ctx.fill();
+
+  if (pct > 0) {
+    ctx.beginPath();
+    ctx.roundRect(barX, y, Math.max(barW * pct, r * 2), h, r);
+    const grad = ctx.createLinearGradient(0, y, 0, y + h);
+    const top = pct > 0.5 ? '#7dff7d' : pct > 0.25 ? '#ffee6a' : '#ff7a6a';
+    const bot = pct > 0.5 ? '#22aa22' : pct > 0.25 ? '#c9a800' : '#c02b1c';
+    grad.addColorStop(0, top);
+    grad.addColorStop(1, bot);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
   const pc = PLAYER_COLORS[pi];
-  ctx.strokeStyle = pc ? pc.color + '80' : 'rgba(128,128,128,0.5)'; ctx.lineWidth = 0.5; ctx.strokeRect(barX, y, barW, h);
+  ctx.strokeStyle = pc ? pc.color + 'aa' : 'rgba(128,128,128,0.6)';
+  ctx.lineWidth = 0.75;
+  ctx.beginPath();
+  ctx.roundRect(barX, y, barW, h, r);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function render() { drawGrid(); tickGame(); updateHUD(); animFrameId = requestAnimationFrame(render); }
@@ -1463,8 +1636,8 @@ function handleCanvasTap(e) {
   }
   const rect = canvas.getBoundingClientRect();
   // Use display size ratio for correct touch mapping
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
+  const scaleX = view.w / rect.width;
+  const scaleY = view.h / rect.height;
   const canvasX = (cx - rect.left) * scaleX;
   const canvasY = (cy - rect.top) * scaleY;
   const cs = cellSize();

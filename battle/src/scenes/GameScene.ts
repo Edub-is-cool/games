@@ -147,9 +147,6 @@ export class GameScene extends Phaser.Scene {
     this.commands.terrain = mapData.terrain;
     this.commands.registerDecorations(mapData.decorations);
 
-    // Graphics enhancer for visual polish
-    this.graphicsEnhancer = new GraphicsEnhancer(this, this.world, this.sprites, this.selection, this.playerColors, mapData.terrain);
-
     // Fallback ground behind terrain
     const bg = this.add.rectangle(mapW / 2, mapH / 2, mapW, mapH, 0x2d5a1e);
     bg.setDepth(-11);
@@ -169,6 +166,21 @@ export class GameScene extends Phaser.Scene {
     this.dayNightOverlay.setDepth(95); // above terrain, below selection/effects
     this.dayNightOverlay.setBlendMode(Phaser.BlendModes.MULTIPLY);
 
+    // Grain over the ground so 32px terrain tiles stop reading as flat blocks.
+    this.makeGrainTexture();
+    this.add.tileSprite(0, 0, mapW, mapH, 'ground-grain')
+      .setOrigin(0, 0)
+      .setDepth(-8)
+      .setAlpha(0.38)
+      .setBlendMode(Phaser.BlendModes.MULTIPLY);
+
+    // Vignette, locked to the camera and kept under the HUD.
+    this.makeVignetteTexture();
+    this.add.image(this.scale.width / 2, this.scale.height / 2, 'battle-vignette')
+      .setDisplaySize(this.scale.width * 1.5, this.scale.height * 1.6)
+      .setScrollFactor(0)
+      .setDepth(94);
+
     // Graphics enhancer (visual polish layer between sprites and selection)
     this.graphicsEnhancer = new GraphicsEnhancer(
       this, this.world, this.sprites, this.selection, this.playerColors, mapData.terrain,
@@ -183,6 +195,41 @@ export class GameScene extends Phaser.Scene {
     // Start HUD & diplomacy panel
     this.scene.launch('HUDScene', { gameScene: this, diplomacy: this.diplomacy });
     this.scene.launch('DiplomacyPanelScene', { gameScene: this, diplomacy: this.diplomacy });
+  }
+
+  /** Tileable speckle; mid-grey is neutral so it darkens and lifts evenly. */
+  private makeGrainTexture() {
+    const key = 'ground-grain';
+    if (this.textures.exists(key)) return;
+    const size = 128;
+    const tex = this.textures.createCanvas(key, size, size);
+    if (!tex) return;
+    const c = tex.getContext();
+    const img = c.createImageData(size, size);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const n = 128 + (Math.random() - 0.5) * 40;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = n;
+      img.data[i + 3] = 255;
+    }
+    c.putImageData(img, 0, 0);
+    tex.refresh();
+  }
+
+  private makeVignetteTexture() {
+    const key = 'battle-vignette';
+    if (this.textures.exists(key)) return;
+    const size = 256;
+    const tex = this.textures.createCanvas(key, size, size);
+    if (!tex) return;
+    const c = tex.getContext();
+    const g = c.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(0.55, 'rgba(0,0,0,0)');
+    g.addColorStop(0.8, 'rgba(0,0,0,0.22)');
+    g.addColorStop(1, 'rgba(0,0,0,0.7)');
+    c.fillStyle = g;
+    c.fillRect(0, 0, size, size);
+    tex.refresh();
   }
 
   private spawnFromMapData(mapData: MapData, totalPlayers: number) {

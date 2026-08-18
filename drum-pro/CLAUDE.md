@@ -17,20 +17,24 @@ by scroll speed.
 ## The Kit
 Eight playable pieces, laid out as a front-facing 2-D kit (like looking at a drummer's setup):
 
+Listed left-to-right as they appear on the kit:
+
 | Piece            | Key     | Sound character                                  |
 |------------------|---------|--------------------------------------------------|
-| Kick             | `Space` | low sine thump with fast pitch drop              |
+| Crash            | `A`     | wide noise wash, long decay                      |
 | Snare            | `S`     | noise burst + short tonal body                   |
-| Closed hi-hat    | `A`     | short filtered noise, tight decay                |
-| Open hi-hat      | `Q`     | same source, long decay                          |
-| High tom         | `D`     | mid sine with pitch drop                         |
-| Mid tom          | `F`     | lower sine with pitch drop                       |
-| Floor tom        | `J`     | lowest tom, longest decay                        |
-| Ride             | `K`     | bright sustained noise + metallic partials       |
-| Crash            | `L`     | wide noise wash, long decay                      |
+| Closed hi-hat    | `D`     | short filtered noise, tight decay                |
+| Open hi-hat      | `E`     | same source, long decay (sits directly above `D`)|
+| High tom         | `F`     | mid sine with pitch drop                         |
+| Kick             | `Space` | low sine thump with fast pitch drop              |
+| Mid tom          | `J`     | lower sine with pitch drop                       |
+| Floor tom        | `K`     | lowest tom, longest decay                        |
+| Ride             | `L`     | bright sustained noise + metallic partials       |
 
-Home-row keys sit left-to-right in the same order as the pieces on screen, so the mapping is
-learnable by looking at the kit. `Space` is kick because it's the foot.
+**The binding rule:** keys advance across the home row in the same order the pieces advance
+across the kit — `A S D F` under the left hand, `J K L` under the right, `Space` for the kick
+because it's the foot. Reaching right on the keyboard reaches right on the kit; that ordering
+is what makes the mapping learnable, so never reassign a key without preserving it.
 
 ## Modes
 
@@ -45,8 +49,12 @@ piece is a lane; a note in a lane means "hit that piece when it reaches the line
 - **Judgements** — Perfect / Good / Miss, based on a fixed millisecond window around the note's
   scheduled time. Windows stay constant in ms across all speeds.
 - **Speed modes** — the "different modes" are scroll-speed presets. Faster scroll = less time to
-  read what's coming, same timing precision required:
-  - Slow, Normal, Fast, Insane
+  read what's coming, same timing precision required. What the setting really controls is
+  *read-ahead*, so choose values by seconds of visible lead time, not by the pixel figure:
+  - Slow (145 px/s, ~2.3s visible) · Normal (470, ~0.7s) · Fast (680, ~0.5s) · Insane (950, ~0.36s)
+- **Extra hits** — striking a pad with no note under it breaks the combo and counts against
+  accuracy (it inflates the denominator), so mashing can't score. Free during the count-in and
+  after the last note, so warming up and celebrating cost nothing.
 - **Scoring** — combo multiplier, accuracy percentage, letter grade at the end.
 - **Persistence** — best grade/score per chart per speed in `localStorage` (`drumpro-save-v1`).
 

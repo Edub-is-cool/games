@@ -202,9 +202,10 @@
       startTime,
       beat,
       endTime: startTime + Charts.duration(chart) + 0.9,
+      lastNoteTime: notes.length ? notes[notes.length - 1].time : startTime,
       total: notes.length,
       score: 0, combo: 0, maxCombo: 0,
-      counts: { perfect: 0, good: 0, miss: 0 },
+      counts: { perfect: 0, good: 0, miss: 0, stray: 0 },
       ended: false,
     };
 
@@ -228,7 +229,16 @@
       const dt = Math.abs(n.time - t);
       if (dt < bestDt) { best = n; bestDt = dt; }
     }
-    if (!best || bestDt > W_GOOD) return;   // stray hit: it still sounds, costs nothing
+    if (!best || bestDt > W_GOOD) {
+      // Nothing to hit here. Only counts against you while the chart is live —
+      // warming up during the count-in, or celebrating after the last note, is free.
+      if (t >= run.startTime - W_GOOD && t <= run.lastNoteTime + W_LATE) {
+        run.counts.stray++;
+        run.combo = 0;
+        floater(laneId, 'EXTRA', '#ff5470');
+      }
+      return;
+    }
 
     best.judged = true;
     if (bestDt <= W_PERFECT) {
@@ -296,7 +306,9 @@
     run.ended = true;
 
     const c = run.counts;
-    const acc = run.total ? ((c.perfect + c.good * 0.5) / run.total) * 100 : 0;
+    // Extra hits inflate the denominator, so spamming can't grade well.
+    const denom = run.total + c.stray;
+    const acc = denom ? ((c.perfect + c.good * 0.5) / denom) * 100 : 0;
     const gr = grade(acc);
 
     const key = bestKey(run.chart.id, run.speed.name);
@@ -316,6 +328,7 @@
       ['Perfect', c.perfect],
       ['Good', c.good],
       ['Missed', c.miss],
+      ['Extra hits', c.stray],
     ].map(([k, v]) => '<div class="rs"><div class="rs-k">' + k + '</div><div class="rs-v">' + v + '</div></div>').join('');
     el.resBest.innerHTML = isBest
       ? '<strong>New best!</strong>'
@@ -478,7 +491,7 @@
       el.hudCombo.textContent = run.combo >= 4 ? run.combo + 'x' + (m > 1 ? ' ·' + m : '') : '';
       hudLast.combo = run.combo;
     }
-    const judged = run.counts.perfect + run.counts.good + run.counts.miss;
+    const judged = run.counts.perfect + run.counts.good + run.counts.miss + run.counts.stray;
     const acc = judged ? (((run.counts.perfect + run.counts.good * 0.5) / judged) * 100).toFixed(1) + '%' : '100.0%';
     if (acc !== hudLast.acc) { el.hudAcc.textContent = acc; hudLast.acc = acc; }
 

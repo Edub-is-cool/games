@@ -314,6 +314,9 @@ h2 {
   grid-template-columns: repeat(2, 1fr);
   gap: 0.5rem;
 }
+/* Odd tile count — the last one takes the full row rather than dangling. */
+.res-stats .rs:last-child { grid-column: 1 / -1; }
+
 .res-stats .rs {
   background: rgba(255, 255, 255, 0.04);
   border-radius: 10px;

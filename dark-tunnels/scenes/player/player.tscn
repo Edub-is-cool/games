@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://player001"]
+[gd_scene load_steps=9 format=3 uid="uid://player001"]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 
@@ -21,6 +21,26 @@ metallic_specular = 0.3
 albedo_color = Color(0.2, 0.12, 0.05, 1)
 roughness = 0.7
 metallic_specular = 0.25
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dust"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(1, 0.86, 0.66, 1)
+emission_enabled = true
+emission = Color(1, 0.82, 0.6, 1)
+emission_energy_multiplier = 1.6
+billboard_mode = 3
+disable_receive_shadows = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_dust"]
+material = SubResource("StandardMaterial3D_dust")
+size = Vector2(0.012, 0.012)
+
+[sub_resource type="Curve" id="Curve_dust"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.25, 1), 0.0, 0.0, 0, 0, Vector2(0.75, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
 
 [node name="Player" type="CharacterBody3D"]
 script = ExtResource("1_player")
@@ -133,11 +153,55 @@ radius = 0.04
 use_collision = false
 material = SubResource("StandardMaterial3D_glove")
 
+; === CARRIED LIGHT (warm lantern glow that travels with the player) ===
+[node name="LanternLight" type="OmniLight3D" parent="Head/Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, -0.15, -0.2)
+light_color = Color(1, 0.78, 0.52, 1)
+light_energy = 1.35
+light_indirect_energy = 0.0
+light_specular = 0.5
+shadow_enabled = false
+omni_range = 13.0
+omni_attenuation = 1.1
+
+; Tight hot pool right around the player so nothing is ever pitch black
+[node name="LanternCore" type="OmniLight3D" parent="Head/Camera3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.3, 0)
+light_color = Color(1, 0.85, 0.66, 1)
+light_energy = 0.5
+light_indirect_energy = 0.0
+light_specular = 0.2
+shadow_enabled = false
+omni_range = 5.0
+omni_attenuation = 1.6
+
 [node name="InteractionRay" type="RayCast3D" parent="Head/Camera3D"]
 target_position = Vector3(0, 0, -3)
 
 [node name="AttackRay" type="RayCast3D" parent="Head/Camera3D"]
 target_position = Vector3(0, 0, -2.5)
+
+
+; Airborne dust drifting through the torchlight — one emitter that follows the
+; player, rather than one per room.
+[node name="DustMotes" type="CPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
+amount = 70
+lifetime = 7.0
+randomness = 1.0
+local_coords = false
+mesh = SubResource("QuadMesh_dust")
+emission_shape = 3
+emission_box_extents = Vector3(7, 2.2, 7)
+direction = Vector3(0.3, 1, 0.1)
+spread = 60.0
+gravity = Vector3(0.02, 0.015, 0.01)
+initial_velocity_min = 0.02
+initial_velocity_max = 0.12
+scale_amount_min = 0.5
+scale_amount_max = 1.8
+scale_amount_curve = SubResource("Curve_dust")
+color = Color(1, 0.87, 0.68, 0.5)
 
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 0.3

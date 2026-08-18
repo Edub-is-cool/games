@@ -12,6 +12,14 @@ func _ready() -> void:
 	GameManager.is_paused = false
 	Inventory.reset()
 	_update_difficulty_label()
+	_sync_bg_resolution()
+	get_viewport().size_changed.connect(_sync_bg_resolution)
+
+# The backdrop shader needs the real viewport size to keep its aspect correct
+func _sync_bg_resolution() -> void:
+	var mat := ($BG as ColorRect).material as ShaderMaterial
+	if mat:
+		mat.set_shader_parameter("resolution", Vector2(get_viewport_rect().size))
 
 func _update_difficulty_label() -> void:
 	difficulty_label.text = difficulties[difficulty_idx].capitalize()

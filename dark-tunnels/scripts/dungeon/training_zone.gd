@@ -1,5 +1,7 @@
 extends Node3D
 
+const DungeonMaterials := preload("res://scripts/dungeon/dungeon_materials.gd")
+
 @onready var hud: CanvasLayer = $HUD
 @onready var player: CharacterBody3D = $Player
 
@@ -53,19 +55,10 @@ func _bake_and_start() -> void:
 func _build_arena() -> void:
 	var nav_region := $NavigationRegion3D
 
-	var floor_mat := StandardMaterial3D.new()
-	floor_mat.albedo_color = Color(0.35, 0.3, 0.27)
-	floor_mat.roughness = 0.9
-	floor_mat.metallic_specular = 0.25
-
-	var wall_mat := StandardMaterial3D.new()
-	wall_mat.albedo_color = Color(0.4, 0.35, 0.3)
-	wall_mat.roughness = 0.85
-	wall_mat.metallic_specular = 0.2
-
-	var ceil_mat := StandardMaterial3D.new()
-	ceil_mat.albedo_color = Color(0.25, 0.22, 0.2)
-	ceil_mat.roughness = 0.95
+	var mats := DungeonMaterials.get_materials()
+	var floor_mat: Material = mats["floor"]
+	var wall_mat: Material = mats["wall"]
+	var ceil_mat: Material = mats["ceiling"]
 
 	var half := arena_size / 2.0
 	var height := 5.0
@@ -117,6 +110,11 @@ func _build_arena() -> void:
 		torch.position = tp
 		add_child(torch)
 
+	# Hanging braziers over the arena — wall torches alone leave the middle of a
+	# 30m room unlit now that lighting is fully dynamic.
+	for bp in [Vector3(-8, 0, -8), Vector3(8, 0, -8), Vector3(-8, 0, 8), Vector3(8, 0, 8), Vector3(0, 0, 0)]:
+		_build_brazier(bp, height)
+
 	# Place a merchant in the corner
 	var merchant_scene := preload("res://scenes/dungeon/merchant.tscn")
 	var merchant := merchant_scene.instantiate()
@@ -127,6 +125,65 @@ func _build_arena() -> void:
 	if Inventory.gold < 500:
 		Inventory.gold = 500
 		Inventory.gold_changed.emit(Inventory.gold)
+
+func _build_brazier(at: Vector3, ceiling_height: float) -> void:
+	var iron := StandardMaterial3D.new()
+	iron.albedo_color = Color(0.13, 0.12, 0.11)
+	iron.roughness = 0.4
+	iron.metallic = 0.85
+
+	var coal := StandardMaterial3D.new()
+	coal.albedo_color = Color(1.0, 0.42, 0.06)
+	coal.roughness = 0.6
+	coal.emission_enabled = true
+	coal.emission = Color(1.0, 0.36, 0.05)
+	coal.emission_energy_multiplier = 6.0
+
+	var hang_y := ceiling_height - 1.2
+
+	var chain := MeshInstance3D.new()
+	var chain_mesh := CylinderMesh.new()
+	chain_mesh.top_radius = 0.02
+	chain_mesh.bottom_radius = 0.02
+	chain_mesh.height = 1.1
+	chain_mesh.radial_segments = 5
+	chain.mesh = chain_mesh
+	chain.material_override = iron
+	chain.position = at + Vector3(0, hang_y + 0.55, 0)
+	add_child(chain)
+
+	var bowl := MeshInstance3D.new()
+	var bowl_mesh := CylinderMesh.new()
+	bowl_mesh.top_radius = 0.55
+	bowl_mesh.bottom_radius = 0.22
+	bowl_mesh.height = 0.35
+	bowl_mesh.radial_segments = 12
+	bowl.mesh = bowl_mesh
+	bowl.material_override = iron
+	bowl.position = at + Vector3(0, hang_y, 0)
+	add_child(bowl)
+
+	var embers := MeshInstance3D.new()
+	var ember_mesh := SphereMesh.new()
+	ember_mesh.radius = 0.4
+	ember_mesh.height = 0.42
+	ember_mesh.radial_segments = 10
+	ember_mesh.rings = 5
+	embers.mesh = ember_mesh
+	embers.material_override = coal
+	embers.position = at + Vector3(0, hang_y + 0.12, 0)
+	embers.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(embers)
+
+	var light := OmniLight3D.new()
+	light.light_color = Color(1.0, 0.72, 0.44)
+	light.light_energy = 1.7
+	light.light_indirect_energy = 0.0
+	light.omni_range = 12.0
+	light.omni_attenuation = 1.3
+	light.shadow_enabled = false
+	light.position = at + Vector3(0, hang_y - 0.2, 0)
+	add_child(light)
 
 func _start_next_wave() -> void:
 	# 10 second delay between waves

@@ -19,6 +19,8 @@ var is_attacking: bool = false
 var is_dead: bool = false
 var held_weapon_node: Node3D = null
 var current_held_weapon: String = ""
+var light_timer: float = 0.0
+var base_fov: float = 75.0
 
 @onready var head: Node3D = $Head
 @onready var camera: Camera3D = $Head/Camera3D
@@ -27,6 +29,8 @@ var current_held_weapon: String = ""
 @onready var attack_timer: Timer = $AttackTimer
 @onready var attack_cooldown: Timer = $AttackCooldown
 @onready var mana_regen_timer: Timer = $ManaRegenTimer
+@onready var lantern: OmniLight3D = $Head/Camera3D/LanternLight
+@onready var lantern_core: OmniLight3D = $Head/Camera3D/LanternCore
 
 signal health_changed(new_health: int, max_health: int)
 signal mana_changed(new_mana: int, max_mana: int)
@@ -45,6 +49,8 @@ func _ready() -> void:
 	health_changed.emit(health, max_health)
 	mana_changed.emit(mana, max_mana)
 	Inventory.weapon_changed.connect(_on_weapon_changed)
+	base_fov = camera.fov
+	light_timer = randf() * TAU
 	_update_held_weapon()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -126,6 +132,30 @@ func _unhandled_input(event: InputEvent) -> void:
 		var hud_node := get_tree().current_scene.get_node_or_null("HUD")
 		if hud_node and hud_node.has_method("toggle_controls"):
 			hud_node.toggle_controls()
+
+func _process(delta: float) -> void:
+	_animate_lantern(delta)
+
+# Warm carried light: gentle guttering plus a sway tied to the walk cycle,
+# so the player's own shadowless glow never reads as a flat headlamp.
+func _animate_lantern(delta: float) -> void:
+	if not is_instance_valid(lantern):
+		return
+	light_timer += delta
+
+	var flicker := sin(light_timer * 5.3) * 0.06
+	flicker += sin(light_timer * 9.1 + 1.3) * 0.035
+	flicker += sin(light_timer * 2.1) * 0.03
+	lantern.light_energy = 1.35 * (1.0 + flicker)
+	lantern_core.light_energy = 0.5 * (1.0 + flicker * 0.5)
+
+	var sway := sin(bob_timer * BOB_FREQ * 0.5) * 0.05
+	lantern.position.x = 0.25 + sway
+	lantern.position.y = -0.15 + abs(sway) * 0.4
+
+	# Sprinting widens the view a touch — cheap sense of speed
+	var target_fov: float = base_fov + (7.0 if (Input.is_action_pressed("sprint") and velocity.length() > 1.0 and not is_dead) else 0.0)
+	camera.fov = lerpf(camera.fov, target_fov, delta * 6.0)
 
 func _physics_process(delta: float) -> void:
 	if is_dead:

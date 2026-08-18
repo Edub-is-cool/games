@@ -1,5 +1,7 @@
 extends Node3D
 
+const DungeonMaterials := preload("res://scripts/dungeon/dungeon_materials.gd")
+
 const ROOM_SIZE_MIN := Vector2(8, 8)
 const ROOM_SIZE_MAX := Vector2(14, 14)
 const CORRIDOR_WIDTH := 4.0
@@ -16,6 +18,7 @@ var floor_mat: StandardMaterial3D
 var wall_mat: StandardMaterial3D
 var ceiling_mat: StandardMaterial3D
 var trim_mat: StandardMaterial3D
+var decor_root: Node3D
 
 var torch_scene := preload("res://scenes/dungeon/torch.tscn")
 var door_scene := preload("res://scenes/dungeon/door.tscn")
@@ -61,53 +64,11 @@ var weapon_scenes: Array[PackedScene] = [
 ]
 
 func _init() -> void:
-	# Gray cobblestone floor - weathered, worn stone
-	floor_mat = StandardMaterial3D.new()
-	floor_mat.albedo_color = Color(0.48, 0.46, 0.44)
-	floor_mat.roughness = 0.94
-	floor_mat.metallic = 0.02
-	floor_mat.metallic_specular = 0.35
-	floor_mat.albedo_texture = _generate_cobblestone_texture()
-	floor_mat.normal_enabled = true
-	floor_mat.normal_texture = _generate_cobblestone_normal()
-	floor_mat.normal_scale = 1.8
-	floor_mat.uv1_triplanar = true
-	floor_mat.uv1_scale = Vector3(1.2, 1.2, 1.2)
-	floor_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
-
-	# Dark stone brick walls - aged masonry with wear
-	wall_mat = StandardMaterial3D.new()
-	wall_mat.albedo_color = Color(0.32, 0.3, 0.27)
-	wall_mat.roughness = 0.9
-	wall_mat.metallic = 0.01
-	wall_mat.metallic_specular = 0.3
-	wall_mat.albedo_texture = _generate_brick_texture()
-	wall_mat.normal_enabled = true
-	wall_mat.normal_texture = _generate_brick_normal()
-	wall_mat.normal_scale = 2.0
-	wall_mat.uv1_triplanar = true
-	wall_mat.uv1_scale = Vector3(1.5, 1.5, 1.5)
-	wall_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
-
-	# Ceiling - rough dark stone with drip stains
-	ceiling_mat = StandardMaterial3D.new()
-	ceiling_mat.albedo_color = Color(0.2, 0.19, 0.17)
-	ceiling_mat.roughness = 0.98
-	ceiling_mat.albedo_texture = _generate_ceiling_texture()
-	ceiling_mat.normal_enabled = true
-	ceiling_mat.normal_texture = _generate_ceiling_normal()
-	ceiling_mat.normal_scale = 1.0
-	ceiling_mat.uv1_triplanar = true
-	ceiling_mat.uv1_scale = Vector3(1.5, 1.5, 1.5)
-	ceiling_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
-
-	# Wall trim - chiseled stone
-	trim_mat = StandardMaterial3D.new()
-	trim_mat.albedo_color = Color(0.18, 0.16, 0.14)
-	trim_mat.roughness = 0.7
-	trim_mat.metallic = 0.05
-	trim_mat.metallic_specular = 0.4
-	trim_mat.metallic_specular = 0.4
+	var mats := DungeonMaterials.get_materials()
+	floor_mat = mats["floor"]
+	wall_mat = mats["wall"]
+	ceiling_mat = mats["ceiling"]
+	trim_mat = mats["trim"]
 
 func generate() -> void:
 	print("DungeonGenerator: Starting generation...")
@@ -122,6 +83,7 @@ func generate() -> void:
 	_place_traps()
 	_place_weapons()
 	_place_merchant()
+	_place_props()
 	print("DungeonGenerator: Generation complete")
 
 func _add_geometry(node: Node3D) -> void:
@@ -129,6 +91,72 @@ func _add_geometry(node: Node3D) -> void:
 		nav_region.add_child(node)
 	else:
 		add_child(node)
+
+# Decorative geometry lives outside the navigation region so the runtime bake
+# never has to walk it — clutter should not cost pathfinding anything.
+func _add_decor(node: Node3D) -> void:
+	if decor_root == null or not is_instance_valid(decor_root):
+		decor_root = Node3D.new()
+		decor_root.name = "Decor"
+		add_child(decor_root)
+	decor_root.add_child(node)
+
+# --- MESH HELPERS -------------------------------------------------------------
+# The dungeon used to be built out of CSG nodes. Nothing here needs boolean
+# operations, and CSG re-evaluates its brushes on the CPU, so everything is
+# plain MeshInstance3D now — with a StaticBody3D only where collision matters.
+
+func _shell(pos: Vector3, mesh: Mesh, mat: Material, collide: bool, shape: Shape3D = null, shadows: bool = true) -> Node3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.material_override = mat
+	if not shadows:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if not collide:
+		mi.position = pos
+		return mi
+	var body := StaticBody3D.new()
+	body.position = pos
+	var col := CollisionShape3D.new()
+	col.shape = shape
+	body.add_child(col)
+	body.add_child(mi)
+	return body
+
+func _box(size: Vector3, pos: Vector3, mat: Material, collide: bool = false, shadows: bool = true) -> Node3D:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var shape: Shape3D = null
+	if collide:
+		var bs := BoxShape3D.new()
+		bs.size = size
+		shape = bs
+	return _shell(pos, mesh, mat, collide, shape, shadows)
+
+func _cyl(radius: float, height: float, sides: int, pos: Vector3, mat: Material, cone: bool = false, shadows: bool = true) -> Node3D:
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = 0.0 if cone else radius
+	mesh.bottom_radius = radius
+	mesh.height = height
+	mesh.radial_segments = sides
+	mesh.rings = 1
+	return _shell(pos, mesh, mat, false, null, shadows)
+
+func _sphere(radius: float, pos: Vector3, mat: Material, segments: int = 8, rings: int = 4, shadows: bool = true) -> Node3D:
+	var mesh := SphereMesh.new()
+	mesh.radius = radius
+	mesh.height = radius * 2.0
+	mesh.radial_segments = segments
+	mesh.rings = rings
+	return _shell(pos, mesh, mat, false, null, shadows)
+
+func _torus(inner: float, outer: float, pos: Vector3, mat: Material, sides: int = 10, ring_sides: int = 5) -> Node3D:
+	var mesh := TorusMesh.new()
+	mesh.inner_radius = inner
+	mesh.outer_radius = outer
+	mesh.rings = sides
+	mesh.ring_segments = ring_sides
+	return _shell(pos, mesh, mat, false, null, false)
 
 func _generate_room_layout() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -300,21 +328,10 @@ func _build_room(room: Dictionary) -> void:
 	if room["type"] == "boss":
 		height = 6.0
 
-	# Floor
-	var floor_box := CSGBox3D.new()
-	floor_box.size = Vector3(sz.x, 0.2, sz.y)
-	floor_box.position = pos
-	floor_box.use_collision = true
-	floor_box.material = floor_mat
-	_add_geometry(floor_box)
-
+	# Floor — never casts shadows, it only ever receives them
+	_add_geometry(_box(Vector3(sz.x, 0.2, sz.y), pos, floor_mat, true, false))
 	# Ceiling
-	var ceil_box := CSGBox3D.new()
-	ceil_box.size = Vector3(sz.x, 0.2, sz.y)
-	ceil_box.position = pos + Vector3(0, height, 0)
-	ceil_box.use_collision = true
-	ceil_box.material = ceiling_mat
-	_add_geometry(ceil_box)
+	_add_geometry(_box(Vector3(sz.x, 0.2, sz.y), pos + Vector3(0, height, 0), ceiling_mat, true, false))
 
 	# Determine which walls need doorway openings
 	var openings: Array[String] = []
@@ -368,24 +385,10 @@ func _decorate_room(room: Dictionary) -> void:
 		pos + Vector3(half_x - 0.2, 0, half_z - 0.2),
 	]
 	for cp in corners:
-		# Main pillar shaft
-		var pillar := CSGBox3D.new()
-		pillar.size = Vector3(0.3, height, 0.3)
-		pillar.position = cp + Vector3(0, height / 2.0, 0)
-		pillar.material = pillar_mat
-		_add_geometry(pillar)
-		# Base plinth
-		var base := CSGBox3D.new()
-		base.size = Vector3(0.45, 0.25, 0.45)
-		base.position = cp + Vector3(0, 0.22, 0)
-		base.material = cap_mat
-		_add_geometry(base)
-		# Capital at top
-		var cap := CSGBox3D.new()
-		cap.size = Vector3(0.42, 0.15, 0.42)
-		cap.position = cp + Vector3(0, height - 0.17, 0)
-		cap.material = cap_mat
-		_add_geometry(cap)
+		# Shaft, plinth and capital
+		_add_decor(_box(Vector3(0.3, height, 0.3), cp + Vector3(0, height / 2.0, 0), pillar_mat))
+		_add_decor(_box(Vector3(0.45, 0.25, 0.45), cp + Vector3(0, 0.22, 0), cap_mat))
+		_add_decor(_box(Vector3(0.42, 0.15, 0.42), cp + Vector3(0, height - 0.17, 0), cap_mat))
 
 	# Floor base trim along walls (skip doorway sides)
 	var openings: Array[String] = []
@@ -398,41 +401,30 @@ func _decorate_room(room: Dictionary) -> void:
 
 	var trim_height := 0.18
 	var trim_depth := 0.12
+	var trim_y := trim_height / 2.0 + 0.1
 	if "north" not in openings:
-		var trim_n := CSGBox3D.new()
-		trim_n.size = Vector3(sz.x - 0.6, trim_height, trim_depth)
-		trim_n.position = pos + Vector3(0, trim_height / 2.0 + 0.1, -half_z + trim_depth / 2.0)
-		trim_n.material = base_mat
-		_add_geometry(trim_n)
+		_add_decor(_box(Vector3(sz.x - 0.6, trim_height, trim_depth),
+			pos + Vector3(0, trim_y, -half_z + trim_depth / 2.0), base_mat))
 	if "south" not in openings:
-		var trim_s := CSGBox3D.new()
-		trim_s.size = Vector3(sz.x - 0.6, trim_height, trim_depth)
-		trim_s.position = pos + Vector3(0, trim_height / 2.0 + 0.1, half_z - trim_depth / 2.0)
-		trim_s.material = base_mat
-		_add_geometry(trim_s)
+		_add_decor(_box(Vector3(sz.x - 0.6, trim_height, trim_depth),
+			pos + Vector3(0, trim_y, half_z - trim_depth / 2.0), base_mat))
 	if "east" not in openings:
-		var trim_e := CSGBox3D.new()
-		trim_e.size = Vector3(trim_depth, trim_height, sz.y - 0.6)
-		trim_e.position = pos + Vector3(half_x - trim_depth / 2.0, trim_height / 2.0 + 0.1, 0)
-		trim_e.material = base_mat
-		_add_geometry(trim_e)
+		_add_decor(_box(Vector3(trim_depth, trim_height, sz.y - 0.6),
+			pos + Vector3(half_x - trim_depth / 2.0, trim_y, 0), base_mat))
 	if "west" not in openings:
-		var trim_w := CSGBox3D.new()
-		trim_w.size = Vector3(trim_depth, trim_height, sz.y - 0.6)
-		trim_w.position = pos + Vector3(-half_x + trim_depth / 2.0, trim_height / 2.0 + 0.1, 0)
-		trim_w.material = base_mat
-		_add_geometry(trim_w)
+		_add_decor(_box(Vector3(trim_depth, trim_height, sz.y - 0.6),
+			pos + Vector3(-half_x + trim_depth / 2.0, trim_y, 0), base_mat))
 
 	# --- DEBRIS AND DETAIL ---
 	var debris_rng := RandomNumberGenerator.new()
 	debris_rng.seed = int(pos.x * 100 + pos.z * 37)
 
 	var debris_mat := StandardMaterial3D.new()
-	debris_mat.albedo_color = Color(0.28, 0.26, 0.23)
+	debris_mat.albedo_color = Color(0.3, 0.28, 0.25)
 	debris_mat.roughness = 0.95
 
 	var stain_mat := StandardMaterial3D.new()
-	stain_mat.albedo_color = Color(0.15, 0.13, 0.1, 0.5)
+	stain_mat.albedo_color = Color(0.12, 0.1, 0.08, 0.55)
 	stain_mat.roughness = 0.98
 	stain_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 
@@ -444,44 +436,23 @@ func _decorate_room(room: Dictionary) -> void:
 		var rz := debris_rng.randf_range(-half_z + 1, half_z - 1)
 		var rtype := debris_rng.randi() % 3
 		if rtype == 0:
-			# Rounded rock
-			var rock := CSGSphere3D.new()
-			rock.radius = rsize
-			rock.radial_segments = 6
-			rock.rings = 3
-			rock.position = pos + Vector3(rx, rsize * 0.5 + 0.1, rz)
-			rock.material = debris_mat
-			_add_geometry(rock)
+			_add_decor(_sphere(rsize, pos + Vector3(rx, rsize * 0.5 + 0.1, rz), debris_mat, 6, 3, false))
 		elif rtype == 1:
-			# Flat pebble (squished sphere)
-			var pebble := CSGSphere3D.new()
-			pebble.radius = rsize * 1.2
-			pebble.radial_segments = 6
-			pebble.rings = 3
+			var pebble := _sphere(rsize * 1.2, Vector3.ZERO, debris_mat, 6, 3, false)
 			pebble.transform = Transform3D(
 				Vector3(1.3, 0, 0), Vector3(0, 0.4, 0), Vector3(0, 0, 1.1),
 				pos + Vector3(rx, rsize * 0.2 + 0.1, rz))
-			pebble.material = debris_mat
-			_add_geometry(pebble)
+			_add_decor(pebble)
 		else:
-			# Broken chunk (cylinder fragment)
-			var chunk := CSGCylinder3D.new()
-			chunk.radius = rsize
-			chunk.height = rsize * 0.8
-			chunk.sides = 5
-			chunk.position = pos + Vector3(rx, rsize * 0.4 + 0.1, rz)
+			var chunk := _cyl(rsize, rsize * 0.8, 5, pos + Vector3(rx, rsize * 0.4 + 0.1, rz), debris_mat, false, false)
 			chunk.rotation = Vector3(debris_rng.randf_range(-0.3, 0.3), debris_rng.randf() * TAU, debris_rng.randf_range(-0.3, 0.3))
-			chunk.material = debris_mat
-			_add_geometry(chunk)
+			_add_decor(chunk)
 
 	# Floor stains (organic-shaped dark patches using flattened spheres)
 	var stain_count := debris_rng.randi_range(1, 3)
 	for _s in range(stain_count):
-		var stain := CSGSphere3D.new()
 		var ssize := debris_rng.randf_range(0.3, 0.8)
-		stain.radius = ssize
-		stain.radial_segments = 8
-		stain.rings = 4
+		var stain := _sphere(ssize, Vector3.ZERO, stain_mat, 8, 4, false)
 		stain.transform = Transform3D(
 			Vector3(1.0 + debris_rng.randf_range(-0.3, 0.3), 0, 0),
 			Vector3(0, 0.01, 0),
@@ -490,29 +461,25 @@ func _decorate_room(room: Dictionary) -> void:
 				debris_rng.randf_range(-half_x + 1, half_x - 1),
 				0.11,
 				debris_rng.randf_range(-half_z + 1, half_z - 1)))
-		stain.material = stain_mat
-		_add_geometry(stain)
+		_add_decor(stain)
 
 	# Wall cracks (thin dark lines on walls, 1-2 per room)
 	var crack_mat := StandardMaterial3D.new()
-	crack_mat.albedo_color = Color(0.08, 0.07, 0.06)
+	crack_mat.albedo_color = Color(0.06, 0.055, 0.05)
 	crack_mat.roughness = 0.99
 	var crack_count := debris_rng.randi_range(1, 2)
 	for _c in range(crack_count):
-		var crack := CSGBox3D.new()
 		var crack_h := debris_rng.randf_range(0.5, 1.5)
-		crack.size = Vector3(0.015, crack_h, 0.015)
 		var wall_side := debris_rng.randi() % 4
 		var crack_pos: Vector3
 		match wall_side:
-			0: crack_pos = pos + Vector3(debris_rng.randf_range(-half_x + 1, half_x - 1), debris_rng.randf_range(0.5, 2.5), -half_z + 0.01)
-			1: crack_pos = pos + Vector3(debris_rng.randf_range(-half_x + 1, half_x - 1), debris_rng.randf_range(0.5, 2.5), half_z - 0.01)
-			2: crack_pos = pos + Vector3(-half_x + 0.01, debris_rng.randf_range(0.5, 2.5), debris_rng.randf_range(-half_z + 1, half_z - 1))
-			3: crack_pos = pos + Vector3(half_x - 0.01, debris_rng.randf_range(0.5, 2.5), debris_rng.randf_range(-half_z + 1, half_z - 1))
-		crack.position = crack_pos
+			0: crack_pos = pos + Vector3(debris_rng.randf_range(-half_x + 1, half_x - 1), debris_rng.randf_range(0.5, 2.5), -half_z + 0.02)
+			1: crack_pos = pos + Vector3(debris_rng.randf_range(-half_x + 1, half_x - 1), debris_rng.randf_range(0.5, 2.5), half_z - 0.02)
+			2: crack_pos = pos + Vector3(-half_x + 0.02, debris_rng.randf_range(0.5, 2.5), debris_rng.randf_range(-half_z + 1, half_z - 1))
+			_: crack_pos = pos + Vector3(half_x - 0.02, debris_rng.randf_range(0.5, 2.5), debris_rng.randf_range(-half_z + 1, half_z - 1))
+		var crack := _box(Vector3(0.015, crack_h, 0.015), crack_pos, crack_mat, false, false)
 		crack.rotation.z = debris_rng.randf_range(-0.3, 0.3)
-		crack.material = crack_mat
-		_add_geometry(crack)
+		_add_decor(crack)
 
 func _dir_to_wall(dir: Vector3) -> String:
 	if dir.x > 0.5: return "east"
@@ -527,87 +494,51 @@ func _build_wall_with_opening(room_pos: Vector3, room_size: Vector2, height: flo
 	var opening_width := CORRIDOR_WIDTH
 
 	if not has_opening:
-		# Solid wall
-		var wall := CSGBox3D.new()
-		wall.use_collision = true
-		wall.material = wall_mat
+		var size: Vector3
+		var at: Vector3
 		match side:
 			"north":
-				wall.size = Vector3(room_size.x, height, WALL_THICKNESS)
-				wall.position = room_pos + Vector3(0, height / 2.0, -half_z)
+				size = Vector3(room_size.x, height, WALL_THICKNESS)
+				at = room_pos + Vector3(0, height / 2.0, -half_z)
 			"south":
-				wall.size = Vector3(room_size.x, height, WALL_THICKNESS)
-				wall.position = room_pos + Vector3(0, height / 2.0, half_z)
+				size = Vector3(room_size.x, height, WALL_THICKNESS)
+				at = room_pos + Vector3(0, height / 2.0, half_z)
 			"east":
-				wall.size = Vector3(WALL_THICKNESS, height, room_size.y)
-				wall.position = room_pos + Vector3(half_x, height / 2.0, 0)
-			"west":
-				wall.size = Vector3(WALL_THICKNESS, height, room_size.y)
-				wall.position = room_pos + Vector3(-half_x, height / 2.0, 0)
-		_add_geometry(wall)
-	else:
-		# Wall with doorway opening in the center
-		var half_opening := opening_width / 2.0
-		var door_height := 3.0
+				size = Vector3(WALL_THICKNESS, height, room_size.y)
+				at = room_pos + Vector3(half_x, height / 2.0, 0)
+			_:
+				size = Vector3(WALL_THICKNESS, height, room_size.y)
+				at = room_pos + Vector3(-half_x, height / 2.0, 0)
+		_add_geometry(_box(size, at, wall_mat, true))
+		return
 
-		match side:
-			"north", "south":
-				var z_offset := -half_z if side == "north" else half_z
-				# Left section
-				var left_width := (room_size.x - opening_width) / 2.0
-				if left_width > 0.1:
-					var left := CSGBox3D.new()
-					left.size = Vector3(left_width, height, WALL_THICKNESS)
-					left.position = room_pos + Vector3(-half_x + left_width / 2.0, height / 2.0, z_offset)
-					left.use_collision = true
-					left.material = wall_mat
-					_add_geometry(left)
-				# Right section
-				var right_width := (room_size.x - opening_width) / 2.0
-				if right_width > 0.1:
-					var right := CSGBox3D.new()
-					right.size = Vector3(right_width, height, WALL_THICKNESS)
-					right.position = room_pos + Vector3(half_x - right_width / 2.0, height / 2.0, z_offset)
-					right.use_collision = true
-					right.material = wall_mat
-					_add_geometry(right)
-				# Top section (above doorway)
-				var top_height := height - door_height
-				if top_height > 0.1:
-					var top := CSGBox3D.new()
-					top.size = Vector3(opening_width, top_height, WALL_THICKNESS)
-					top.position = room_pos + Vector3(0, door_height + top_height / 2.0, z_offset)
-					top.use_collision = true
-					top.material = wall_mat
-					_add_geometry(top)
-			"east", "west":
-				var x_offset := half_x if side == "east" else -half_x
-				# Left section (negative Z)
-				var side_width := (room_size.y - opening_width) / 2.0
-				if side_width > 0.1:
-					var left := CSGBox3D.new()
-					left.size = Vector3(WALL_THICKNESS, height, side_width)
-					left.position = room_pos + Vector3(x_offset, height / 2.0, -half_z + side_width / 2.0)
-					left.use_collision = true
-					left.material = wall_mat
-					_add_geometry(left)
-				# Right section (positive Z)
-				if side_width > 0.1:
-					var right := CSGBox3D.new()
-					right.size = Vector3(WALL_THICKNESS, height, side_width)
-					right.position = room_pos + Vector3(x_offset, height / 2.0, half_z - side_width / 2.0)
-					right.use_collision = true
-					right.material = wall_mat
-					_add_geometry(right)
-				# Top section
-				var top_height := height - door_height
-				if top_height > 0.1:
-					var top := CSGBox3D.new()
-					top.size = Vector3(WALL_THICKNESS, top_height, opening_width)
-					top.position = room_pos + Vector3(x_offset, door_height + top_height / 2.0, 0)
-					top.use_collision = true
-					top.material = wall_mat
-					_add_geometry(top)
+	# Wall with a doorway punched through the middle
+	var door_height := 3.0
+	var top_height := height - door_height
+
+	match side:
+		"north", "south":
+			var z_offset := -half_z if side == "north" else half_z
+			var seg_width := (room_size.x - opening_width) / 2.0
+			if seg_width > 0.1:
+				_add_geometry(_box(Vector3(seg_width, height, WALL_THICKNESS),
+					room_pos + Vector3(-half_x + seg_width / 2.0, height / 2.0, z_offset), wall_mat, true))
+				_add_geometry(_box(Vector3(seg_width, height, WALL_THICKNESS),
+					room_pos + Vector3(half_x - seg_width / 2.0, height / 2.0, z_offset), wall_mat, true))
+			if top_height > 0.1:
+				_add_geometry(_box(Vector3(opening_width, top_height, WALL_THICKNESS),
+					room_pos + Vector3(0, door_height + top_height / 2.0, z_offset), wall_mat, true))
+		"east", "west":
+			var x_offset := half_x if side == "east" else -half_x
+			var side_width := (room_size.y - opening_width) / 2.0
+			if side_width > 0.1:
+				_add_geometry(_box(Vector3(WALL_THICKNESS, height, side_width),
+					room_pos + Vector3(x_offset, height / 2.0, -half_z + side_width / 2.0), wall_mat, true))
+				_add_geometry(_box(Vector3(WALL_THICKNESS, height, side_width),
+					room_pos + Vector3(x_offset, height / 2.0, half_z - side_width / 2.0), wall_mat, true))
+			if top_height > 0.1:
+				_add_geometry(_box(Vector3(WALL_THICKNESS, top_height, opening_width),
+					room_pos + Vector3(x_offset, door_height + top_height / 2.0, 0), wall_mat, true))
 
 func _build_corridor(from_room: Dictionary, to_room: Dictionary) -> void:
 	var from_pos: Vector3 = from_room["pos"]
@@ -642,57 +573,26 @@ func _build_corridor(from_room: Dictionary, to_room: Dictionary) -> void:
 	if length < 0.5:
 		return
 
-	# Floor
-	var c_floor := CSGBox3D.new()
-	c_floor.use_collision = true
-	c_floor.material = floor_mat
+	var floor_size: Vector3
 	if abs(dir.x) > 0.5:
-		c_floor.size = Vector3(length, 0.2, CORRIDOR_WIDTH)
+		floor_size = Vector3(length, 0.2, CORRIDOR_WIDTH)
 	else:
-		c_floor.size = Vector3(CORRIDOR_WIDTH, 0.2, length)
-	c_floor.position = mid
-	_add_geometry(c_floor)
+		floor_size = Vector3(CORRIDOR_WIDTH, 0.2, length)
 
-	# Ceiling
-	var c_ceil := CSGBox3D.new()
-	c_ceil.use_collision = true
-	c_ceil.material = ceiling_mat
-	c_ceil.size = c_floor.size
-	c_ceil.position = mid + Vector3(0, WALL_HEIGHT, 0)
-	_add_geometry(c_ceil)
+	_add_geometry(_box(floor_size, mid, floor_mat, true, false))
+	_add_geometry(_box(floor_size, mid + Vector3(0, WALL_HEIGHT, 0), ceiling_mat, true, false))
 
-	# Walls
 	var half_w := CORRIDOR_WIDTH / 2.0
 	if abs(dir.x) > 0.5:
-		# Corridor goes east-west, walls on north and south
-		var wall_n := CSGBox3D.new()
-		wall_n.size = Vector3(length, WALL_HEIGHT, WALL_THICKNESS)
-		wall_n.position = mid + Vector3(0, WALL_HEIGHT / 2.0, -half_w)
-		wall_n.use_collision = true
-		wall_n.material = wall_mat
-		_add_geometry(wall_n)
-
-		var wall_s := CSGBox3D.new()
-		wall_s.size = Vector3(length, WALL_HEIGHT, WALL_THICKNESS)
-		wall_s.position = mid + Vector3(0, WALL_HEIGHT / 2.0, half_w)
-		wall_s.use_collision = true
-		wall_s.material = wall_mat
-		_add_geometry(wall_s)
+		# East-west corridor: walls on the north and south flanks
+		var wall_size := Vector3(length, WALL_HEIGHT, WALL_THICKNESS)
+		_add_geometry(_box(wall_size, mid + Vector3(0, WALL_HEIGHT / 2.0, -half_w), wall_mat, true))
+		_add_geometry(_box(wall_size, mid + Vector3(0, WALL_HEIGHT / 2.0, half_w), wall_mat, true))
 	else:
-		# Corridor goes north-south, walls on east and west
-		var wall_e := CSGBox3D.new()
-		wall_e.size = Vector3(WALL_THICKNESS, WALL_HEIGHT, length)
-		wall_e.position = mid + Vector3(half_w, WALL_HEIGHT / 2.0, 0)
-		wall_e.use_collision = true
-		wall_e.material = wall_mat
-		_add_geometry(wall_e)
-
-		var wall_w := CSGBox3D.new()
-		wall_w.size = Vector3(WALL_THICKNESS, WALL_HEIGHT, length)
-		wall_w.position = mid + Vector3(-half_w, WALL_HEIGHT / 2.0, 0)
-		wall_w.use_collision = true
-		wall_w.material = wall_mat
-		_add_geometry(wall_w)
+		# North-south corridor: walls on the east and west flanks
+		var wall_size := Vector3(WALL_THICKNESS, WALL_HEIGHT, length)
+		_add_geometry(_box(wall_size, mid + Vector3(half_w, WALL_HEIGHT / 2.0, 0), wall_mat, true))
+		_add_geometry(_box(wall_size, mid + Vector3(-half_w, WALL_HEIGHT / 2.0, 0), wall_mat, true))
 
 func _place_doors() -> void:
 	for i in range(1, room_data.size()):
@@ -715,6 +615,13 @@ func _place_doors() -> void:
 		if abs(dir.x) > 0.5:
 			door.rotation.y = PI / 2.0
 		get_parent().call_deferred("add_child", door)
+
+func _add_decor_deferred(node: Node3D) -> void:
+	if decor_root == null or not is_instance_valid(decor_root):
+		decor_root = Node3D.new()
+		decor_root.name = "Decor"
+		add_child(decor_root)
+	decor_root.call_deferred("add_child", node)
 
 func _place_torches() -> void:
 	var rng := RandomNumberGenerator.new()
@@ -747,7 +654,7 @@ func _place_torches() -> void:
 		for tp in torch_positions:
 			var torch := torch_scene.instantiate()
 			torch.position = tp
-			get_parent().call_deferred("add_child", torch)
+			_add_decor_deferred(torch)
 
 	# Place torches in corridors at 1/3 and 2/3 points (avoids doors at ends)
 	for i in range(1, room_data.size()):
@@ -763,17 +670,17 @@ func _place_torches() -> void:
 		if abs(dir.x) > 0.5:
 			var t1 := torch_scene.instantiate()
 			t1.position = third1 + Vector3(0, 1.5, -half_w)
-			get_parent().call_deferred("add_child", t1)
+			_add_decor_deferred(t1)
 			var t2 := torch_scene.instantiate()
 			t2.position = third2 + Vector3(0, 1.5, half_w)
-			get_parent().call_deferred("add_child", t2)
+			_add_decor_deferred(t2)
 		else:
 			var t1 := torch_scene.instantiate()
 			t1.position = third1 + Vector3(-half_w, 1.5, 0)
-			get_parent().call_deferred("add_child", t1)
+			_add_decor_deferred(t1)
 			var t2 := torch_scene.instantiate()
 			t2.position = third2 + Vector3(half_w, 1.5, 0)
-			get_parent().call_deferred("add_child", t2)
+			_add_decor_deferred(t2)
 
 func _pick_enemy_scene(room_index: int, rng: RandomNumberGenerator) -> PackedScene:
 	# Floor-based enemy tier system
@@ -977,185 +884,220 @@ func _place_merchant() -> void:
 		merchant2.position = pre_pos + Vector3(-3, 0, -3)
 		get_parent().call_deferred("add_child", merchant2)
 
-func _generate_cobblestone_texture() -> ImageTexture:
-	var size := 256
-	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
+# --- SET DRESSING ---------------------------------------------------------
+# Props exist mostly to break up the orange monotony of torchlight: the
+# crystals and their cold accent lights are what give rooms a second colour.
+
+func _place_props() -> void:
 	var rng := RandomNumberGenerator.new()
-	rng.seed = 42
-	for x in range(size):
-		for y in range(size):
-			var cell_size := 40
-			var cell_x := x % cell_size
-			var cell_y := y % cell_size
-			var row := y / cell_size
-			var col := x / cell_size
-			var offset_x := cell_x
-			if row % 2 == 1:
-				offset_x = (x + cell_size / 2) % cell_size
-			# Mortar
-			if offset_x <= 2 or cell_y <= 2:
-				var m := 0.12 + sin(float(x * 3 + y * 7)) * 0.02
-				img.set_pixel(x, y, Color(m, m * 0.92, m * 0.88))
-			elif offset_x == 3 or cell_y == 3:
-				img.set_pixel(x, y, Color(0.22, 0.21, 0.19))
-			elif offset_x >= cell_size - 2 or cell_y >= cell_size - 2:
-				img.set_pixel(x, y, Color(0.25, 0.24, 0.22))
+	rng.randomize()
+
+	var crystal_palette := [
+		{"albedo": Color(0.25, 0.6, 0.95), "light": Color(0.35, 0.65, 1.0)},   # cold blue
+		{"albedo": Color(0.55, 0.3, 0.9), "light": Color(0.6, 0.35, 1.0)},     # violet
+		{"albedo": Color(0.2, 0.85, 0.7), "light": Color(0.3, 0.95, 0.8)},     # sickly green
+	]
+
+	for i in range(room_data.size()):
+		var room: Dictionary = room_data[i]
+		var pos: Vector3 = room["pos"]
+		var sz: Vector2 = room["size"]
+		var half_x := sz.x / 2.0
+		var half_z := sz.y / 2.0
+		var height: float = 6.0 if room["type"] == "boss" else WALL_HEIGHT
+
+		# Crystal outcrops — the cool counterpoint to all that firelight
+		if room["type"] == "boss" or rng.randf() < 0.45:
+			var pal: Dictionary = crystal_palette[rng.randi() % crystal_palette.size()]
+			var corner := rng.randi() % 4
+			var cx: float = (half_x - 1.2) * (1.0 if corner % 2 == 0 else -1.0)
+			var cz: float = (half_z - 1.2) * (1.0 if corner < 2 else -1.0)
+			_build_crystal_cluster(pos + Vector3(cx, 0.1, cz), pal, rng)
+
+		# Barrels and crates against the walls
+		var crate_count := rng.randi_range(0, 3)
+		for _c in range(crate_count):
+			var wall := rng.randi() % 4
+			var along := rng.randf_range(-0.65, 0.65)
+			var cp: Vector3
+			match wall:
+				0: cp = pos + Vector3(along * half_x, 0.1, -half_z + 0.7)
+				1: cp = pos + Vector3(along * half_x, 0.1, half_z - 0.7)
+				2: cp = pos + Vector3(-half_x + 0.7, 0.1, along * half_z)
+				_: cp = pos + Vector3(half_x - 0.7, 0.1, along * half_z)
+			if rng.randf() < 0.5:
+				_build_barrel(cp, rng)
 			else:
-				var stone_id := row * 7 + col
-				var base_r := 0.38 + sin(float(stone_id) * 3.7) * 0.04
-				var base_g := 0.37 + sin(float(stone_id) * 5.1) * 0.03
-				var base_b := 0.35 + sin(float(stone_id) * 2.3) * 0.03
-				# Multi-octave noise
-				var n1 := sin(float(x) * 0.6 + float(y) * 0.9) * 0.018
-				var n2 := sin(float(x) * 1.7 - float(y) * 0.5) * 0.012
-				var n3 := sin(float(x) * 3.3 + float(y) * 2.8) * 0.006
-				var n4 := sin(float(x) * 7.1 - float(y) * 4.2) * 0.003
-				var noise := n1 + n2 + n3 + n4
-				# Wear pattern - darken edges of stones
-				var edge_dist := minf(minf(float(offset_x - 3), float(cell_size - 3 - offset_x)),
-					minf(float(cell_y - 3), float(cell_size - 3 - cell_y)))
-				var edge_dark := clampf(edge_dist / 6.0, 0.0, 1.0) * 0.04
-				img.set_pixel(x, y, Color(
-					clampf(base_r + noise + edge_dark, 0.05, 0.95),
-					clampf(base_g + noise + edge_dark, 0.05, 0.95),
-					clampf(base_b + noise * 0.8 + edge_dark, 0.05, 0.95)))
-	return ImageTexture.create_from_image(img)
+				_build_crate(cp, rng)
 
-func _generate_cobblestone_normal() -> ImageTexture:
-	var size := 256
-	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
-	img.fill(Color(0.5, 0.5, 1.0))
-	for x in range(size):
-		for y in range(size):
-			var cell_size := 40
-			var cell_x := x % cell_size
-			var cell_y := y % cell_size
-			var row := y / cell_size
-			var offset_x := cell_x
-			if row % 2 == 1:
-				offset_x = (x + cell_size / 2) % cell_size
-			var nx := 0.5
-			var ny := 0.5
-			if offset_x <= 2:
-				nx = 0.72
-			elif offset_x == 3:
-				nx = 0.32
-			elif offset_x >= cell_size - 2:
-				nx = 0.68
-			elif offset_x >= cell_size - 3:
-				nx = 0.35
-			if cell_y <= 2:
-				ny = 0.72
-			elif cell_y == 3:
-				ny = 0.32
-			elif cell_y >= cell_size - 2:
-				ny = 0.68
-			elif cell_y >= cell_size - 3:
-				ny = 0.35
-			var bx := sin(float(x) * 1.3 + float(y) * 1.8) * 0.035
-			bx += sin(float(x) * 4.1 - float(y) * 2.3) * 0.015
-			var by := sin(float(x) * 1.8 + float(y) * 1.3) * 0.035
-			by += sin(float(x) * 2.7 + float(y) * 5.1) * 0.015
-			img.set_pixel(x, y, Color(clampf(nx + bx, 0, 1), clampf(ny + by, 0, 1), 1.0))
-	return ImageTexture.create_from_image(img)
+		# Bones left by whoever came through last
+		if rng.randf() < 0.55:
+			_build_bone_pile(pos + Vector3(
+				rng.randf_range(-half_x + 1.5, half_x - 1.5), 0.1,
+				rng.randf_range(-half_z + 1.5, half_z - 1.5)), rng)
 
-func _generate_brick_texture() -> ImageTexture:
-	var size := 256
-	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
-	for y in range(size):
-		var brick_h := 24
-		var row := y / brick_h
-		var y_in := y % brick_h
-		for x in range(size):
-			var x_off := 0 if row % 2 == 0 else 48
-			var brick_w := 96
-			var x_in := (x + x_off) % brick_w
-			if y_in <= 2 or x_in <= 2:
-				var m := 0.07 + sin(float(x + y) * 0.4) * 0.015
-				img.set_pixel(x, y, Color(m, m * 0.9, m * 0.85))
-			elif y_in == 3 or x_in == 3:
-				img.set_pixel(x, y, Color(0.26, 0.24, 0.22))
-			elif y_in >= brick_h - 2 or x_in >= brick_w - 2:
-				img.set_pixel(x, y, Color(0.16, 0.15, 0.13))
-			else:
-				var brick_id := row * 3 + x_in / brick_w
-				var base := 0.25 + sin(float(brick_id) * 5.3) * 0.035
-				var n1 := sin(float(x) * 0.9 + float(y) * 0.6) * 0.014
-				var n2 := sin(float(x) * 2.5 - float(y) * 1.3) * 0.008
-				var n3 := sin(float(x) * 5.7 + float(y) * 3.9) * 0.004
-				var g := base + n1 + n2 + n3
-				var temp := sin(float(brick_id) * 3.3) * 0.03
-				# Wear near edges
-				var ey := minf(float(y_in - 3), float(brick_h - 3 - y_in))
-				var ex := minf(float(x_in - 3), float(brick_w - 3 - x_in))
-				var edge := clampf(minf(ey, ex) / 5.0, 0.0, 1.0) * 0.02
-				img.set_pixel(x, y, Color(
-					clampf(g + temp + edge, 0.05, 0.95),
-					clampf(g * 0.97 + edge, 0.05, 0.95),
-					clampf(g * 0.93 - temp * 0.5 + edge, 0.05, 0.95)))
-	return ImageTexture.create_from_image(img)
+		# Standing water — low roughness, so it mirrors the torches
+		var puddle_count := rng.randi_range(0, 2)
+		for _p in range(puddle_count):
+			_build_puddle(pos + Vector3(
+				rng.randf_range(-half_x + 1.5, half_x - 1.5), 0.105,
+				rng.randf_range(-half_z + 1.5, half_z - 1.5)), rng)
 
-func _generate_brick_normal() -> ImageTexture:
-	var size := 256
-	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
-	img.fill(Color(0.5, 0.5, 1.0))
-	for y in range(size):
-		var brick_h := 24
-		var row := y / brick_h
-		var y_in := y % brick_h
-		for x in range(size):
-			var x_off := 0 if row % 2 == 0 else 48
-			var brick_w := 96
-			var x_in := (x + x_off) % brick_w
-			var nx := 0.5
-			var ny := 0.5
-			if x_in <= 2: nx = 0.76
-			elif x_in == 3: nx = 0.28
-			elif x_in >= brick_w - 2: nx = 0.72
-			elif x_in >= brick_w - 3: nx = 0.32
-			if y_in <= 2: ny = 0.76
-			elif y_in == 3: ny = 0.28
-			elif y_in >= brick_h - 2: ny = 0.72
-			elif y_in >= brick_h - 3: ny = 0.32
-			var bx := sin(float(x) * 2.1 + float(y) * 1.0) * 0.04
-			bx += sin(float(x) * 5.3 - float(y) * 2.8) * 0.02
-			var by := sin(float(x) * 1.0 + float(y) * 2.4) * 0.04
-			by += sin(float(x) * 3.2 + float(y) * 6.1) * 0.02
-			img.set_pixel(x, y, Color(clampf(nx + bx, 0, 1), clampf(ny + by, 0, 1), 1.0))
-	return ImageTexture.create_from_image(img)
+		# Chains hanging from the vault — vertical interest, catches highlights
+		if rng.randf() < 0.5:
+			_build_chain(pos + Vector3(
+				rng.randf_range(-half_x + 2.0, half_x - 2.0), height,
+				rng.randf_range(-half_z + 2.0, half_z - 2.0)), rng)
 
-func _generate_ceiling_texture() -> ImageTexture:
-	var size := 128
-	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
-	for x in range(size):
-		for y in range(size):
-			var n1 := sin(float(x) * 0.7 + float(y) * 1.1) * 0.018
-			var n2 := sin(float(x) * 2.3 - float(y) * 0.4) * 0.012
-			var n3 := sin(float(x) * 4.5 + float(y) * 3.2) * 0.006
-			var g := 0.12 + n1 + n2 + n3
-			# Drip stain streaks (vertical bias)
-			var drip := sin(float(x) * 0.3) * 0.5 + 0.5
-			drip *= sin(float(y) * 0.15 + float(x) * 0.05) * 0.5 + 0.5
-			if drip > 0.7:
-				g -= 0.02
-			img.set_pixel(x, y, Color(
-				clampf(g, 0.04, 0.3),
-				clampf(g * 0.94, 0.04, 0.3),
-				clampf(g * 0.88, 0.04, 0.3)))
-	return ImageTexture.create_from_image(img)
+func _build_crystal_cluster(at: Vector3, pal: Dictionary, rng: RandomNumberGenerator) -> void:
+	var crystal_mat := StandardMaterial3D.new()
+	crystal_mat.albedo_color = pal["albedo"]
+	crystal_mat.roughness = 0.12
+	crystal_mat.metallic = 0.1
+	crystal_mat.metallic_specular = 0.9
+	crystal_mat.emission_enabled = true
+	crystal_mat.emission = pal["light"]
+	crystal_mat.emission_energy_multiplier = 0.85
 
-func _generate_ceiling_normal() -> ImageTexture:
-	var size := 128
-	var img := Image.create(size, size, false, Image.FORMAT_RGB8)
-	img.fill(Color(0.5, 0.5, 1.0))
-	for x in range(size):
-		for y in range(size):
-			var bx := sin(float(x) * 1.8 + float(y) * 0.7) * 0.04
-			bx += sin(float(x) * 4.2 - float(y) * 1.5) * 0.02
-			var by := sin(float(x) * 0.9 + float(y) * 2.1) * 0.04
-			by += sin(float(x) * 2.1 + float(y) * 4.8) * 0.02
-			img.set_pixel(x, y, Color(0.5 + bx, 0.5 + by, 1.0))
-	return ImageTexture.create_from_image(img)
+	var base_mat := StandardMaterial3D.new()
+	base_mat.albedo_color = Color(0.14, 0.14, 0.16)
+	base_mat.roughness = 0.9
+
+	var rock := _sphere(0.42, Vector3.ZERO, base_mat, 7, 4, false)
+	rock.transform = Transform3D(Vector3(1.3, 0, 0), Vector3(0, 0.5, 0), Vector3(0, 0, 1.2), at)
+	_add_decor(rock)
+
+	var shard_count := rng.randi_range(4, 7)
+	for i in range(shard_count):
+		var radius := rng.randf_range(0.06, 0.13)
+		var height := rng.randf_range(0.5, 1.15)
+		var ang := rng.randf() * TAU
+		var dist := rng.randf_range(0.0, 0.32)
+		var shard := _cyl(radius, height, 6,
+			at + Vector3(cos(ang) * dist, height / 2.0 + 0.05, sin(ang) * dist),
+			crystal_mat, true, false)
+		shard.rotation = Vector3(rng.randf_range(-0.35, 0.35), ang, rng.randf_range(-0.35, 0.35))
+		_add_decor(shard)
+
+	var light := OmniLight3D.new()
+	light.light_color = pal["light"]
+	light.light_energy = 2.4
+	light.light_indirect_energy = 0.0
+	light.omni_range = 8.5
+	light.omni_attenuation = 1.6
+	light.shadow_enabled = false
+	light.position = at + Vector3(0, 0.8, 0)
+	_add_decor(light)
+
+func _build_barrel(at: Vector3, rng: RandomNumberGenerator) -> void:
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.22, 0.14, 0.08)
+	wood.roughness = 0.85
+	wood.metallic_specular = 0.25
+	var iron := StandardMaterial3D.new()
+	iron.albedo_color = Color(0.16, 0.15, 0.14)
+	iron.roughness = 0.4
+	iron.metallic = 0.8
+
+	var body := _cyl(0.28, 0.75, 12, at + Vector3(0, 0.375, 0), wood)
+	body.rotation.y = rng.randf() * TAU
+	_add_decor(body)
+	_add_collider(at + Vector3(0, 0.375, 0), Vector3(0.5, 0.75, 0.5))
+
+	for h in [0.18, 0.57]:
+		_add_decor(_torus(0.275, 0.3, at + Vector3(0, h, 0), iron, 12, 4))
+
+func _build_crate(at: Vector3, rng: RandomNumberGenerator) -> void:
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.26, 0.17, 0.09)
+	wood.roughness = 0.9
+	var frame := StandardMaterial3D.new()
+	frame.albedo_color = Color(0.17, 0.11, 0.06)
+	frame.roughness = 0.9
+
+	var sz := rng.randf_range(0.45, 0.65)
+	var yaw := rng.randf() * TAU
+	var box := _box(Vector3(sz, sz, sz), at + Vector3(0, sz / 2.0, 0), wood)
+	box.rotation.y = yaw
+	_add_decor(box)
+	_add_collider(at + Vector3(0, sz / 2.0, 0), Vector3(sz, sz, sz))
+
+	# Battens across the lid so it doesn't read as a bare cube
+	for axis in [true, false]:
+		var batten := _box(
+			Vector3(sz * 1.02, 0.05, 0.05) if axis else Vector3(0.05, 0.05, sz * 1.02),
+			at + Vector3(0, sz - 0.03, 0), frame, false, false)
+		batten.rotation.y = yaw
+		_add_decor(batten)
+
+func _add_collider(at: Vector3, size: Vector3) -> void:
+	var body := StaticBody3D.new()
+	body.position = at
+	var col := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	col.shape = shape
+	body.add_child(col)
+	_add_geometry(body)
+
+func _build_bone_pile(at: Vector3, rng: RandomNumberGenerator) -> void:
+	var bone_mat := StandardMaterial3D.new()
+	bone_mat.albedo_color = Color(0.66, 0.63, 0.55)
+	bone_mat.roughness = 0.7
+	bone_mat.metallic_specular = 0.3
+
+	var skull := _sphere(0.11, at + Vector3(0, 0.11, 0), bone_mat, 8, 5)
+	skull.rotation.y = rng.randf() * TAU
+	_add_decor(skull)
+	_add_decor(_box(Vector3(0.13, 0.05, 0.1), at + Vector3(0, 0.04, 0.03), bone_mat, false, false))
+
+	for i in range(rng.randi_range(3, 5)):
+		var ang := rng.randf() * TAU
+		var rib := _cyl(0.02, rng.randf_range(0.22, 0.4), 5,
+			at + Vector3(cos(ang) * rng.randf_range(0.15, 0.45), 0.03, sin(ang) * rng.randf_range(0.15, 0.45)),
+			bone_mat, false, false)
+		rib.rotation = Vector3(PI / 2.0, rng.randf() * TAU, 0)
+		_add_decor(rib)
+
+func _build_puddle(at: Vector3, rng: RandomNumberGenerator) -> void:
+	# There are no screen-space reflections in the compatibility renderer, so a
+	# puddle sells itself with a tight specular highlight rather than a mirror:
+	# dark, mostly transparent, and very smooth.
+	var water := StandardMaterial3D.new()
+	water.albedo_color = Color(0.06, 0.07, 0.08, 0.5)
+	water.roughness = 0.04
+	water.metallic = 0.2
+	water.metallic_specular = 1.0
+	water.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	water.disable_receive_shadows = true
+	water.cull_mode = BaseMaterial3D.CULL_BACK
+
+	var radius := rng.randf_range(0.5, 1.1)
+	var puddle := _cyl(radius, 0.02, 16, Vector3.ZERO, water, false, false)
+	puddle.transform = Transform3D(
+		Vector3(1.0 + rng.randf_range(-0.3, 0.3), 0, 0),
+		Vector3(0, 1, 0),
+		Vector3(0, 0, 1.0 + rng.randf_range(-0.3, 0.3)),
+		at)
+	_add_decor(puddle)
+
+func _build_chain(at: Vector3, rng: RandomNumberGenerator) -> void:
+	var iron := StandardMaterial3D.new()
+	iron.albedo_color = Color(0.14, 0.13, 0.12)
+	iron.roughness = 0.35
+	iron.metallic = 0.9
+	iron.metallic_specular = 0.7
+
+	var links := rng.randi_range(4, 9)
+	for i in range(links):
+		var link := _torus(0.035, 0.06, at + Vector3(0, -0.1 - i * 0.09, 0), iron, 6, 4)
+		link.rotation = Vector3(PI / 2.0, 0, 0) if i % 2 == 0 else Vector3(PI / 2.0, PI / 2.0, 0)
+		_add_decor(link)
+
+	if rng.randf() < 0.4:
+		var hook := _torus(0.07, 0.11, at + Vector3(0, -0.15 - links * 0.09, 0), iron, 8, 4)
+		hook.rotation = Vector3(PI / 2.0, 0, 0)
+		_add_decor(hook)
 
 func _on_boss_defeated() -> void:
 	boss_defeated.emit()

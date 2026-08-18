@@ -15,6 +15,7 @@ extends CanvasLayer
 @onready var shield_indicator: ColorRect = $ShieldIndicator
 @onready var minimap: Control = $MinimapContainer
 @onready var floor_label: Label = $FloorLabel
+@onready var screen_fx: ColorRect = $ScreenEffects
 
 var player: CharacterBody3D
 var room_data: Array[Dictionary] = []
@@ -129,6 +130,14 @@ func _flash_damage() -> void:
 	damage_overlay.modulate.a = 0.35
 	var tween := create_tween()
 	tween.tween_property(damage_overlay, "modulate:a", 0.0, 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_EXPO)
+	# Bleed red in from the frame edges as well as the flat overlay
+	var mat := screen_fx.material as ShaderMaterial
+	if mat:
+		mat.set_shader_parameter("damage_flash", 0.85)
+		var fx_tween := create_tween()
+		fx_tween.tween_method(
+			func(v: float) -> void: mat.set_shader_parameter("damage_flash", v),
+			0.85, 0.0, 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_EXPO)
 
 func show_interaction(text: String) -> void:
 	interaction_label.text = text

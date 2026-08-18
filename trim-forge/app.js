@@ -1,7 +1,7 @@
 /* Trim Forge — UI wiring. State is per piece, so a set can mix armor
    materials, trim patterns and trim materials in any combination. */
 
-const STORAGE_KEY = 'trim-forge-state-v1';
+const STORAGE_KEY = 'trim-forge-state-v2';
 const PIECE_IDS = ['helmet', 'chestplate', 'leggings', 'boots'];
 
 function defaultPiece(armor, pattern, trim) {
@@ -119,6 +119,7 @@ function buildArmorRow() {
   host.innerHTML = '';
   const cfg = sel();
   for (const mat of ARMOR_MATERIALS) {
+    if (!allowedOn(mat, state.selected)) continue;
     const canvas = pieceThumb(state.selected, { armor: mat.id }, 54);
     host.appendChild(thumbButton(mat.name, canvas, cfg.armor === mat.id, () => {
       cfg.armor = mat.id;
@@ -288,7 +289,9 @@ function wire() {
   $('applyAll').addEventListener('click', () => {
     const src = sel();
     for (const id of PIECE_IDS) {
-      state.pieces[id] = { ...state.pieces[id], armor: src.armor, dye: src.dye, pattern: src.pattern, trim: src.trim };
+      const cfg = state.pieces[id];
+      const armor = allowedOn(armorById(src.armor), id) ? src.armor : cfg.armor;
+      state.pieces[id] = { ...cfg, armor, dye: src.dye, pattern: src.pattern, trim: src.trim };
     }
     refresh();
   });
@@ -296,7 +299,7 @@ function wire() {
   $('randomSet').addEventListener('click', () => {
     for (const id of PIECE_IDS) {
       const cfg = state.pieces[id];
-      cfg.armor = pick(ARMOR_MATERIALS).id;
+      cfg.armor = pick(ARMOR_MATERIALS.filter(m => allowedOn(m, id))).id;
       cfg.dye = pick(DYE_PRESETS).hex;
       cfg.pattern = pick(PATTERNS).id;
       cfg.trim = pick(TRIM_MATERIALS).id;
@@ -336,5 +339,13 @@ function wire() {
 
 buildBgRow();
 buildVerToggle();
-wire();
-refresh();
+
+loadTextures().then(() => {
+  document.body.classList.remove('loading');
+  wire();
+  refresh();
+}).catch(err => {
+  const stage = $('stage');
+  stage.textContent = `Could not load textures: ${err.message}`;
+  console.error(err);
+});

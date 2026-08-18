@@ -153,6 +153,13 @@ main {
 
 #view { image-rendering: pixelated; }
 
+body.loading #view { display: none; }
+body.loading .stage::before {
+  content: "Loading textures\2026";
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
 .stage-controls {
   display: flex;
   flex-wrap: wrap;

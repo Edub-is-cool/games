@@ -1,88 +1,131 @@
-/* Trim Forge — canvas renderer.
-   The figure lives on a 16x32 pixel grid (standard front-facing skin layout)
-   with 1 cell of padding around it. Every piece is drawn independently, so a
-   set can mix armor materials, trim patterns and trim materials per piece. */
+/* Trim Forge — renderer.
+   Draws the game's own textures rather than an imitation of them: the armour
+   texture, then the trim texture recoloured through the game's palette files,
+   sampled at the front faces of the standard armour UV layout. Every piece is
+   drawn from its own material and trim, so a set can mix freely. */
 
 const GRID_W = 16, GRID_H = 32, PAD = 1;
 const CANVAS_W = GRID_W + PAD * 2, CANVAS_H = GRID_H + PAD * 2;
 
-/* --------------------------------------------------------------- colour -- */
+/* ------------------------------------------------------------- loading -- */
 
-function hexToRgb(hex) {
-  const h = hex.replace('#', '');
-  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+const IMG = {};
+
+function loadTextures() {
+  const entries = Object.entries(TEXTURES);
+  return Promise.all(entries.map(([key, uri]) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => { IMG[key] = img; resolve(); };
+    img.onerror = () => reject(new Error(`texture failed to load: ${key}`));
+    img.src = uri;
+  })));
 }
 
-function rgbToHex(r, g, b) {
-  const c = v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0');
-  return `#${c(r)}${c(g)}${c(b)}`;
+function pixelsOf(key) {
+  const img = IMG[key];
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  return ctx.getImageData(0, 0, c.width, c.height);
 }
 
-/* amount > 0 lightens toward white, < 0 darkens toward black */
-function shift(hex, amount) {
-  const [r, g, b] = hexToRgb(hex);
-  const t = amount > 0 ? 255 : 0;
-  const k = Math.abs(amount);
-  return rgbToHex(r + (t - r) * k, g + (t - g) * k, b + (t - b) * k);
-}
+/* --------------------------------------------------------- trim colour --
+   Trim textures ship in a greyscale key palette; the game swaps those exact
+   colours for the chosen material's 8-pixel palette. Same thing here. */
 
-/* Deterministic per-cell noise so texture speckle never flickers between frames */
-function cellHash(x, y) {
-  let h = (x * 73856093) ^ (y * 19349663);
-  h = (h ^ (h >>> 13)) * 1274126177;
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
+let keyColors = null;
+const trimCache = new Map();
+const leatherCache = new Map();
 
-/* ------------------------------------------------------------- geometry -- */
+const packRGB = (d, i) => (d[i * 4] << 16) | (d[i * 4 + 1] << 8) | d[i * 4 + 2];
 
-const REGIONS = {
-  head: { x0: 4, y0: 0, x1: 11, y1: 7 },
-  torso: { x0: 4, y0: 8, x1: 11, y1: 19 },
-  armL: { x0: 0, y0: 8, x1: 3, y1: 19 },
-  armR: { x0: 12, y0: 8, x1: 15, y1: 19 },
-  legs: { x0: 4, y0: 20, x1: 11, y1: 31 },
-};
+function trimTexture(pattern, layer, palette) {
+  const cacheKey = `${pattern}|${layer}|${palette}`;
+  const hit = trimCache.get(cacheKey);
+  if (hit) return hit;
 
-function rect(x0, y0, x1, y1) {
-  const out = [];
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) out.push([x, y]);
+  if (!keyColors) {
+    const key = pixelsOf('palettes/trim_palette');
+    keyColors = new Map();
+    for (let i = 0; i < key.width; i++) keyColors.set(packRGB(key.data, i), i);
+  }
+
+  const pal = pixelsOf(`palettes/${palette}`);
+  const src = pixelsOf(`trims/${layer}/${pattern}`);
+  const d = src.data;
+  for (let p = 0; p < d.length; p += 4) {
+    if (!d[p + 3]) continue;
+    const slot = keyColors.get((d[p] << 16) | (d[p + 1] << 8) | d[p + 2]);
+    if (slot === undefined) continue;
+    d[p] = pal.data[slot * 4];
+    d[p + 1] = pal.data[slot * 4 + 1];
+    d[p + 2] = pal.data[slot * 4 + 2];
+    d[p + 3] = pal.data[slot * 4 + 3];
+  }
+  const out = document.createElement('canvas');
+  out.width = src.width; out.height = src.height;
+  out.getContext('2d').putImageData(src, 0, 0);
+  trimCache.set(cacheKey, out);
   return out;
 }
 
-/* Which cells each armor piece occupies. Helmet flares 1 cell wider than the
-   head and leaves a face opening; the chestplate carries full sleeves. */
-function pieceCells(piece) {
-  const cells = [];
-  if (piece === 'helmet') {
-    for (const [x, y] of rect(3, -1, 12, 7)) {
-      const inFace = x >= 6 && x <= 9 && y >= 3 && y <= 5;
-      if (!inFace) cells.push([x, y]);
-    }
-  } else if (piece === 'chestplate') {
-    cells.push(...rect(4, 8, 11, 18));
-    cells.push(...rect(0, 8, 3, 18));
-    cells.push(...rect(12, 8, 15, 18));
-  } else if (piece === 'leggings') {
-    cells.push(...rect(4, 16, 11, 26));
-  } else if (piece === 'boots') {
-    cells.push(...rect(4, 26, 11, 31));
-    cells.push(...rect(3, 29, 3, 31));
-    cells.push(...rect(12, 29, 12, 31));
-  }
-  return cells;
+/* Leather ships greyscale and is multiplied by the dye colour, with an
+   un-tinted overlay drawn on top — the same two-texture trick the game uses. */
+function tintedLeather(layer, dye) {
+  const cacheKey = `${layer}|${dye}`;
+  const hit = leatherCache.get(cacheKey);
+  if (hit) return hit;
+
+  const img = IMG[`armor/${layer}/leather`];
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = dye;
+  ctx.fillRect(0, 0, c.width, c.height);
+  ctx.globalCompositeOperation = 'destination-in';   // put the alpha back
+  ctx.drawImage(img, 0, 0);
+  leatherCache.set(cacheKey, c);
+  return c;
 }
 
-/* Where each art grid is pinned, and which piece owns it */
-const ART_ANCHORS = {
-  helmet: [{ key: 'helmet', x: 4, y: 0 }],
-  chestplate: [
-    { key: 'body', x: 4, y: 8 },
-    { key: 'arm', x: 0, y: 8 },
-    { key: 'arm', x: 12, y: 8, mirror: true },
-  ],
-  leggings: [{ key: 'legs', x: 4, y: 16 }],
-  boots: [{ key: 'boots', x: 4, y: 27 }],
+/* ------------------------------------------------------------ geometry --
+   Front faces of the 64x32 armour layout, and where each lands on the 16x32
+   figure. Armour textures carry one arm and one leg, mirrored for the far
+   side, exactly as the model does. */
+
+const ARMOR_FACE = { head: [8, 8, 8, 8], body: [20, 20, 8, 12], arm: [44, 20, 4, 12], leg: [4, 20, 4, 12] };
+
+const PIECE_SPEC = {
+  helmet: { layer: 'humanoid', faces: [['head', 4, 0, false]] },
+  chestplate: { layer: 'humanoid', faces: [['body', 4, 8, false], ['arm', 0, 8, false], ['arm', 12, 8, true]] },
+  boots: { layer: 'humanoid', faces: [['leg', 4, 20, false], ['leg', 8, 20, true]] },
+  leggings: { layer: 'leggings', faces: [['body', 4, 8, false], ['leg', 4, 20, false], ['leg', 8, 20, true]] },
 };
+
+/* Player skin is the modern 64x64 layout, which has both arms and both legs
+   plus the outer (hat / jacket / sleeve) layer. */
+const BODY_FACES = [
+  [[8, 8, 8, 8], 4, 0], [[20, 20, 8, 12], 4, 8],
+  [[44, 20, 4, 12], 0, 8], [[36, 52, 4, 12], 12, 8],
+  [[4, 20, 4, 12], 4, 20], [[20, 52, 4, 12], 8, 20],
+];
+const BODY_OVERLAY_FACES = [
+  [[40, 8, 8, 8], 4, 0], [[20, 36, 8, 12], 4, 8],
+  [[44, 36, 4, 12], 0, 8], [[52, 52, 4, 12], 12, 8],
+  [[4, 36, 4, 12], 4, 20], [[4, 52, 4, 12], 8, 20],
+];
+
+function blit(ctx, src, rect, dx, dy, mirror, s, ox, oy) {
+  const [sx, sy, w, h] = rect;
+  const x = (dx + ox) * s, y = (dy + oy) * s;
+  ctx.save();
+  if (mirror) { ctx.translate(x * 2 + w * s, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(src, sx, sy, w, h, x, y, w * s, h * s);
+  ctx.restore();
+}
 
 /* --------------------------------------------------------------- lookup -- */
 
@@ -91,110 +134,40 @@ const armorById = id => byId(ARMOR_MATERIALS, id);
 const trimById = id => byId(TRIM_MATERIALS, id);
 const patternById = id => byId(PATTERNS, id);
 
-function armorPalette(cfg) {
-  const mat = armorById(cfg.armor);
-  if (!mat.dyeable) return mat.palette;
-  const dye = cfg.dye || '#a06540';
-  return {
-    light: shift(dye, 0.18),
-    base: dye,
-    dark: shift(dye, -0.22),
-    shadow: shift(dye, -0.42),
-  };
-}
+const allowedOn = (mat, piece) => !mat.pieces || mat.pieces.includes(piece);
 
-/* A trim whose material matches its armor uses the darker palette in game. */
-function trimShades(cfg) {
-  const mat = trimById(cfg.trim);
-  const collides = DARKER_PAIRS[cfg.armor] === mat.id;
-  return collides ? mat.shades.map(c => shift(c, -0.34)) : mat.shades;
+/* The game darkens a trim whose material matches the armour it sits on. */
+function paletteFor(cfg) {
+  const trim = trimById(cfg.trim).id;
+  return DARKER_PAIRS[cfg.armor] === trim ? `${trim}_darker` : trim;
 }
 
 /* ------------------------------------------------------------ rendering -- */
 
-function px(ctx, x, y, color, s, ox, oy) {
-  ctx.fillStyle = color;
-  ctx.fillRect((x + ox) * s, (y + oy) * s, s, s);
-}
+function drawPiece(ctx, piece, cfg, s, ox, oy) {
+  const spec = PIECE_SPEC[piece];
+  const mat = armorById(cfg.armor);
+  if (!allowedOn(mat, piece)) return;
 
-/* Body underneath the armor — a plain mannequin so bare slots read clearly. */
-const SKIN = '#c08552', SKIN_DARK = '#a06e42', HAIR = '#3b2716';
-const SHIRT = '#12a3a3', SHIRT_DARK = '#0d7d7d';
-const PANTS = '#3c44aa', PANTS_DARK = '#2c3382';
-const SHOE = '#2f2f38';
+  const base = mat.dyeable ? tintedLeather(spec.layer, cfg.dye) : IMG[`armor/${spec.layer}/${mat.tex}`];
+  if (!base) return;
+  for (const [face, dx, dy, mirror] of spec.faces) blit(ctx, base, ARMOR_FACE[face], dx, dy, mirror, s, ox, oy);
+
+  if (mat.dyeable) {
+    const overlay = IMG[`armor/${spec.layer}/leather_overlay`];
+    for (const [face, dx, dy, mirror] of spec.faces) blit(ctx, overlay, ARMOR_FACE[face], dx, dy, mirror, s, ox, oy);
+  }
+
+  if (cfg.pattern && cfg.pattern !== 'none') {
+    const trim = trimTexture(cfg.pattern, spec.layer, paletteFor(cfg));
+    for (const [face, dx, dy, mirror] of spec.faces) blit(ctx, trim, ARMOR_FACE[face], dx, dy, mirror, s, ox, oy);
+  }
+}
 
 function drawBody(ctx, s, ox, oy) {
-  const put = (x, y, c) => px(ctx, x, y, c, s, ox, oy);
-  const r = REGIONS;
-  for (const [x, y] of rect(r.head.x0, r.head.y0, r.head.x1, r.head.y1)) {
-    put(x, y, y <= 1 ? HAIR : x === r.head.x0 || x === r.head.x1 ? SKIN_DARK : SKIN);
-  }
-  put(6, 4, '#3b2716'); put(9, 4, '#3b2716');
-  put(7, 6, SKIN_DARK); put(8, 6, SKIN_DARK);
-  for (const [x, y] of rect(r.torso.x0, r.torso.y0, r.torso.x1, r.torso.y1)) {
-    put(x, y, x === r.torso.x0 || x === r.torso.x1 || y === r.torso.y1 ? SHIRT_DARK : SHIRT);
-  }
-  for (const arm of [r.armL, r.armR]) {
-    for (const [x, y] of rect(arm.x0, arm.y0, arm.x1, arm.y1)) {
-      const sleeve = y <= 15;
-      put(x, y, sleeve ? (x === arm.x0 ? SHIRT_DARK : SHIRT) : (x === arm.x0 ? SKIN_DARK : SKIN));
-    }
-  }
-  for (const [x, y] of rect(r.legs.x0, r.legs.y0, r.legs.x1, r.legs.y1)) {
-    const seam = x === 7 || x === 8;
-    put(x, y, y >= 30 ? SHOE : seam ? PANTS_DARK : PANTS);
-  }
-}
-
-/* Edge-aware shading: lit on the top/left border of a piece, shaded on the
-   bottom/right, with a material-specific texture in the interior. */
-function drawArmorPiece(ctx, piece, cfg, s, ox, oy) {
-  const cells = pieceCells(piece);
-  const set = new Set(cells.map(([x, y]) => `${x},${y}`));
-  const has = (x, y) => set.has(`${x},${y}`);
-  const pal = armorPalette(cfg);
-  const mat = armorById(cfg.armor);
-
-  for (const [x, y] of cells) {
-    let color;
-    if (!has(x, y - 1)) color = pal.light;
-    else if (!has(x - 1, y)) color = pal.light;
-    else if (!has(x, y + 1)) color = pal.shadow;
-    else if (!has(x + 1, y)) color = pal.dark;
-    else {
-      const n = cellHash(x, y);
-      if (mat.texture === 'mesh') color = (x + y) % 2 === 0 ? pal.base : pal.dark;
-      else if (mat.texture === 'hide') color = n < 0.18 ? pal.dark : n > 0.88 ? pal.light : pal.base;
-      else color = n < 0.12 ? pal.dark : n > 0.9 ? pal.light : pal.base;
-    }
-    px(ctx, x, y, color, s, ox, oy);
-  }
-
-  /* Seam down the middle of the legs so the two limbs stay readable */
-  if (piece === "leggings" || piece === "boots") {
-    for (const [x, y] of cells) {
-      if (y >= 20 && (x === 7 || x === 8)) px(ctx, x, y, x === 7 ? pal.shadow : pal.dark, s, ox, oy);
-    }
-  }
-
-  if (!cfg.pattern || cfg.pattern === 'none') return;
-  const art = patternById(cfg.pattern).art;
-  const shades = trimShades(cfg);
-  for (const anchor of ART_ANCHORS[piece]) {
-    const grid = art[anchor.key];
-    if (!grid) continue;
-    const w = grid[0].length;
-    for (let ry = 0; ry < grid.length; ry++) {
-      for (let rx = 0; rx < w; rx++) {
-        const ch = grid[ry][rx];
-        if (ch !== '1' && ch !== '2' && ch !== '3') continue;
-        const gx = anchor.x + (anchor.mirror ? w - 1 - rx : rx);
-        const gy = anchor.y + ry;
-        if (!has(gx, gy)) continue;
-        px(ctx, gx, gy, shades[+ch - 1], s, ox, oy);
-      }
-    }
-  }
+  const skin = IMG['player/steve'];
+  for (const [rect, dx, dy] of BODY_FACES) blit(ctx, skin, rect, dx, dy, false, s, ox, oy);
+  for (const [rect, dx, dy] of BODY_OVERLAY_FACES) blit(ctx, skin, rect, dx, dy, false, s, ox, oy);
 }
 
 const BACKGROUNDS = {
@@ -226,10 +199,10 @@ function renderFigure(canvas, opts) {
   const ox = PAD - crop.x, oy = PAD - crop.y;
   if (opts.showBody !== false) drawBody(ctx, s, ox, oy);
 
-  /* back-to-front: legs first so the chestplate skirt and helmet sit on top */
-  for (const piece of ['boots', 'leggings', 'chestplate', 'helmet']) {
+  /* leggings sit under the chestplate skirt and boot cuffs, as in game */
+  for (const piece of ['leggings', 'boots', 'chestplate', 'helmet']) {
     const cfg = opts.pieces[piece];
-    if (cfg && cfg.on) drawArmorPiece(ctx, piece, cfg, s, ox, oy);
+    if (cfg && cfg.on) drawPiece(ctx, piece, cfg, s, ox, oy);
   }
   return canvas;
 }

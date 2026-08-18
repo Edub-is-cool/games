@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trim Forge — Minecraft Armor Trim Previewer</title>
+  <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAARGVYSWZNTQAqAAAACAABh2kABAAAAAEAAAAaAAAAAAADoAEAAwAAAAEAAQAAoAIABAAAAAEAAABAoAMABAAAAAEAAABAAAAAAEZRQrAAAAHLaVRYdFhNTDpjb20uYWRvYmUueG1wAAAAAAA8eDp4bXBtZXRhIHhtbG5zOng9ImFkb2JlOm5zOm1ldGEvIiB4OnhtcHRrPSJYTVAgQ29yZSA2LjAuMCI+CiAgIDxyZGY6UkRGIHhtbG5zOnJkZj0iaHR0cDovL3d3dy53My5vcmcvMTk5OS8wMi8yMi1yZGYtc3ludGF4LW5zIyI+CiAgICAgIDxyZGY6RGVzY3JpcHRpb24gcmRmOmFib3V0PSIiCiAgICAgICAgICAgIHhtbG5zOmV4aWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20vZXhpZi8xLjAvIj4KICAgICAgICAgPGV4aWY6Q29sb3JTcGFjZT4xPC9leGlmOkNvbG9yU3BhY2U+CiAgICAgICAgIDxleGlmOlBpeGVsWERpbWVuc2lvbj41MTI8L2V4aWY6UGl4ZWxYRGltZW5zaW9uPgogICAgICAgICA8ZXhpZjpQaXhlbFlEaW1lbnNpb24+NTEyPC9leGlmOlBpeGVsWURpbWVuc2lvbj4KICAgICAgPC9yZGY6RGVzY3JpcHRpb24+CiAgIDwvcmRmOlJERj4KPC94OnhtcG1ldGE+CgCF4JgAABXESURBVHgB1Ztbr2TXUcdX9+k+Z+4znrGdcZCdWCg4gWAFJ4QEHCTyEIk3JCTEt+CNVx4QQkAeQPApkHgAXghShBAYgiEBocnFNlZIItmT8fjMfc61u/n//lW19u4+B2fEU1ievatWrVq16rZqr737eDK7enHVJq21ramvyRQoAnAqCD1xj0HzlePgk6BNEroP7kuygbTqe8EgDfdVoACjuq246BcuuFy525ZL0yf0dblvSF9jRVvU2LKtFss2Ud/jwhE0WzdeipbxNnzSwiFl7AAn3REYmnQMLIeUsQntHEykbxjAd+nYG8bSAMJX3fjot4niBQ05KxmhflzoEX0vAZ0pDZr0U4uV1W/Rb3LCjAhPKspp9EDTFGfEYDgGnpoJrJrG2zn0fbEyS9PvWowR4bRQOIBwujLUdmAwkQZOAw+ITEU1nbCyfI0XlAiWXqUz0gMCkgWP2qzS25Ffi76MHjmk0n4wvpwiSc4GOZLVegZIesdztXKIl+aWdPelOA2AoSCFO2gZeRxhJ0S0vUam/GQh05wFmj4y2gaLNDQ5zWtP28zRx/BRFgwZgUGDI07fDpkRY+PHhpfRCb2wxGJbmQ/uZkQ3IE4oiMGZBUTe+97ryQnsdcsOh0wWYq0+Qr2I5uSawzpg3gIacZHLrTByhL2rfncIhlVWaE7UgVEmWCnx9JqAbvS5UIYbTW4o1D3dHHWgLm5A0aIGCMfQaRqcTmhL5Kq4eQuIJ6MeWyJFeR0LtQqBiTdbbAGMKsNHETdtbUzScvyE8XYiCpERAW2lRGOw8XJErZ5DYXQSraFujjg2JS6jVxhMNjjquQVYz2mf6W+ZFjJaRbxZ+PDReLTXACttY7VI1oLYHkS4HIQClRGBV5YA12rA2AlleEHHYqRfoeMsAMdYO0AM2ucTO0E0R1zr23D6GhcN8erFOABczTSeBqZIf2heSzUAY9dS3JFMI8fRF96dlDxhPBHHSRKLBmt40lhRYwxbiYJ0e5OaoWmmffZR1OmvSYJOb22FePZDk2Ha9z39hfaqj2yxsJxF+5aOWJGa1IAypowtWHSgjQdKFON9rJwnOg4wXdCOwOABR414TI20Aq1m5dSRwd7KjryIglH1hVf6aytE2mus5nuSOiwpaqczro7IA43+FgN6DMZe1rANABLpMLpqQPQ1VsaXQ5hjWsxbkzE2XjjO2IE3NPTi3JY2FExaxb+20AGnFz8c4gygBih6Tv+0qNJejz9vB8QIJbIT7XlxrTcIvnQjGrqGDMiobjqkp33WBQzuW6ZoGfmYS4bgEJQKSIZ+eOds+81nnu8KaaQd6yT29s332rEMpl8af21rr91VXk9xThof6Z+Fzk4Qf0JH3AIQUi2e9as0FGMnuqIvHdMZckAoCYy9PES/GwqPI53Gz5Q/s+RLx1Xh7PIwnsZcwHyrXd6aG+cG9UiROifsCOX6iHiRD6EcwBgKUwjlkH6WxzmuAcqS44XZYXWDX81iAo2+6JFdGtG6IwdgkIiOqmA3bDDUDpFyk3fut8mdx+EUDNU/3zouhS5dbNPrT8vrUlqLzi4s2vJaahXcMj/26kC1jm1rd9HmMojIkkXLm7fb6v6DmAUJxzBmoJsyafXUOaXZJaVVkENSsHU+GeyAUACREQ5QR8Y6fTEgDV/fClkXGFPkMX7y37vhgL5SIiilqEyvr9rWuWvGt/QGNuXF5Qnb9IHSf1+XlvPtB/flhPcCt7M3BPFmp7Z64YrWwzA6YeCQ+hgt+hZFlq0QfWfAsHdF9FYYHOHUz6yo2upHUC5K/UHuuJH1U+bony+JxbczRy44GSIVKexc9Hujozl9vmSxzvGSrBg4YZnp4jUXnUIPGSgFJDkUg4h8rdX3vxbECRtbQARrronOAvVtuPrSfrI9bxc+9Yk2PbvT2k+91CaPDttCQ587OG4flQLKPLeZtsi/f+Ot9vUf7LZ80rge31MN+JvnLiaXgMQvj5ftzt49w2Ggtf33H2kYiWJSOzo6br/8S59sX/jFl9uhcBqGv7E8bl85PpJjZcv57daunmvLvYP26D++1VYHR5GhPRNwiBh9mgSnq+8BE87tdXbv0U9niN6zQ4adef65Nj13trWPaHWxHOt66fFBe+Vg0Q5D17azM2+3b91p//q92+jpxtC+ZH/n0pmkCIi4Olq0o3MqjIIEpNoKPaojuNCW+smPPte+9MVX2v7+oUdkbjuzOGpfPdxrCokNwqjl47326MablqleBDOdMFHa+0zBYj5LuAhqMpGv/W+ofmUBY3lRfVcLXre0Emtq6PjwWFGRIcJpPO8XuT2CEneGx1sAKhHwlg1xwah7ZVMnCEHmgaJ6cKjIqjHlSA5oWr9P19p+QuBAdJYbcaZuLDZEn0WTrhCLIY0+cZaHaZQdLPz/oqH3pu5px5qNYtMnsWIObwUD2yLpXZh2pWj2bLqcLSDOtq2+UDfw2vtJGoDLenaZwOut0zMFDpwnMPb8DhHNldgCW9LnSPrV2ugc3wJQjKjzCBbN+160TaixOAdYGQkqozf7EqZi0X5Oj78zjzlwDArf3Nlqf3t23tNwpmL5NosrzRZlHOwqXsc33x8MYw3xTFRUJztioJ9tqbWWTlMRJIPDz43j4/bnx/vtWEWPBvtD1YNX71Ewo6H//sFBe00Qx3iPsteF+ykMDSdovK7IABFsvOg1MDhDkzWRqH5m93G7MjuW3uEA9vRf/sTlduPs9rC/5YCtK+fb89cutjPnd6Q/UVi1o9mk3Xl3KIxWGcc+81Ska9jg+/ULO23Go03rUqT3n77U3jo3a9852JcjwwFk4ycf7bdfu/XQmcnEqWh3jw/b14Qflk1ldEFsF26HiKc7wIbDJGLsnw1cYyx6pAsn0vBDbQEeRbSlFL967VJ74cVn25Vr55wtPOfvbk/av5AZ48Z6CMm5NfSxy2fblflU60Rg7i6ebd+/drntildFy2w6j/YtgF40xowj17IFNyJu+og2coAkICgXLfxE30t98M3VPbcAODYueWQ8YSPD2D6c75jFdhhvuw8UkzaM9cfoiYzu9QGh5nMRDHyYkIMEK4XVRIoOV22XLSnp94OtLSlIQdM/XpqYd0oj0KePnMK8SZJMZPsUagMUb/W3oLGehJNp6Mf6paN1MT90FKhxTRE+ygBGi8FIMgcggO8e7rcHW3qp0WlrpROgzG4PFgdtoVPY+Z1tFV5tDyk0f7xv3FmoVfEl74HbWtDFCfE0IsNbJYxqVHheguZyLPs5DNGwxpF57tbdNtUWIyPuHxy2BzqNfv/2Q704i3dHH7fO7bSHKpJONkSmDCH+5z4LFV1wsvMrP7uqt7zGaygvO4pox6HJqN7XSa/983d1Dv2heR1Vyb+oojclEwiFFNy+cqmdfe46+cuSXnRXb3R7hwdSB+2g6Z+KZjVknZ3N21NndWKkQ1Pd2Hv3Zju8ez8cpklLHcYevP/AW8uSdKRuL32otc+/GEdg+nKk3xKBvvIQV2Oi8Q6hDNAi9giQFdGqcPpqNa4B0maKEJ3A2jJLkvh37z2OUxf8Mnqmd//5ZR1bRw5YvHNHr7UPQx58amt7m71/+WLbe0GOE+4mBxw92GvHdzUviyiPxW2tz2u2m/RZcaFn1x88umP9u21pk84XyZjQMoqWTF2SWD1OTntsWIQ09bHTzHKSxms/Bim2x2aNqNXNkzXF80zQTXIWupBfW8VzWL+acHdFilqbY8GYXMETPotxMpED1smW82NAHfqmdeTkHEfaTCpU7NO4xhmwFu2TEkyBh7k9A0Slj8yQDqFCPxKyqZ/61BQ3gPsj/kTDAcmwNpxzT6Xh7rpgIDqXL6ugRQ3gne/81attfkWHHJ84RBD//dv32sGjPaGkEE2GkOppD/Vje3u7XXqKeUkU79Hefnuk+Qea4frB/j3QB5lkcZXtMs2EcJtfLCf6ad+QAeY8zWrLGt0UoTMyUXvVxRFF1d/+8u+31fUP+X39S1efbr/+9LPtkO8JqcFc6vzp7/5he/2rf9/memK4KZKL+xiiiKsd7x+0l3/+F9pv/cHv6XthTpSIbX1R+ovbt9pf795u87lU/uF77eC3f6c1OcaB0Pjk/IU4jT6JCV4tVAsH5FpdWxg6LbnXaFplLQMUUTKAyOmoeuba1XZFOBGrRq2f7+hoTCGbcrCmyXDk5CGJJefKgMuSFQdeM/l9/8xKRVfXZK73Dr0DhBzJ8nw5AEhDyKbum/3kY8aQARCrrU1Qh75piRffGLJv83IN0Jh2budgBz9xDTht7kh+rytdeiFdUevrR3IfWusllb8Q6UqmsgYjPNGUKABB1zgDwBU5fQ6KR9XspF/Z9VOivzmvFEwID7wnGjKRrwzwWiXHEG4yScD6+ubH5JrTg1xMZp3FJI0waKB0Mp4EkYdCBU1L8VXoUM94DkiQpMTqNb2DKfVXeh1dffozrX1aX4SzkWoP9vfa7nu32kQHoR4L7f2pvzBFDaCE3t1937w7qiuxWghZvf3dtvr6v7UV22hX54k9fZbXadAO5c3xmNJL0ywmVhE1KWl9LMdFDgfARGMSk0eMeLA7hGFdU77LPZACHGOx7vHjtvjyn1iZqVL1765fb9/+7CvtzM+8xLcssaiC64j69rdutMnjB225XzFetfmRZMWiOssv2vf+6632R3/2x/oZjW8MWkyny/1vvtFuvv6NNr15Ux9idfaXEks5shupQ9BkT9mB7r5041+3R3QTADEGhRZbwERmqnUGS8j+Oo5iZJ6NZw4dUjPTd/fWrfbgxo124cK2IqNsUeOY7C3AJE82+cSNd/V33n1HX4pjHo/Wh5J1JJlbPH1o1AM7LrpdXtlhU0Y6c26AxrjbMKYMkDnq9z9EKCFkJa9XzDGtIIQPbhg7k0NmWyQYnpJ89v8Tti2cVfNS1kLwRzb0tLEcnEa6M7HsSgiAtlEDYlKkPbguCeJTsh1koXp2KzpL3gXy1xWihq/C1JGaRLqiXXjBYqtx+jVWsGjFm9Bq8fuArRDxiBqw0LfJ1BldhMcWSBs8Jt4N6AwIIoxiWIt6CQwhFAM+g7/6+Z9uH//cp/T1RXSZfaTF/+of/rM91CcqIr3SXl7q1Xlx774iEans7XH/XpvfuxvFUzNpkxoHpyA+fNSONa8edROdGZC15AyAUUr/C+fPtN/41S+2uWoQGvA16s3JUfunw0dxGCJoGJoBWzMaG+0EjQuuO8AfNRS1ijoCcAgQY4WzNz/2iQ+3L+hV91DKcADZ2z9qX3n9m+3+w/hJm48jK33EXO7tWWEtqblKalXuLao3T4/Tmqq5Pv5rnk547HM1O1Sy6oPLUrJ39CH21c9+XAdQFUoZsY1svTL/47ffkFGaNDYeW9yXPCC6GQZfOgC60hy9bLSY+W5Wxgv646a/penIKiccKhPKAfx0hcwTbTOVqw88rY3Hi6fgiJ+1+InMb6B05AB0iohjSxqLLYwbSgC4/kU/xmbuZHTtdV5s7IScyB8i2XD186+xLGSk0I8FakOJbuqPDThi7ATTwnDTNTxsAQ262MGUkeePjfjLLAtSJOLv8VLAj7JaCsWvtlqFpmmnp4lHh1vOqy3w5PMkYs3YMN5PA9OzzzYvPuGZASKeFnnSD2YypKIPjreBPRXAh+ZpOike3bkTzmOI4sjp8X/Jfs/WGDzHG/OWog07AQGsJ519oQskDNPlDADPvZ+Z4T62lPGJ67cNHnHIQpAmSUh8UaWvlFL61x8ju+/FmPAEjcW5aAWj98H3/8s8zVnptVgLhS3YQ7+2gQ0Px4QTohgOGYBhlQXjaHPO1hjDPXqs0zvgPybNGSBdBNl+Nt5O2HBERh9H2AHe66QBAnKvx9/hSRiW8+cZeDY9rF+52naezJzuPIbscc3HOeV18LqE8pVWf+YhR9M5pTHPimtMqNe2PN2gJ+6PolpzW49TPwZ14vTXXXg0yZnQjRQNh1Q/t0r15QAxYIUdoBUcfa0l2onUFxu6v/G+3sa0EH/P50eQDjAHz55v0wv6wUqKOd0vnG+LS5qwEk3Ajn3xamvP6Dzv9UTrFgrFONL4gv7K4woymKs+vM9daJOLgsKnMuRA3/9f++EtHbXFpz4fUd+8vavaLX5dEYAwnHE/Fh0UaBrvPLJi++WP6FcICZKw+D0gcB9WTMt+59EzV7rwu515ROd3hfm2YuC3Q/GzlRjXvwGXQ1G46B7UeG8opn8oiLIoaUWD3nGiqUgf6RwypLleqzWPrxCmkQl1JX/vi+4XtByfVVq7ACr6/L39BzWp45+j+LncUYMZRfVXIl4ER5UDNqAXZp5bOggcobZ+BLvxOECXHQOMKM49p+YiU5EeGV1Z0Gk5Fk4b5OUW0Hxk6FpPfQnVf9pVuZIWr2YSk9ScruiJAJ4qGWmfJkXLE+SJ6Of0kIGctApo+UBdabyPwxuOwOk9azASB2XhW68Fm1sheEdPAWlDHcgaMM7Q/hSwh6xu6KoB25AOCEfIXSiZ0edX2TAcqLmekHiISoHZKeNxPXLcH5wQDkH5oHl/23D1Rw7o+75omTk1r+DMjH77ltDSQdB6FkFQ4kUbUa0Yb2MZ8TK6tkBG30WMaaO9H7tgJMvraIX4NxjNopUBBTFEeI866645ICM9Nlz45laIzOEkCCPNSg6QtU+o2COuwVHUyXgiHn98qJlrqS8pNh4oPjU7JdD1O0bSAODjq7JBsBvP+NphJw3tTpFtZbwzQP3xfI3lFpBQpf+w19FAwnRfc4KMNo2bHSCk/gRNMF5E5AjSf5z69GmAKoJdsJAyHB7LRm5d0ALvWwID11J6sw5oHMPhIcB2CLSgj+dGEWRhNQ13/RRSU/QFIJzAIEYDClefstGdoV+LyQSOB360it3HajuDmRDGEDxbOQF5aGK5CoyNF8mpX1CDdgJwZLwNTYPXjC9HjJxix3gLsJIYwrZwgii9ZdSx2tWdASslYxnTdBc6ouw3R6AulFG0T9YAzc8sYElW7w1hNIDXKCgCfWQm9DuM+lHsGEvDHfns9+gzJuPpp+HR91FYxLJeGE3Tk8KCZIIa0WeAZpxFiLiUwGDRJpkB/bEHvfY/8zbSn003CIVBjTW6I1g/L9QcGd8jbxoGiq/Xg+on3DQ+HcGRemav8BTg8WeFgKGHi5p7ECLaKOHjbkXcNUCGKM3j/+3JGoCxlfp2AoJwyBiCq2F0edc43TScfuJrNcCGaxDDM/onsgG6jPW8inw6KeoDGcAAa+AEfcxUSAddiCoK8EXaUQ8Y+xJ+WWNFyIQ0WNB/mYmhGX0H3rekCYQjQLKxDg15CY1y85VjGEzfULoL9qeCncEYdFI++bJvW4uWjpj5S6uc4MC48IVDQgme81UEMRYlgOGYOPkJx0vQMZKMECjjC/ewOogoX8DofiwWdxGsE72x4eWINQeE8aTyyegrU7sTwiGRDRz3tQiZIZn/A/66MGpxu4R1AAAAAElFTkSuQmCC">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <header>
+    <div class="head-left">
+      <h1>Trim Forge</h1>
+      <p>Minecraft Java armor trims — 18 patterns &times; 10 materials, on any armor</p>
+    </div>
+    <a class="back" href="../index.html">&larr; All games</a>
+  </header>
+
+  <main>
+
+    <!-- ------------------------------------------------ the set -->
+    <section class="panel set-panel">
+      <h2>The Set</h2>
+      <p class="hint">Every piece is independent — mix armor, patterns and materials freely.</p>
+      <div id="pieceList" class="piece-list"></div>
+      <div class="set-actions">
+        <button id="applyAll" class="btn">Apply piece to all</button>
+        <button id="randomSet" class="btn">Randomize set</button>
+        <button id="clearTrims" class="btn">Clear trims</button>
+        <button id="resetAll" class="btn btn-quiet">Reset</button>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ preview -->
+    <section class="panel stage-panel">
+      <div class="stage" id="stage">
+        <canvas id="view"></canvas>
+      </div>
+      <div class="stage-controls">
+        <div class="ctrl">
+          <label for="zoom">Zoom</label>
+          <input type="range" id="zoom" min="6" max="26" step="1" value="14">
+        </div>
+        <div class="ctrl">
+          <label>Backdrop</label>
+          <div class="bg-row" id="bgRow"></div>
+        </div>
+        <div class="ctrl">
+          <label class="check"><input type="checkbox" id="showBody" checked> Show body</label>
+        </div>
+        <button id="exportPng" class="btn btn-accent">Export PNG</button>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ editor -->
+    <section class="panel editor-panel">
+      <h2>Editing <span id="editingName" class="editing-name">Chestplate</span></h2>
+
+      <h3>Armor material</h3>
+      <div id="armorRow" class="thumb-row"></div>
+
+      <div id="dyeBlock" class="dye-block" hidden>
+        <h3>Leather dye</h3>
+        <div class="dye-row">
+          <input type="color" id="dyeInput" value="#a06540">
+          <div id="dyePresets" class="dye-presets"></div>
+        </div>
+      </div>
+
+      <h3>Trim material</h3>
+      <div id="trimRow" class="thumb-row"></div>
+
+      <h3>Trim pattern</h3>
+      <div id="patternGrid" class="thumb-grid"></div>
+    </section>
+
+    <!-- ------------------------------------------------ details -->
+    <section class="panel info-panel">
+      <div class="info-block">
+        <h2>Smithing template</h2>
+        <div id="templateInfo" class="template-info"></div>
+      </div>
+      <div class="info-block">
+        <div class="cmd-head">
+          <h2>Give commands</h2>
+          <div class="ver-toggle" id="verToggle"></div>
+        </div>
+        <pre id="giveCmd" class="cmd"></pre>
+        <button id="copyCmd" class="btn">Copy commands</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    A fan-made previewer. Trim art is hand-drawn pixel art in the game's style, not game assets.
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="render.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

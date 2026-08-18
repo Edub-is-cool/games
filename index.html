@@ -20,6 +20,7 @@
       --accent-6: #40a0ff;
       --accent-7: #6ad8ff;
       --accent-8: #ffd23f;
+      --accent-9: #9fb8d8;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -79,6 +80,7 @@
     .card:nth-child(6):hover { border-color: var(--accent-6); }
     .card:nth-child(7):hover { border-color: var(--accent-7); }
     .card:nth-child(8):hover { border-color: var(--accent-8); }
+    .card:nth-child(9):hover { border-color: var(--accent-9); }
 
     .card-banner {
       height: 180px;
@@ -114,6 +116,9 @@
     .card:nth-child(8) .card-banner {
       background: linear-gradient(135deg, #140d02 0%, #33220a 50%, #140d02 100%);
     }
+    .card:nth-child(9) .card-banner {
+      background: linear-gradient(135deg, #0b0f16 0%, #1c2534 50%, #0b0f16 100%);
+    }
 
     .card-body {
       padding: 1.5rem;
@@ -143,6 +148,7 @@
     .card:nth-child(6) .genre { color: var(--accent-6); }
     .card:nth-child(7) .genre { color: var(--accent-7); }
     .card:nth-child(8) .genre { color: var(--accent-8); }
+    .card:nth-child(9) .genre { color: var(--accent-9); }
 
     .card-body .desc {
       color: var(--text-muted);
@@ -189,6 +195,7 @@
     .card:nth-child(6) .play-btn { background: var(--accent-6); }
     .card:nth-child(7) .play-btn { background: var(--accent-7); color: #0a0a0f; }
     .card:nth-child(8) .play-btn { background: var(--accent-8); color: #0a0a0f; }
+    .card:nth-child(9) .play-btn { background: var(--accent-9); color: #0a0a0f; }
 
     footer {
       text-align: center;
@@ -326,6 +333,21 @@
           <span class="tag">Vanilla JS</span>
         </div>
         <a class="play-btn" href="drum-pro/index.html">Play</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-banner">&#128737;&#65039;</div>
+      <div class="card-body">
+        <div class="genre">Tool / Minecraft</div>
+        <h2>Trim Forge</h2>
+        <p class="desc">A Minecraft Java armor trim previewer. Put any of the 18 trim patterns and 10 materials onto leather through netherite — every piece configured separately — then copy the matching /give command.</p>
+        <div class="tags">
+          <span class="tag">HTML5</span>
+          <span class="tag">Canvas</span>
+          <span class="tag">Vanilla JS</span>
+        </div>
+        <a class="play-btn" href="trim-forge/index.html">Open</a>
       </div>
     </div>
 

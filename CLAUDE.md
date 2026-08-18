@@ -14,6 +14,7 @@ A collection of browser-playable games, published via a static landing page.
 | `emoji-battle/`| Emoji Battle       | Vanilla HTML/CSS/JS + Canvas |
 | `ore-bit/`     | Ore-bit            | Vanilla HTML/CSS/JS + Canvas |
 | `drum-pro/`    | Drum Pro           | Vanilla HTML/CSS/JS + Web Audio |
+| `trim-forge/`  | Trim Forge         | Vanilla HTML/CSS/JS + Canvas |
 
 ## Structure
 ```
@@ -26,6 +27,7 @@ Games/
 ├── emoji-battle/       # Static site — open index.html directly
 ├── ore-bit/            # Static site — open index.html directly
 ├── drum-pro/           # Static site — open index.html directly
+├── trim-forge/         # Minecraft armor trim previewer — open index.html directly
 └── CLAUDE.md
 ```
 
@@ -38,6 +40,7 @@ Games/
 - **Emoji Battle**: Open `emoji-battle/index.html` in a browser (no build step)
 - **Ore-bit**: Open `ore-bit/index.html` in a browser (no build step)
 - **Drum Pro**: Open `drum-pro/index.html` in a browser (no build step)
+- **Trim Forge**: Open `trim-forge/index.html` in a browser (no build step)
 
 ## Conventions
 - Each game is self-contained in its own directory with its own CLAUDE.md

@@ -39,6 +39,7 @@ def main(jar_path):
     for a in HELMET_ONLY:
         wanted[f'armor/humanoid/{a}'] = f'{TEX}entity/equipment/humanoid/{a}.png'
     wanted['player/steve'] = f'{TEX}entity/player/wide/steve.png'
+    wanted['wings/elytra'] = f'{TEX}entity/equipment/wings/elytra.png'
 
     out, total = {}, 0
     with zipfile.ZipFile(jar_path) as jar:

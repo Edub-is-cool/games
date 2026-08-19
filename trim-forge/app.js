@@ -1,7 +1,9 @@
 /* Trim Forge — UI wiring. State is per piece, so a set can mix armor
    materials, trim patterns and trim materials in any combination. */
 
-const STORAGE_KEY = 'trim-forge-state-v2';
+const STORAGE_KEY = 'trim-forge-state-v3';
+const SKIN_KEY = 'trim-forge-skin-v1';
+const CAPE_KEY = 'trim-forge-cape-v1';
 const PIECE_IDS = ['helmet', 'chestplate', 'leggings', 'boots'];
 
 function defaultPiece(armor, pattern, trim) {
@@ -17,14 +19,21 @@ function defaultState() {
       boots: defaultPiece('netherite', 'sentry', 'copper'),
     },
     selected: 'chestplate',
+    view: '3d',
     zoom: 14,
     bg: 'dark',
     showBody: true,
+    spin: false,
+    slim: false,
+    elytra: false,
     cmdVersion: 'modern',
   };
 }
 
 let state = loadState();
+let viewer = null;          // Viewer3D, created once textures are in
+let skinLabel = 'Steve (default)';
+let capeLabel = 'none';
 
 function loadState() {
   try {
@@ -47,18 +56,23 @@ function saveState() {
 }
 
 const sel = () => state.pieces[state.selected];
+const viewOpts = () => ({
+  pieces: state.pieces, showBody: state.showBody, bg: state.bg, elytra: state.elytra,
+});
 const $ = id => document.getElementById(id);
 
 /* ---------------------------------------------------------- thumbnails -- */
 
-/* Renders one piece on its own, framed to that piece, with overrides applied. */
+/* Renders one piece on its own, framed to that piece, with overrides applied.
+   Pass { on: false } to preview the bare slot. */
 function pieceThumb(piece, overrides, maxPx = 62) {
   const crop = PIECE_CROPS[piece];
   const scale = Math.max(2, Math.min(Math.floor(maxPx / crop.w), Math.floor(maxPx / crop.h)));
   const canvas = document.createElement('canvas');
   const pieces = {};
   for (const id of PIECE_IDS) pieces[id] = { ...state.pieces[id], on: false };
-  pieces[piece] = { ...state.pieces[piece], ...overrides, on: true };
+  pieces[piece] = { ...state.pieces[piece], ...overrides };
+  if (overrides.on === undefined) pieces[piece].on = true;
   renderFigure(canvas, { scale, pieces, showBody: true, bg: 'dark', crop });
   return canvas;
 }
@@ -101,11 +115,11 @@ function buildPieceList() {
 
     const meta = document.createElement('div');
     meta.className = 'piece-meta';
-    const armorName = armorById(cfg.armor).name;
     const trimText = cfg.pattern === 'none'
       ? 'no trim'
       : `${patternById(cfg.pattern).name} · ${trimById(cfg.trim).name}`;
-    meta.innerHTML = `<div class="piece-name">${p.name}</div><div class="piece-sub">${armorName} · ${trimText}</div>`;
+    const summary = cfg.on ? `${armorById(cfg.armor).name} · ${trimText}` : 'no armor';
+    meta.innerHTML = `<div class="piece-name">${p.name}</div><div class="piece-sub">${summary}</div>`;
 
     row.append(toggle, thumb, meta);
     host.appendChild(row);
@@ -118,11 +132,19 @@ function buildArmorRow() {
   const host = $('armorRow');
   host.innerHTML = '';
   const cfg = sel();
+
+  host.appendChild(thumbButton('None', pieceThumb(state.selected, { on: false }, 54), !cfg.on, () => {
+    cfg.on = false;
+    refresh();
+  }));
+
   for (const mat of ARMOR_MATERIALS) {
     if (!allowedOn(mat, state.selected)) continue;
-    const canvas = pieceThumb(state.selected, { armor: mat.id }, 54);
-    host.appendChild(thumbButton(mat.name, canvas, cfg.armor === mat.id, () => {
+    const canvas = pieceThumb(state.selected, { armor: mat.id, on: true }, 54);
+    host.appendChild(thumbButton(mat.name, canvas, cfg.on && cfg.armor === mat.id, () => {
       cfg.armor = mat.id;
+      cfg.on = true;
+      if (state.selected === 'chestplate') state.elytra = false;
       refresh();
     }));
   }
@@ -134,7 +156,7 @@ function buildTrimRow() {
   const cfg = sel();
   const pattern = cfg.pattern === 'none' ? PATTERNS[0].id : cfg.pattern;
   for (const mat of TRIM_MATERIALS) {
-    const canvas = pieceThumb(state.selected, { trim: mat.id, pattern }, 54);
+    const canvas = pieceThumb(state.selected, { trim: mat.id, pattern, on: true }, 54);
     host.appendChild(thumbButton(mat.name, canvas, cfg.trim === mat.id, () => {
       cfg.trim = mat.id;
       if (cfg.pattern === 'none') cfg.pattern = pattern;
@@ -147,10 +169,10 @@ function buildPatternGrid() {
   const host = $('patternGrid');
   host.innerHTML = '';
   const cfg = sel();
-  host.appendChild(thumbButton('None', pieceThumb(state.selected, { pattern: 'none' }, 54),
+  host.appendChild(thumbButton('None', pieceThumb(state.selected, { pattern: 'none', on: true }, 54),
     cfg.pattern === 'none', () => { cfg.pattern = 'none'; refresh(); }));
   for (const pat of PATTERNS) {
-    const canvas = pieceThumb(state.selected, { pattern: pat.id }, 54);
+    const canvas = pieceThumb(state.selected, { pattern: pat.id, on: true }, 54);
     host.appendChild(thumbButton(pat.name, canvas, cfg.pattern === pat.id, () => {
       cfg.pattern = pat.id;
       refresh();
@@ -178,6 +200,11 @@ function buildTemplateInfo() {
   const cfg = sel();
   const host = $('templateInfo');
   const pieceName = PIECES.find(p => p.id === state.selected).name;
+  if (!cfg.on) {
+    host.innerHTML = `<dt>Piece</dt><dd>${pieceName} — no armor</dd>
+      <dt>Trim</dt><dd>Pick an armor material to trim this slot.</dd>`;
+    return;
+  }
   if (cfg.pattern === 'none') {
     host.innerHTML = `<dt>Piece</dt><dd>${armorById(cfg.armor).name} ${pieceName}</dd>
       <dt>Trim</dt><dd>None — pick a pattern to see its template.</dd>`;
@@ -216,7 +243,149 @@ function giveCommands() {
       lines.push(`/give @p ${item}${parts.length ? `{${parts.join(',')}}` : ''} 1`);
     }
   }
-  return lines.length ? lines.join('\n') : '# No pieces worn — tick a piece in The Set.';
+  if (state.elytra) lines.push(modern ? '/give @p minecraft:elytra' : '/give @p minecraft:elytra 1');
+  return lines.length ? lines.join('\n') : '# Nothing worn — pick an armor material for a slot.';
+}
+
+/* ---------------------------------------------------------------- skin --
+   A dropped PNG is normalised to a 64-wide skin so every UV rect stays in
+   the same coordinate space, then kept in localStorage. */
+
+function normaliseSkin(img) {
+  const ratio = img.height / img.width;
+  if (img.width < 64 || (ratio !== 1 && ratio !== 0.5)) {
+    throw new Error(`expected a 64x64 or 64x32 skin, got ${img.width}x${img.height}`);
+  }
+  const h = ratio === 1 ? 64 : 32;
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 64, h);
+  return c;
+}
+
+function applyCapeDataURL(dataURL, label, persist) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      if (img.width < 64 || img.height / img.width !== 0.5) {
+        return reject(new Error(`expected a 64x32 cape, got ${img.width}x${img.height}`));
+      }
+      const c = document.createElement('canvas');
+      c.width = 64; c.height = 32;
+      const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, 64, 32);
+      const ready = new Image();
+      ready.onload = () => {
+        setCape(ready);
+        capeLabel = label;
+        if (persist) {
+          try { localStorage.setItem(CAPE_KEY, JSON.stringify({ data: c.toDataURL('image/png'), label })); }
+          catch (e) { /* keep it in memory */ }
+        }
+        refresh();
+        resolve();
+      };
+      ready.src = c.toDataURL('image/png');
+    };
+    img.onerror = () => reject(new Error('that file is not a readable image'));
+    img.src = dataURL;
+  });
+}
+
+function readCapeFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    applyCapeDataURL(reader.result, file.name, true)
+      .then(() => setSkinStatus(''))
+      .catch(err => setSkinStatus(err.message, true));
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetCape() {
+  setCape(null);
+  capeLabel = 'none';
+  try { localStorage.removeItem(CAPE_KEY); } catch (e) { /* ignore */ }
+  refresh();
+}
+
+function restoreCape() {
+  try {
+    const raw = localStorage.getItem(CAPE_KEY);
+    if (!raw) return Promise.resolve();
+    const saved = JSON.parse(raw);
+    return applyCapeDataURL(saved.data, saved.label || 'saved cape', false).catch(() => {});
+  } catch (e) {
+    return Promise.resolve();
+  }
+}
+
+function applySkinDataURL(dataURL, label, persist) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = normaliseSkin(img);
+        const ready = new Image();
+        ready.onload = () => {
+          setSkin(ready, state.slim);
+          skinLabel = label;
+          if (persist) {
+            try { localStorage.setItem(SKIN_KEY, JSON.stringify({ data: canvas.toDataURL('image/png'), label })); }
+            catch (e) { /* over quota or private mode — keep it in memory */ }
+          }
+          refresh();
+          resolve();
+        };
+        ready.src = canvas.toDataURL('image/png');
+      } catch (err) { reject(err); }
+    };
+    img.onerror = () => reject(new Error('that file is not a readable image'));
+    img.src = dataURL;
+  });
+}
+
+function readSkinFile(file) {
+  if (!file) return;
+  if (!/image\/(png|jpeg)/.test(file.type)) {
+    return setSkinStatus('Skins must be PNG files.', true);
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    applySkinDataURL(reader.result, file.name, true)
+      .then(() => setSkinStatus(''))
+      .catch(err => setSkinStatus(err.message, true));
+  };
+  reader.readAsDataURL(file);
+}
+
+function setSkinStatus(msg, isError) {
+  const el = $('skinStatus');
+  el.textContent = msg;
+  el.classList.toggle('error', !!isError);
+}
+
+function resetSkin() {
+  setSkin(null, state.slim);
+  skinLabel = 'Steve (default)';
+  try { localStorage.removeItem(SKIN_KEY); } catch (e) { /* ignore */ }
+  setSkinStatus('');
+  refresh();
+}
+
+function restoreSkin() {
+  try {
+    const raw = localStorage.getItem(SKIN_KEY);
+    if (!raw) return Promise.resolve();
+    const saved = JSON.parse(raw);
+    return applySkinDataURL(saved.data, saved.label || 'saved skin', false).catch(() => {});
+  } catch (e) {
+    return Promise.resolve();
+  }
 }
 
 /* ------------------------------------------------------------- refresh -- */
@@ -224,15 +393,25 @@ function giveCommands() {
 function refresh() {
   const cfg = sel();
   $('editingName').textContent = PIECES.find(p => p.id === state.selected).name;
-  $('dyeBlock').hidden = !armorById(cfg.armor).dyeable;
+  $('dyeBlock').hidden = !(cfg.on && armorById(cfg.armor).dyeable);
   $('dyeInput').value = cfg.dye;
+  $('skinName').textContent = skinLabel;
+  $('capeName').textContent = capeLabel;
+  $('elytra').checked = state.elytra;
 
-  renderFigure($('view'), {
-    scale: state.zoom,
-    pieces: state.pieces,
-    showBody: state.showBody,
-    bg: state.bg,
-  });
+  document.body.classList.toggle('view-3d', state.view === '3d');
+  if (state.view === '3d' && viewer) {
+    viewer.distance = Math.max(24, Math.min(120, 90 - state.zoom * 3));
+    viewer.spin = state.spin;
+    viewer.dirty = true;
+  } else {
+    renderFigure($('view'), {
+      scale: state.zoom,
+      pieces: state.pieces,
+      showBody: state.showBody,
+      bg: state.bg,
+    });
+  }
 
   buildPieceList();
   buildArmorRow();
@@ -243,6 +422,7 @@ function refresh() {
   $('giveCmd').textContent = giveCommands();
   document.querySelectorAll('.ver-btn').forEach(b => b.classList.toggle('active', b.dataset.ver === state.cmdVersion));
   document.querySelectorAll('.bg-swatch').forEach(b => b.classList.toggle('active', b.dataset.bg === state.bg));
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === state.view));
   saveState();
 }
 
@@ -262,15 +442,15 @@ function buildBgRow() {
   }
 }
 
-function buildVerToggle() {
-  const host = $('verToggle');
+function buildToggleRow(hostId, options, cls, onPick) {
+  const host = $(hostId);
   host.innerHTML = '';
-  for (const [ver, label] of [['modern', '1.21.5+'], ['legacy', '1.20.4']]) {
+  for (const [value, label] of options) {
     const b = document.createElement('button');
-    b.className = 'ver-btn';
-    b.dataset.ver = ver;
+    b.className = cls;
+    b.dataset[cls === 'ver-btn' ? 'ver' : 'view'] = value;
     b.textContent = label;
-    b.addEventListener('click', () => { state.cmdVersion = ver; refresh(); });
+    b.addEventListener('click', () => onPick(value));
     host.appendChild(b);
   }
 }
@@ -284,14 +464,50 @@ function wire() {
   $('showBody').checked = state.showBody;
   $('showBody').addEventListener('change', e => { state.showBody = e.target.checked; refresh(); });
 
+  $('spin').checked = state.spin;
+  $('spin').addEventListener('change', e => { state.spin = e.target.checked; refresh(); });
+
+  $('slimArms').checked = state.slim;
+  $('slimArms').addEventListener('change', e => {
+    state.slim = e.target.checked;
+    setSlim(state.slim);
+    refresh();
+  });
+
   $('dyeInput').addEventListener('input', e => { sel().dye = e.target.value; refresh(); });
+
+  $('elytra').addEventListener('change', e => {
+    state.elytra = e.target.checked;
+    if (state.elytra) state.pieces.chestplate.on = false;   // same slot as a chestplate
+    refresh();
+  });
+
+  $('loadCape').addEventListener('click', () => $('capeFile').click());
+  $('capeFile').addEventListener('change', e => readCapeFile(e.target.files[0]));
+  $('resetCape').addEventListener('click', resetCape);
+
+  $('loadSkin').addEventListener('click', () => $('skinFile').click());
+  $('skinFile').addEventListener('change', e => readSkinFile(e.target.files[0]));
+  $('resetSkin').addEventListener('click', resetSkin);
+
+  const stage = $('stage');
+  ['dragenter', 'dragover'].forEach(ev => stage.addEventListener(ev, e => {
+    e.preventDefault();
+    stage.classList.add('dropping');
+  }));
+  ['dragleave', 'drop'].forEach(ev => stage.addEventListener(ev, e => {
+    e.preventDefault();
+    if (ev === 'dragleave' && stage.contains(e.relatedTarget)) return;
+    stage.classList.remove('dropping');
+  }));
+  stage.addEventListener('drop', e => readSkinFile(e.dataTransfer.files[0]));
 
   $('applyAll').addEventListener('click', () => {
     const src = sel();
     for (const id of PIECE_IDS) {
       const cfg = state.pieces[id];
       const armor = allowedOn(armorById(src.armor), id) ? src.armor : cfg.armor;
-      state.pieces[id] = { ...cfg, armor, dye: src.dye, pattern: src.pattern, trim: src.trim };
+      state.pieces[id] = { ...cfg, on: src.on, armor, dye: src.dye, pattern: src.pattern, trim: src.trim };
     }
     refresh();
   });
@@ -313,7 +529,12 @@ function wire() {
     refresh();
   });
 
-  $('resetAll').addEventListener('click', () => { state = defaultState(); refresh(); });
+  $('resetAll').addEventListener('click', () => {
+    const view = state.view;
+    state = defaultState();
+    state.view = view;
+    refresh();
+  });
 
   $('copyCmd').addEventListener('click', async () => {
     const btn = $('copyCmd');
@@ -327,25 +548,44 @@ function wire() {
   });
 
   $('exportPng').addEventListener('click', () => {
-    const canvas = document.createElement('canvas');
-    renderFigure(canvas, { scale: 24, pieces: state.pieces, showBody: state.showBody, bg: state.bg });
-    const link = document.createElement('a');
     const cfg = sel();
+    const link = document.createElement('a');
     link.download = `trim-forge-${cfg.armor}-${cfg.pattern}-${cfg.trim}.png`;
-    link.href = canvas.toDataURL('image/png');
+    if (state.view === '3d' && viewer) {
+      viewer.render(viewOpts());
+      link.href = $('view3d').toDataURL('image/png');
+    } else {
+      const canvas = document.createElement('canvas');
+      renderFigure(canvas, { scale: 24, pieces: state.pieces, showBody: state.showBody, bg: state.bg });
+      link.href = canvas.toDataURL('image/png');
+    }
     link.click();
   });
 }
 
-buildBgRow();
-buildVerToggle();
+/* --------------------------------------------------------------- start -- */
 
-loadTextures().then(() => {
+buildBgRow();
+buildToggleRow('verToggle', [['modern', '1.21.5+'], ['legacy', '1.20.4']], 'ver-btn', v => {
+  state.cmdVersion = v; refresh();
+});
+buildToggleRow('viewToggle', [['3d', '3D'], ['flat', 'Flat']], 'view-btn', v => {
+  state.view = v; refresh();
+});
+
+loadTextures().then(restoreSkin).then(restoreCape).then(() => {
   document.body.classList.remove('loading');
+  try {
+    viewer = new Viewer3D($('view3d'));
+    viewer.start(viewOpts);
+  } catch (err) {
+    console.warn('3D unavailable, staying flat:', err.message);
+    state.view = 'flat';
+    $('viewToggle').hidden = true;
+  }
   wire();
   refresh();
 }).catch(err => {
-  const stage = $('stage');
-  stage.textContent = `Could not load textures: ${err.message}`;
+  $('stage').textContent = `Could not load textures: ${err.message}`;
   console.error(err);
 });

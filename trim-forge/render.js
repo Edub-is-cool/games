@@ -1,8 +1,11 @@
-/* Trim Forge — renderer.
+/* Trim Forge — textures and the flat (2D) view.
    Draws the game's own textures rather than an imitation of them: the armour
    texture, then the trim texture recoloured through the game's palette files,
-   sampled at the front faces of the standard armour UV layout. Every piece is
-   drawn from its own material and trim, so a set can mix freely. */
+   sampled at the front faces of the standard armour UV layout.
+
+   Each piece is composited into a single 64x32 texture by pieceTexture(),
+   which both this view and the 3D view render from — in 3D that matters,
+   because armour and trim drawn as separate coplanar boxes would z-fight. */
 
 const GRID_W = 16, GRID_H = 32, PAD = 1;
 const CANVAS_W = GRID_W + PAD * 2, CANVAS_H = GRID_H + PAD * 2;
@@ -21,14 +24,35 @@ function loadTextures() {
   })));
 }
 
-function pixelsOf(key) {
-  const img = IMG[key];
+function pixelsOf(source) {
+  const img = typeof source === 'string' ? IMG[source] : source;
   const c = document.createElement('canvas');
   c.width = img.width; c.height = img.height;
   const ctx = c.getContext('2d');
   ctx.drawImage(img, 0, 0);
   return ctx.getImageData(0, 0, c.width, c.height);
 }
+
+/* ----------------------------------------------------------- the skin --
+   Defaults to the bundled Steve; a dropped PNG replaces it. Legacy 64x32
+   skins have no left limbs, so those mirror the right ones. */
+
+let skinImage = null;
+let skinSlim = false;
+
+function setSkin(img, slim) {
+  skinImage = img || null;
+  skinSlim = !!slim;
+}
+
+function setSlim(slim) { skinSlim = !!slim; }
+
+let capeImage = null;
+function setCape(img) { capeImage = img || null; }
+const currentCape = () => capeImage;
+const currentSkin = () => skinImage || IMG['player/steve'];
+const skinIsLegacy = () => currentSkin().height === 32;
+const skinIsSlim = () => skinSlim;
 
 /* --------------------------------------------------------- trim colour --
    Trim textures ship in a greyscale key palette; the game swaps those exact
@@ -37,6 +61,7 @@ function pixelsOf(key) {
 let keyColors = null;
 const trimCache = new Map();
 const leatherCache = new Map();
+const pieceCache = new Map();
 
 const packRGB = (d, i) => (d[i * 4] << 16) | (d[i * 4 + 1] << 8) | d[i * 4 + 2];
 
@@ -91,42 +116,6 @@ function tintedLeather(layer, dye) {
   return c;
 }
 
-/* ------------------------------------------------------------ geometry --
-   Front faces of the 64x32 armour layout, and where each lands on the 16x32
-   figure. Armour textures carry one arm and one leg, mirrored for the far
-   side, exactly as the model does. */
-
-const ARMOR_FACE = { head: [8, 8, 8, 8], body: [20, 20, 8, 12], arm: [44, 20, 4, 12], leg: [4, 20, 4, 12] };
-
-const PIECE_SPEC = {
-  helmet: { layer: 'humanoid', faces: [['head', 4, 0, false]] },
-  chestplate: { layer: 'humanoid', faces: [['body', 4, 8, false], ['arm', 0, 8, false], ['arm', 12, 8, true]] },
-  boots: { layer: 'humanoid', faces: [['leg', 4, 20, false], ['leg', 8, 20, true]] },
-  leggings: { layer: 'leggings', faces: [['body', 4, 8, false], ['leg', 4, 20, false], ['leg', 8, 20, true]] },
-};
-
-/* Player skin is the modern 64x64 layout, which has both arms and both legs
-   plus the outer (hat / jacket / sleeve) layer. */
-const BODY_FACES = [
-  [[8, 8, 8, 8], 4, 0], [[20, 20, 8, 12], 4, 8],
-  [[44, 20, 4, 12], 0, 8], [[36, 52, 4, 12], 12, 8],
-  [[4, 20, 4, 12], 4, 20], [[20, 52, 4, 12], 8, 20],
-];
-const BODY_OVERLAY_FACES = [
-  [[40, 8, 8, 8], 4, 0], [[20, 36, 8, 12], 4, 8],
-  [[44, 36, 4, 12], 0, 8], [[52, 52, 4, 12], 12, 8],
-  [[4, 36, 4, 12], 4, 20], [[4, 52, 4, 12], 8, 20],
-];
-
-function blit(ctx, src, rect, dx, dy, mirror, s, ox, oy) {
-  const [sx, sy, w, h] = rect;
-  const x = (dx + ox) * s, y = (dy + oy) * s;
-  ctx.save();
-  if (mirror) { ctx.translate(x * 2 + w * s, 0); ctx.scale(-1, 1); }
-  ctx.drawImage(src, sx, sy, w, h, x, y, w * s, h * s);
-  ctx.restore();
-}
-
 /* --------------------------------------------------------------- lookup -- */
 
 const byId = (list, id) => list.find(m => m.id === id) || list[0];
@@ -142,32 +131,96 @@ function paletteFor(cfg) {
   return DARKER_PAIRS[cfg.armor] === trim ? `${trim}_darker` : trim;
 }
 
+/* ------------------------------------------------------------ geometry --
+   Front faces of the 64x32 armour layout, and where each lands on the 16x32
+   figure. Armour textures carry one arm and one leg, mirrored for the far
+   side, exactly as the model does. */
+
+const ARMOR_FACE = { head: [8, 8, 8, 8], body: [20, 20, 8, 12], arm: [44, 20, 4, 12], leg: [4, 20, 4, 12] };
+
+const PIECE_SPEC = {
+  helmet: { layer: 'humanoid', faces: [['head', 4, 0, false]] },
+  chestplate: { layer: 'humanoid', faces: [['body', 4, 8, false], ['arm', 0, 8, false], ['arm', 12, 8, true]] },
+  boots: { layer: 'humanoid', faces: [['leg', 4, 20, false], ['leg', 8, 20, true]] },
+  leggings: { layer: 'leggings', faces: [['body', 4, 8, false], ['leg', 4, 20, false], ['leg', 8, 20, true]] },
+};
+
+/* One 64x32 texture per piece: armour, dye overlay and recoloured trim
+   flattened together. Cached — the pickers ask for a lot of these. */
+function pieceTexture(piece, cfg) {
+  const spec = PIECE_SPEC[piece];
+  const mat = armorById(cfg.armor);
+  if (!allowedOn(mat, piece)) return null;
+
+  const cacheKey = `${spec.layer}|${cfg.armor}|${mat.dyeable ? cfg.dye : ''}|${cfg.pattern}|${cfg.trim}`;
+  const hit = pieceCache.get(cacheKey);
+  if (hit) return hit;
+
+  const base = mat.dyeable ? tintedLeather(spec.layer, cfg.dye) : IMG[`armor/${spec.layer}/${mat.tex}`];
+  if (!base) return null;
+
+  const out = document.createElement('canvas');
+  out.width = 64; out.height = 32;
+  const ctx = out.getContext('2d');
+  ctx.drawImage(base, 0, 0);
+  if (mat.dyeable) ctx.drawImage(IMG[`armor/${spec.layer}/leather_overlay`], 0, 0);
+  if (cfg.pattern && cfg.pattern !== 'none') {
+    ctx.drawImage(trimTexture(cfg.pattern, spec.layer, paletteFor(cfg)), 0, 0);
+  }
+  pieceCache.set(cacheKey, out);
+  return out;
+}
+
+function blit(ctx, src, rect, dx, dy, mirror, s, ox, oy) {
+  const [sx, sy, w, h] = rect;
+  const x = (dx + ox) * s, y = (dy + oy) * s;
+  ctx.save();
+  if (mirror) { ctx.translate(x * 2 + w * s, 0); ctx.scale(-1, 1); }
+  ctx.drawImage(src, sx, sy, w, h, x, y, w * s, h * s);
+  ctx.restore();
+}
+
 /* ------------------------------------------------------------ rendering -- */
 
 function drawPiece(ctx, piece, cfg, s, ox, oy) {
-  const spec = PIECE_SPEC[piece];
-  const mat = armorById(cfg.armor);
-  if (!allowedOn(mat, piece)) return;
-
-  const base = mat.dyeable ? tintedLeather(spec.layer, cfg.dye) : IMG[`armor/${spec.layer}/${mat.tex}`];
-  if (!base) return;
-  for (const [face, dx, dy, mirror] of spec.faces) blit(ctx, base, ARMOR_FACE[face], dx, dy, mirror, s, ox, oy);
-
-  if (mat.dyeable) {
-    const overlay = IMG[`armor/${spec.layer}/leather_overlay`];
-    for (const [face, dx, dy, mirror] of spec.faces) blit(ctx, overlay, ARMOR_FACE[face], dx, dy, mirror, s, ox, oy);
-  }
-
-  if (cfg.pattern && cfg.pattern !== 'none') {
-    const trim = trimTexture(cfg.pattern, spec.layer, paletteFor(cfg));
-    for (const [face, dx, dy, mirror] of spec.faces) blit(ctx, trim, ARMOR_FACE[face], dx, dy, mirror, s, ox, oy);
+  const tex = pieceTexture(piece, cfg);
+  if (!tex) return;
+  for (const [face, dx, dy, mirror] of PIECE_SPEC[piece].faces) {
+    blit(ctx, tex, ARMOR_FACE[face], dx, dy, mirror, s, ox, oy);
   }
 }
 
+/* Player skin is the 64x64 layout; legacy 64x32 skins mirror the right limbs
+   and only carry the hat overlay. */
+function bodyFaces() {
+  const legacy = skinIsLegacy();
+  const slim = skinIsSlim();
+  const aw = slim ? 3 : 4;                       // arm width
+  const ax = slim ? 1 : 0;                       // slim arms sit a pixel inward
+  const base = [
+    [[8, 8, 8, 8], 4, 0, false],                                     // head
+    [[20, 20, 8, 12], 4, 8, false],                                  // body
+    [[44, 20, aw, 12], ax, 8, false],                                // right arm
+    legacy ? [[44, 20, aw, 12], 12, 8, true] : [[36, 52, aw, 12], 12, 8, false],
+    [[4, 20, 4, 12], 4, 20, false],                                  // right leg
+    legacy ? [[4, 20, 4, 12], 8, 20, true] : [[20, 52, 4, 12], 8, 20, false],
+  ];
+  const overlay = legacy ? [[[40, 8, 8, 8], 4, 0, false]] : [
+    [[40, 8, 8, 8], 4, 0, false],
+    [[20, 36, 8, 12], 4, 8, false],
+    [[44, 36, aw, 12], ax, 8, false],
+    [[52, 52, aw, 12], 12, 8, false],
+    [[4, 36, 4, 12], 4, 20, false],
+    [[4, 52, 4, 12], 8, 20, false],
+  ];
+  return { base, overlay };
+}
+
 function drawBody(ctx, s, ox, oy) {
-  const skin = IMG['player/steve'];
-  for (const [rect, dx, dy] of BODY_FACES) blit(ctx, skin, rect, dx, dy, false, s, ox, oy);
-  for (const [rect, dx, dy] of BODY_OVERLAY_FACES) blit(ctx, skin, rect, dx, dy, false, s, ox, oy);
+  const skin = currentSkin();
+  const { base, overlay } = bodyFaces();
+  for (const [rect, dx, dy, mirror] of base) blit(ctx, skin, rect, dx, dy, mirror, s, ox, oy);
+  for (const [rect, dx, dy, mirror] of overlay) blit(ctx, skin, rect, dx, dy, mirror, s, ox, oy);
 }
 
 const BACKGROUNDS = {

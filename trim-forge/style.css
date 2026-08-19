@@ -290,3 +290,66 @@ footer {
   .info-panel { grid-template-columns: 1fr; }
   .stage { min-height: 340px; }
 }
+
+
+/* ------------------------------------------------------- 3D + skin UI -- */
+
+.stage { position: relative; }
+
+#view3d {
+  width: 100%;
+  height: 440px;
+  display: none;
+  cursor: grab;
+  touch-action: none;      /* let the viewer own drag gestures */
+}
+#view3d:active { cursor: grabbing; }
+
+body.view-3d #view3d { display: block; }
+body.view-3d #view { display: none; }
+body.loading #view3d { display: none; }
+body:not(.view-3d) .only-3d { display: none; }
+
+.stage.dropping { outline: 2px dashed var(--accent); outline-offset: -6px; }
+.drop-badge {
+  position: absolute;
+  inset: auto 0 0.6rem 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  pointer-events: none;
+  opacity: 0.55;
+}
+.stage.dropping .drop-badge { opacity: 1; color: var(--accent); }
+
+.skin-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+}
+.skin-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.skin-name { font-size: 0.75rem; color: var(--text-muted); }
+.skin-status { font-size: 0.75rem; color: var(--text-muted); }
+.skin-status.error { color: #ff7a6b; }
+
+.view-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 7px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.view-btn.active { border-color: var(--accent); color: var(--text); }
+
+.back-hint { margin: 0.4rem 0 0; font-size: 0.72rem; }

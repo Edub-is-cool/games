@@ -33,11 +33,46 @@ footer. Keep both if you touch the footer. If they ever need to come out, the sw
 Regenerating against a newer jar picks up new content automatically — copper armor, the resin
 trim material and turtle scute all arrived this way.
 
+## Views
+Two renderers share the same textures:
+
+- **3D** (`render3d.js`) — a hand-written WebGL viewer, drag to rotate and scroll to zoom.
+  Six body boxes, the skin's outer layer, one inflated box per armour piece, plus cape and
+  elytra. No libraries.
+- **Flat** (`render.js`) — the original front-on 2D view. It still draws **every picker
+  thumbnail**, which is why it has to stay: 38 WebGL contexts would blow the browser's limit.
+
+Cape and elytra are 3D only — they are behind the figure and invisible head-on.
+
+## Skins and capes
+Drop a PNG on the stage, or use the buttons under the preview. Skins are normalised to a
+64-wide canvas (`normaliseSkin`), so 64x64, legacy 64x32 and HD skins all end up in the same
+coordinate space and every UV rect keeps working. Legacy skins have no left limbs, so those
+mirror the right ones (`bodyFaces`, `bodyBoxes`). Slim arms are a toggle — a PNG can't tell you.
+
+Both are kept in `localStorage` under their own keys, separate from the set.
+
+Cape textures are **not in the game files** — Mojang serves those per account, so there is
+nothing to extract and none ship here. A cape PNG is 64x32 and carries the elytra artwork in the
+same file, which is why an equipped elytra can render from it.
+
+## Model notes worth keeping
+- Armour inflates by **1.0** for helmet/chestplate/boots and **0.5** for leggings, matching the
+  game, so the layers never z-fight.
+- `boxGeometry` bakes a per-face brightness rather than lighting anything.
+- Boxes written in Minecraft's model space face -z; `yaw180` turns such a box around. The **cape
+  needs it, the elytra does not** — the wing's visible surface is the box's *back* rect and its
+  inner face is fully transparent. Getting this backwards points the wings the wrong way.
+- Both elytra wings span the full back (x -5..+5) and splay apart by rotation; they are not
+  offset out to the sides.
+- An elytra takes the chestplate slot and replaces the cape, as in game.
+
 ## Tech Stack
 - **HTML5 Canvas** — the figure and every picker thumbnail
 - **CSS3** — three-panel layout, collapses to one column on mobile
 - **Vanilla JavaScript** — no build step, no dependencies (matches `ore-bit/`, `emoji-battle/`)
-- `localStorage` remembers the last set (`trim-forge-state-v2`)
+- **WebGL** for the 3D view — hand-written, no libraries
+- `localStorage` remembers the set (`trim-forge-state-v3`), skin and cape
 
 ## Files
 | File | Role |
@@ -45,7 +80,8 @@ trim material and turtle scute all arrived this way.
 | `textures.js` | Generated. Game textures as data URIs — do not edit by hand |
 | `tools/extract-textures.py` | Regenerates `textures.js` from a client jar |
 | `data.js` | Metadata only: material names, item ids, template locations |
-| `render.js` | UV geometry, palette swap, leather tinting, `renderFigure` |
+| `render.js` | UV geometry, palette swap, leather tinting, skin/cape slots, `renderFigure` |
+| `render3d.js` | WebGL viewer: box geometry, model definitions, orbit controls |
 | `app.js` | State, pickers, give-command builder, PNG export |
 | `index.html` / `style.css` | Layout and chrome |
 

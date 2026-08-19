@@ -35,9 +35,15 @@
     <!-- ------------------------------------------------ preview -->
     <section class="panel stage-panel">
       <div class="stage" id="stage">
+        <canvas id="view3d"></canvas>
         <canvas id="view"></canvas>
+        <div class="drop-badge">Drop a skin PNG</div>
       </div>
       <div class="stage-controls">
+        <div class="ctrl">
+          <label>View</label>
+          <div class="ver-toggle" id="viewToggle"></div>
+        </div>
         <div class="ctrl">
           <label for="zoom">Zoom</label>
           <input type="range" id="zoom" min="6" max="26" step="1" value="14">
@@ -49,8 +55,31 @@
         <div class="ctrl">
           <label class="check"><input type="checkbox" id="showBody" checked> Show body</label>
         </div>
+        <div class="ctrl only-3d">
+          <label class="check"><input type="checkbox" id="spin"> Spin</label>
+        </div>
         <button id="exportPng" class="btn btn-accent">Export PNG</button>
       </div>
+
+      <div class="skin-row">
+        <span class="skin-label">Skin</span>
+        <button id="loadSkin" class="btn">Load PNG&hellip;</button>
+        <input type="file" id="skinFile" accept="image/png" hidden>
+        <button id="resetSkin" class="btn btn-quiet">Reset</button>
+        <label class="check"><input type="checkbox" id="slimArms"> Slim arms</label>
+        <span id="skinName" class="skin-name"></span>
+      </div>
+
+      <div class="skin-row">
+        <span class="skin-label">Back</span>
+        <button id="loadCape" class="btn">Cape PNG&hellip;</button>
+        <input type="file" id="capeFile" accept="image/png" hidden>
+        <button id="resetCape" class="btn btn-quiet">Clear</button>
+        <label class="check"><input type="checkbox" id="elytra"> Elytra</label>
+        <span id="capeName" class="skin-name"></span>
+        <span id="skinStatus" class="skin-status"></span>
+      </div>
+      <p class="hint back-hint">Capes and elytra show in the 3D view. Wearing an elytra replaces the cape and takes the chestplate slot, as in game &mdash; and a cape PNG carries its own elytra artwork, so the wings use it.</p>
     </section>
 
     <!-- ------------------------------------------------ editor -->
@@ -101,6 +130,7 @@
   <script src="textures.js"></script>
   <script src="data.js"></script>
   <script src="render.js"></script>
+  <script src="render3d.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

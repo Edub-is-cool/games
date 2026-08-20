@@ -8,7 +8,7 @@ const BACKDROP_KEY = 'trim-forge-backdrop-v1';
 const PIECE_IDS = ['helmet', 'chestplate', 'leggings', 'boots'];
 
 function defaultPiece(armor, pattern, trim) {
-  return { on: true, armor, dye: '#a06540', pattern, trim };
+  return { on: true, armor, dye: '#a06540', pattern, trim, enchanted: false };
 }
 
 function defaultState() {
@@ -27,6 +27,10 @@ function defaultState() {
     spin: false,
     slim: false,
     elytra: false,
+    item: 'none',
+    itemEnchanted: false,
+    shield: false,
+    shieldEnchanted: false,
     cmdVersion: 'modern',
   };
 }
@@ -59,6 +63,8 @@ function saveState() {
 const sel = () => state.pieces[state.selected];
 const viewOpts = () => ({
   pieces: state.pieces, showBody: state.showBody, bg: state.bg, elytra: state.elytra,
+  item: state.item, itemEnchanted: state.itemEnchanted,
+  shield: state.shield, shieldEnchanted: state.shieldEnchanted,
 });
 const $ = id => document.getElementById(id);
 
@@ -119,7 +125,9 @@ function buildPieceList() {
     const trimText = cfg.pattern === 'none'
       ? 'no trim'
       : `${patternById(cfg.pattern).name} · ${trimById(cfg.trim).name}`;
-    const summary = cfg.on ? `${armorById(cfg.armor).name} · ${trimText}` : 'no armor';
+    const summary = cfg.on
+      ? `${armorById(cfg.armor).name} · ${trimText}${cfg.enchanted ? ' · enchanted' : ''}`
+      : 'no armor';
     meta.innerHTML = `<div class="piece-name">${p.name}</div><div class="piece-sub">${summary}</div>`;
 
     row.append(toggle, thumb, meta);
@@ -223,6 +231,16 @@ function buildTemplateInfo() {
     <dt>Added</dt><dd>Minecraft ${pat.version}</dd>`;
 }
 
+/* Forcing the sheen without picking an enchantment: 1.21 has a component for
+   exactly that; on 1.20.4 the nearest honest equivalent is a real enchantment. */
+const GLINT_MODERN = 'minecraft:enchantment_glint_override=true';
+const GLINT_LEGACY = 'Enchantments:[{id:"minecraft:unbreaking",lvl:1}]';
+
+function giveLine(item, enchanted, modern) {
+  if (!enchanted) return modern ? `/give @p ${item}` : `/give @p ${item} 1`;
+  return modern ? `/give @p ${item}[${GLINT_MODERN}]` : `/give @p ${item}{${GLINT_LEGACY}} 1`;
+}
+
 function giveCommands() {
   const modern = state.cmdVersion === 'modern';
   const lines = [];
@@ -237,13 +255,19 @@ function giveCommands() {
     if (modern) {
       if (dyeInt !== null) parts.push(`minecraft:dyed_color=${dyeInt}`);
       if (trimmed) parts.push(`minecraft:trim={pattern:"minecraft:${cfg.pattern}",material:"minecraft:${cfg.trim}"}`);
+      if (cfg.enchanted) parts.push(GLINT_MODERN);
       lines.push(`/give @p ${item}${parts.length ? `[${parts.join(',')}]` : ''}`);
     } else {
       if (dyeInt !== null) parts.push(`display:{color:${dyeInt}}`);
       if (trimmed) parts.push(`Trim:{pattern:"minecraft:${cfg.pattern}",material:"minecraft:${cfg.trim}"}`);
+      if (cfg.enchanted) parts.push(GLINT_LEGACY);
       lines.push(`/give @p ${item}${parts.length ? `{${parts.join(',')}}` : ''} 1`);
     }
   }
+
+  const held = HELD_ITEMS.find(i => i.id === state.item);
+  if (held && held.item) lines.push(giveLine(`minecraft:${held.item}`, state.itemEnchanted, modern));
+  if (state.shield) lines.push(giveLine('minecraft:shield', state.shieldEnchanted, modern));
   if (state.elytra) lines.push(modern ? '/give @p minecraft:elytra' : '/give @p minecraft:elytra 1');
   return lines.length ? lines.join('\n') : '# Nothing worn — pick an armor material for a slot.';
 }
@@ -465,6 +489,12 @@ function restoreSkin() {
 function refresh() {
   const cfg = sel();
   $('editingName').textContent = PIECES.find(p => p.id === state.selected).name;
+  $('pieceEnchanted').checked = !!cfg.enchanted;
+  $('pieceEnchanted').disabled = !cfg.on;
+  $('heldItem').value = state.item;
+  $('itemEnchanted').checked = state.itemEnchanted;
+  $('shield').checked = state.shield;
+  $('shieldEnchanted').checked = state.shieldEnchanted;
   $('dyeBlock').hidden = !(cfg.on && armorById(cfg.armor).dyeable);
   $('dyeInput').value = cfg.dye;
   $('skinName').textContent = skinLabel;
@@ -499,6 +529,17 @@ function refresh() {
 }
 
 /* -------------------------------------------------------------- chrome -- */
+
+function buildHeldItems() {
+  const host = $('heldItem');
+  host.innerHTML = '';
+  for (const it of HELD_ITEMS) {
+    const opt = document.createElement('option');
+    opt.value = it.id;
+    opt.textContent = it.name;
+    host.appendChild(opt);
+  }
+}
 
 function buildBgRow() {
   const host = $('bgRow');
@@ -558,6 +599,12 @@ function wire() {
   });
 
   $('dyeInput').addEventListener('input', e => { sel().dye = e.target.value; refresh(); });
+
+  $('pieceEnchanted').addEventListener('change', e => { sel().enchanted = e.target.checked; refresh(); });
+  $('itemEnchanted').addEventListener('change', e => { state.itemEnchanted = e.target.checked; refresh(); });
+  $('shield').addEventListener('change', e => { state.shield = e.target.checked; refresh(); });
+  $('shieldEnchanted').addEventListener('change', e => { state.shieldEnchanted = e.target.checked; refresh(); });
+  $('heldItem').addEventListener('change', e => { state.item = e.target.value; refresh(); });
 
   $('elytra').addEventListener('change', e => {
     state.elytra = e.target.checked;
@@ -653,6 +700,7 @@ function wire() {
 /* --------------------------------------------------------------- start -- */
 
 buildBgRow();
+buildHeldItems();
 buildToggleRow('verToggle', [['modern', '1.21.5+'], ['legacy', '1.20.4']], 'ver-btn', v => {
   state.cmdVersion = v; refresh();
 });

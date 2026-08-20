@@ -217,6 +217,72 @@ function armorBoxes(piece, pose) {
   }
 }
 
+/* ---------------------------------------------------------- held items --
+   Item sprites are flat 16x16 textures that the game extrudes into a slab.
+   Front and back are single quads (the cutout comes from the alpha discard);
+   side faces are emitted per pixel wherever an opaque pixel meets a gap. */
+
+function spriteGeometry(out, pixels, w, h, place) {
+  const opaque = (x, y) => x >= 0 && y >= 0 && x < w && y < h && pixels[(y * w + x) * 4 + 3] > 16;
+  const push = (pts, uv, shade) => {
+    for (const i of [0, 1, 2, 0, 2, 3]) {
+      const p = place(pts[i][0], pts[i][1], pts[i][2]);
+      out.push(p[0], p[1], p[2], uv[i][0], uv[i][1], shade);
+    }
+  };
+
+  const t = 0.5;   // half thickness, in sprite pixels
+  /* flat faces, spanning the whole sprite */
+  push([[0, 0, t], [w, 0, t], [w, h, t], [0, h, t]],
+       [[0, 1], [1, 1], [1, 0], [0, 0]], SHADE.front);
+  push([[w, 0, -t], [0, 0, -t], [0, h, -t], [w, h, -t]],
+       [[1, 1], [0, 1], [0, 0], [1, 0]], SHADE.back);
+
+  /* edges: one quad per exposed pixel side, textured with that texel */
+  for (let py = 0; py < h; py++) {
+    for (let px = 0; px < w; px++) {
+      if (!opaque(px, py)) continue;
+      const u = (px + 0.5) / w, v = (py + 0.5) / h;
+      const uv = [[u, v], [u, v], [u, v], [u, v]];
+      const x0 = px, x1 = px + 1;
+      const y0 = h - py - 1, y1 = h - py;      // sprite rows run top-down
+      if (!opaque(px, py - 1)) push([[x0, y1, -t], [x1, y1, -t], [x1, y1, t], [x0, y1, t]], uv, SHADE.top);
+      if (!opaque(px, py + 1)) push([[x0, y0, t], [x1, y0, t], [x1, y0, -t], [x0, y0, -t]], uv, SHADE.bottom);
+      if (!opaque(px - 1, py)) push([[x0, y0, -t], [x0, y1, -t], [x0, y1, t], [x0, y0, t]], uv, SHADE.side);
+      if (!opaque(px + 1, py)) push([[x1, y0, t], [x1, y1, t], [x1, y1, -t], [x1, y0, -t]], uv, SHADE.side);
+    }
+  }
+}
+
+/* Grip: the sprite's flat face points sideways and its diagonal runs up and
+   forward, which is how a sword sits in the hand in third person. */
+function heldItemPlacement(pose) {
+  const scale = 0.82;
+  const anchorX = 2.5, anchorY = 2.5;                // handle end of the sprite
+  const hand = [-6.5, 12.5 + pose.armX * 6, 2.5];    // rides the right arm's sway
+  const tilt = 0;                                    // the sprite's own diagonal is the grip angle
+  return (lx, ly, lz) => {
+    const x = (lx - anchorX) * scale;
+    const y = (ly - anchorY) * scale;
+    const z = lz * scale;
+    /* sprite x runs forward, sprite y runs up, thickness goes sideways */
+    let wy = y, wz = x;
+    const c = Math.cos(tilt), sn = Math.sin(tilt);
+    const ry = wy * c - wz * sn, rz = wy * sn + wz * c;
+    return [hand[0] + z, hand[1] + ry, hand[2] + rz];
+  };
+}
+
+/* Shield: plate plus handle, held in the off hand. Texture is 64x64. */
+function shieldBoxes(pose) {
+  const sway = pose.armX * -1;
+  const y = 15 + sway * 5;
+  return [
+    { uv: [0, 0], size: [12, 22, 1], pos: [7, y, 4], pivot: [7, y, 3], rot: [0, -0.18, 0] },
+    { uv: [26, 0], size: [2, 6, 6], pos: [7, y, 0.5], pivot: [7, y, 3], rot: [0, -0.18, 0] },
+  ];
+}
+
 /* Cape hangs from the shoulders on the back and flares out slightly. The
    texture is the standard 64x32 cape layout. */
 function capeBox(pose) {
@@ -239,6 +305,14 @@ function elytraBoxes(pose) {
   return [wing(-1, false), wing(1, true)];
 }
 
+const spritePixelCache = new Map();
+function itemPixels(key) {
+  if (!IMG[key]) return null;
+  let hit = spritePixelCache.get(key);
+  if (!hit) { hit = pixelsOf(key); spritePixelCache.set(key, hit); }
+  return hit;
+}
+
 /* ---------------------------------------------------------------- viewer -- */
 
 const VERT_SRC = `
@@ -246,10 +320,11 @@ attribute vec3 aPos;
 attribute vec2 aUV;
 attribute float aShade;
 uniform mat4 uMVP;
+uniform vec4 uUV;        // xy scale, zw offset — the glint pass scrolls these
 varying vec2 vUV;
 varying float vShade;
 void main() {
-  vUV = aUV;
+  vUV = aUV * uUV.xy + uUV.zw;
   vShade = aShade;
   gl_Position = uMVP * vec4(aPos, 1.0);
 }`;
@@ -257,12 +332,14 @@ void main() {
 const FRAG_SRC = `
 precision mediump float;
 uniform sampler2D uTex;
+uniform float uGlint;    // >0 while drawing the sheen; doubles as its strength
 varying vec2 vUV;
 varying float vShade;
 void main() {
   vec4 c = texture2D(uTex, vUV);
   if (c.a < 0.1) discard;             // cutout, so draw order never matters
-  gl_FragColor = vec4(c.rgb * vShade, c.a);
+  float lit = uGlint > 0.0 ? uGlint : vShade;
+  gl_FragColor = vec4(c.rgb * lit, c.a);
 }`;
 
 class Viewer3D {
@@ -280,6 +357,8 @@ class Viewer3D {
     };
     this.uMVP = gl.getUniformLocation(this.program, 'uMVP');
     this.uTex = gl.getUniformLocation(this.program, 'uTex');
+    this.uUV = gl.getUniformLocation(this.program, 'uUV');
+    this.uGlint = gl.getUniformLocation(this.program, 'uGlint');
     this.buffer = gl.createBuffer();
     this.textures = new WeakMap();
 
@@ -343,31 +422,28 @@ class Viewer3D {
 
   /* Textures are keyed off the canvas/image object, so a recoloured piece
      uploads once and is reused until its composite changes. */
-  texture(source, linear) {
+  texture(source, linear, repeat) {
     let tex = this.textures.get(source);
     if (tex) return tex;
     const gl = this.gl;
     const filter = linear ? gl.LINEAR : gl.NEAREST;
+    const wrap = repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
     tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrap);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrap);
     this.textures.set(source, tex);
     return tex;
   }
 
-  drawGroup(boxes, source, texW, texH, mvp) {
-    if (!source) return;
+  bindData(data) {
     const gl = this.gl;
-    const data = [];
-    for (const box of boxes) boxGeometry(data, box, texW, texH);
     gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.DYNAMIC_DRAW);
-
     const stride = 6 * 4;
     gl.enableVertexAttribArray(this.attr.pos);
     gl.vertexAttribPointer(this.attr.pos, 3, gl.FLOAT, false, stride, 0);
@@ -375,12 +451,54 @@ class Viewer3D {
     gl.vertexAttribPointer(this.attr.uv, 2, gl.FLOAT, false, stride, 12);
     gl.enableVertexAttribArray(this.attr.shade);
     gl.vertexAttribPointer(this.attr.shade, 1, gl.FLOAT, false, stride, 20);
+  }
 
+  /* The enchantment sheen re-draws the same geometry with the glint sheet,
+     scrolled and added on top. depthFunc EQUAL keeps it exactly where the
+     model actually drew, so cut-out pixels never light up. */
+  drawGlint(count, sheet) {
+    const gl = this.gl;
+    const tex = IMG[sheet];
+    if (!tex) return;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture(tex, true, true));
+    gl.uniform1f(this.uGlint, 0.26);
+    gl.depthFunc(gl.EQUAL);
+    gl.depthMask(false);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+
+    const t = this.ticks;
+    for (const [scale, sx, sy] of [[3.1, 0.0038, 0.0021], [2.4, -0.0026, 0.0033]]) {
+      gl.uniform4f(this.uUV, scale, scale, (t * sx) % 1, (t * sy) % 1);
+      gl.drawArrays(gl.TRIANGLES, 0, count);
+    }
+
+    gl.uniform4f(this.uUV, 1, 1, 0, 0);
+    gl.uniform1f(this.uGlint, 0);
+    gl.depthFunc(gl.LESS);
+    gl.depthMask(true);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  }
+
+  drawData(data, source, mvp, glintSheet) {
+    if (!source || !data.length) return;
+    const gl = this.gl;
+    this.bindData(data);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.texture(source));
     gl.uniform1i(this.uTex, 0);
+    gl.uniform4f(this.uUV, 1, 1, 0, 0);
+    gl.uniform1f(this.uGlint, 0);
     gl.uniformMatrix4fv(this.uMVP, false, mvp);
     gl.drawArrays(gl.TRIANGLES, 0, data.length / 6);
+    if (glintSheet) this.drawGlint(data.length / 6, glintSheet);
+  }
+
+  drawGroup(boxes, source, texW, texH, mvp, glintSheet) {
+    if (!source) return;
+    const data = [];
+    for (const box of boxes) boxGeometry(data, box, texW, texH);
+    this.drawData(data, source, mvp, glintSheet);
   }
 
   /* Backdrop is a screen-filling quad drawn before the model with depth off.
@@ -419,6 +537,8 @@ class Viewer3D {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.texture(source, big));
     gl.uniform1i(this.uTex, 0);
+    gl.uniform4f(this.uUV, 1, 1, 0, 0);
+    gl.uniform1f(this.uGlint, 0);
     gl.uniformMatrix4fv(this.uMVP, false, mat4Identity());
     gl.disable(gl.DEPTH_TEST);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -479,7 +599,23 @@ class Viewer3D {
       if (!cfg || !cfg.on) continue;
       const tex = pieceTexture(piece, cfg);
       if (!tex) continue;
-      this.drawGroup(armorBoxes(piece, pose), tex, 64, 32, mvp);
+      this.drawGroup(armorBoxes(piece, pose), tex, 64, 32, mvp, cfg.enchanted && 'glint/armor');
+    }
+
+    if (opts.shield) {
+      this.drawGroup(shieldBoxes(pose), IMG['shield/base'], 64, 64, mvp,
+                     opts.shieldEnchanted && 'glint/item');
+    }
+
+    if (opts.item && opts.item !== 'none') {
+      const def = HELD_ITEMS.find(i => i.id === opts.item);
+      const key = def && def.tex ? `item/${def.tex}` : null;
+      const px = key && itemPixels(key);
+      if (px) {
+        const data = [];
+        spriteGeometry(data, px.data, px.width, px.height, heldItemPlacement(pose));
+        this.drawData(data, IMG[key], mvp, opts.itemEnchanted && 'glint/item');
+      }
     }
 
     /* A player with a cape flies it as their elytra, exactly as in game. */

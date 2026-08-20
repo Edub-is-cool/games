@@ -24,6 +24,9 @@ PALETTES = ['trim_palette', 'amethyst', 'copper', 'copper_darker', 'diamond',
 ARMOR = ['leather', 'leather_overlay', 'chainmail', 'copper', 'iron', 'gold',
          'diamond', 'netherite']
 HELMET_ONLY = ['turtle_scute']
+ITEMS = ['wooden_sword', 'stone_sword', 'iron_sword', 'golden_sword', 'diamond_sword',
+         'netherite_sword', 'diamond_axe', 'netherite_axe', 'diamond_pickaxe',
+         'netherite_pickaxe', 'bow', 'crossbow_standby', 'trident', 'mace']
 
 
 def main(jar_path):
@@ -40,6 +43,11 @@ def main(jar_path):
         wanted[f'armor/humanoid/{a}'] = f'{TEX}entity/equipment/humanoid/{a}.png'
     wanted['player/steve'] = f'{TEX}entity/player/wide/steve.png'
     wanted['wings/elytra'] = f'{TEX}entity/equipment/wings/elytra.png'
+    wanted['shield/base'] = f'{TEX}entity/shield/shield_base_nopattern.png'
+    for g in ['armor', 'item']:
+        wanted[f'glint/{g}'] = f'{TEX}misc/enchanted_glint_{g}.png'
+    for it in ITEMS:
+        wanted[f'item/{it}'] = f'{TEX}item/{it}.png'
 
     out, total = {}, 0
     with zipfile.ZipFile(jar_path) as jar:

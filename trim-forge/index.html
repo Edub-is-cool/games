@@ -82,7 +82,14 @@
         <span id="capeName" class="skin-name"></span>
         <span id="skinStatus" class="skin-status"></span>
       </div>
-      <p class="hint back-hint">Capes and elytra show in the 3D view. Wearing an elytra replaces the cape and takes the chestplate slot, as in game &mdash; and a cape PNG carries its own elytra artwork, so the wings use it.</p>
+      <div class="skin-row">
+        <span class="skin-label">Gear</span>
+        <select id="heldItem" class="select"></select>
+        <label class="check"><input type="checkbox" id="itemEnchanted"> Enchanted</label>
+        <label class="check"><input type="checkbox" id="shield"> Shield</label>
+        <label class="check"><input type="checkbox" id="shieldEnchanted"> Enchanted</label>
+      </div>
+      <p class="hint back-hint">Enchantment glint, capes, elytra, weapons and shields show in the 3D view. Wearing an elytra replaces the cape and takes the chestplate slot, as in game &mdash; and a cape PNG carries its own elytra artwork, so the wings use it.</p>
     </section>
 
     <!-- ------------------------------------------------ editor -->
@@ -91,6 +98,7 @@
 
       <h3>Armor material</h3>
       <div id="armorRow" class="thumb-row"></div>
+      <label class="check editor-check"><input type="checkbox" id="pieceEnchanted"> Enchanted (glint)</label>
 
       <div id="dyeBlock" class="dye-block" hidden>
         <h3>Leather dye</h3>

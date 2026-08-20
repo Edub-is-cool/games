@@ -356,3 +356,15 @@ body:not(.view-3d) .only-3d { display: none; }
 
 .btn-small { padding: 0.3rem 0.5rem; font-size: 0.7rem; }
 .bg-row { flex-wrap: wrap; max-width: 280px; }
+
+.select {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.78rem;
+}
+.editor-check { margin-top: 0.6rem; font-size: 0.8rem; color: var(--text-muted); }
+.editor-check input { margin-right: 0.35rem; }

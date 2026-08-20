@@ -79,6 +79,30 @@ Dropping a file routes by shape: 64 or 128 wide and square or 2:1 is worn as a s
 else becomes a backdrop. Capes need the explicit button, since a legacy skin and a cape are the
 same size.
 
+## Held items, shield and glint
+**Items** are flat 16x16 sprites that the game extrudes into a slab. `spriteGeometry` does the
+same: front and back are single quads (the cutout comes from the alpha discard), and side faces
+are emitted per pixel wherever an opaque pixel meets a gap. The grip angle is the sprite's own
+diagonal — a sword sprite already runs handle-to-tip at 45 degrees, so no extra tilt is needed.
+`HELD_ITEMS` carries a separate `tex`, because the crossbow's sprite is `crossbow_standby`.
+
+**Shield** is a plate plus handle on a 64x64 texture, held in the off hand. Only the plain
+(no-banner) base ships; the game has 40-odd banner patterns if that is ever wanted.
+
+**Glint** re-draws the same geometry with the scrolling glint sheet, added on top. Two things
+make it work:
+- `depthFunc(EQUAL)` with `depthMask(false)`, so the sheen lands exactly where the model drew
+  and never on cut-out pixels.
+- The glint sheet is sampled with `REPEAT` wrap and a UV scale/offset (`uUV`), which is why it
+  has to be a power-of-two texture under WebGL 1.
+
+`uGlint` doubles as the sheen's strength. It is deliberately low (0.26) — two additive layers at
+full brightness drown the armour completely. On dark armour it reads clearly; on bright diamond
+it is barely there, which is what the game does too.
+
+Glint, held items, the shield, capes and the elytra are all **3D only**. The flat view is
+front-on, where most of them are invisible anyway.
+
 ## Model notes worth keeping
 - Armour inflates by **1.0** for helmet/chestplate/boots and **0.5** for leggings, matching the
   game, so the layers never z-fight.

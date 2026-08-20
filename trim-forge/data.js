@@ -86,6 +86,25 @@ const PATTERNS = [
   { id: 'flow',      name: 'Flow',      found: 'Trial Chambers (ominous vault)',  dupe: 'Breeze Rod',         version: '1.21' },
 ];
 
+/* Held items. `tex` is the sprite in TEXTURES, `item` the id for /give. */
+const HELD_ITEMS = [
+  { id: 'none', name: 'Empty', tex: null, item: null },
+  { id: 'wooden_sword', name: 'Wood Sword', tex: 'wooden_sword', item: 'wooden_sword' },
+  { id: 'stone_sword', name: 'Stone Sword', tex: 'stone_sword', item: 'stone_sword' },
+  { id: 'iron_sword', name: 'Iron Sword', tex: 'iron_sword', item: 'iron_sword' },
+  { id: 'golden_sword', name: 'Gold Sword', tex: 'golden_sword', item: 'golden_sword' },
+  { id: 'diamond_sword', name: 'Diamond Sword', tex: 'diamond_sword', item: 'diamond_sword' },
+  { id: 'netherite_sword', name: 'Netherite Sword', tex: 'netherite_sword', item: 'netherite_sword' },
+  { id: 'diamond_axe', name: 'Diamond Axe', tex: 'diamond_axe', item: 'diamond_axe' },
+  { id: 'netherite_axe', name: 'Netherite Axe', tex: 'netherite_axe', item: 'netherite_axe' },
+  { id: 'diamond_pickaxe', name: 'Diamond Pick', tex: 'diamond_pickaxe', item: 'diamond_pickaxe' },
+  { id: 'netherite_pickaxe', name: 'Netherite Pick', tex: 'netherite_pickaxe', item: 'netherite_pickaxe' },
+  { id: 'trident', name: 'Trident', tex: 'trident', item: 'trident' },
+  { id: 'mace', name: 'Mace', tex: 'mace', item: 'mace' },
+  { id: 'bow', name: 'Bow', tex: 'bow', item: 'bow' },
+  { id: 'crossbow', name: 'Crossbow', tex: 'crossbow_standby', item: 'crossbow' },
+];
+
 const PIECES = [
   { id: 'helmet', name: 'Helmet' },
   { id: 'chestplate', name: 'Chestplate' },

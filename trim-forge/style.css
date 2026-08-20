@@ -353,3 +353,6 @@ body:not(.view-3d) .only-3d { display: none; }
 .view-btn.active { border-color: var(--accent); color: var(--text); }
 
 .back-hint { margin: 0.4rem 0 0; font-size: 0.72rem; }
+
+.btn-small { padding: 0.3rem 0.5rem; font-size: 0.7rem; }
+.bg-row { flex-wrap: wrap; max-width: 280px; }

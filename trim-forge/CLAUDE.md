@@ -56,6 +56,29 @@ Cape textures are **not in the game files** — Mojang serves those per account,
 nothing to extract and none ship here. A cape PNG is 64x32 and carries the elytra artwork in the
 same file, which is why an equipped elytra can render from it.
 
+## Idle animation
+The 3D figure is never quite still. The arm sway is the game's own — `HumanoidModel`
+nudges the arms by `cos(age * 0.09) * 0.05` and `sin(age * 0.067) * 0.05` each tick — plus a
+slow head drift and cape sway built from two sines at odd frequencies so the loop never reads as
+a loop. `idlePose(ticks)` is the whole thing.
+
+It must stay hard to notice: if you find yourself watching it, the amplitudes are too big. The
+helmet and sleeves share the head and arm poses (`headPose`, `armPose`) or the armour drifts off
+the body. Honours `prefers-reduced-motion`, and the render loop idles when the tab is hidden.
+
+## Backdrops
+`BACKDROPS` in `render.js` are painted procedurally at whatever size is asked for — a gradient
+plus a ground band at 78% height — so they ship as code, not assets, and stay sharp at any zoom.
+A dropped image becomes the `custom` backdrop.
+
+Procedural backdrops **stretch** to fill in 3D (they are uniform horizontally, and cover-fitting
+would crop the horizon away); custom images **cover**. That distinction is the `cover` argument
+to `drawBackdrop`.
+
+Dropping a file routes by shape: 64 or 128 wide and square or 2:1 is worn as a skin, anything
+else becomes a backdrop. Capes need the explicit button, since a legacy skin and a cape are the
+same size.
+
 ## Model notes worth keeping
 - Armour inflates by **1.0** for helmet/chestplate/boots and **0.5** for leggings, matching the
   game, so the layers never z-fight.

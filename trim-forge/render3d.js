@@ -131,25 +131,52 @@ function boxGeometry(out, box, texW, texH) {
 /* ---------------------------------------------------------------- model --
    Model units are skin pixels, feet at y=0. */
 
-function bodyBoxes(slim, legacy) {
+/* Idle motion. The arm sway is the game's own: HumanoidModel nudges the arms
+   by cos(age * 0.09) * 0.05 and sin(age * 0.067) * 0.05 every tick, which
+   almost nobody consciously notices. The head drift and cape sway are two slow
+   sines each, deliberately at odd frequencies so the loop never reads as one.
+   `t` is in ticks (20/s), as in game. */
+function idlePose(t) {
+  return {
+    armZ: Math.cos(t * 0.09) * 0.05 + 0.05,
+    armX: Math.sin(t * 0.067) * 0.05,
+    headYaw: Math.sin(t * 0.013) * 0.04 + Math.sin(t * 0.0071) * 0.018,
+    headPitch: Math.sin(t * 0.0097) * 0.014,
+    capeSway: Math.sin(t * 0.05) * 0.02 + Math.sin(t * 0.031) * 0.012,
+  };
+}
+
+const HEAD_PIVOT = [0, 24, 0];
+const shoulder = sign => [sign * 5, 22, 0];
+
+function headPose(pose) {
+  return { pivot: HEAD_PIVOT, rot: [pose.headPitch, pose.headYaw, 0] };
+}
+function armPose(pose, sign) {
+  return { pivot: shoulder(sign), rot: [pose.armX * sign, 0, pose.armZ * sign] };
+}
+
+function bodyBoxes(slim, legacy, pose) {
   const aw = slim ? 3 : 4;
   const ax = slim ? 5.5 : 6;
+  const head = headPose(pose);
+  const armR = armPose(pose, -1), armL = armPose(pose, 1);
   const base = [
-    { uv: [0, 0],   size: [8, 8, 8],   pos: [0, 28, 0] },
+    { uv: [0, 0],   size: [8, 8, 8],   pos: [0, 28, 0], ...head },
     { uv: [16, 16], size: [8, 12, 4],  pos: [0, 18, 0] },
-    { uv: [40, 16], size: [aw, 12, 4], pos: [-ax, 18, 0] },
-    legacy ? { uv: [40, 16], size: [aw, 12, 4], pos: [ax, 18, 0], mirror: true }
-           : { uv: [32, 48], size: [aw, 12, 4], pos: [ax, 18, 0] },
+    { uv: [40, 16], size: [aw, 12, 4], pos: [-ax, 18, 0], ...armR },
+    legacy ? { uv: [40, 16], size: [aw, 12, 4], pos: [ax, 18, 0], mirror: true, ...armL }
+           : { uv: [32, 48], size: [aw, 12, 4], pos: [ax, 18, 0], ...armL },
     { uv: [0, 16], size: [4, 12, 4], pos: [-2, 6, 0] },
     legacy ? { uv: [0, 16], size: [4, 12, 4], pos: [2, 6, 0], mirror: true }
            : { uv: [16, 48], size: [4, 12, 4], pos: [2, 6, 0] },
   ];
   const e = 0.25;
-  const overlay = legacy ? [{ uv: [32, 0], size: [8, 8, 8], pos: [0, 28, 0], inflate: e }] : [
-    { uv: [32, 0],  size: [8, 8, 8],   pos: [0, 28, 0],  inflate: e },
+  const overlay = legacy ? [{ uv: [32, 0], size: [8, 8, 8], pos: [0, 28, 0], inflate: e, ...head }] : [
+    { uv: [32, 0],  size: [8, 8, 8],   pos: [0, 28, 0],  inflate: e, ...head },
     { uv: [16, 32], size: [8, 12, 4],  pos: [0, 18, 0],  inflate: e },
-    { uv: [40, 32], size: [aw, 12, 4], pos: [-ax, 18, 0], inflate: e },
-    { uv: [48, 48], size: [aw, 12, 4], pos: [ax, 18, 0],  inflate: e },
+    { uv: [40, 32], size: [aw, 12, 4], pos: [-ax, 18, 0], inflate: e, ...armR },
+    { uv: [48, 48], size: [aw, 12, 4], pos: [ax, 18, 0],  inflate: e, ...armL },
     { uv: [0, 32],  size: [4, 12, 4],  pos: [-2, 6, 0],  inflate: e },
     { uv: [0, 48],  size: [4, 12, 4],  pos: [2, 6, 0],   inflate: e },
   ];
@@ -159,39 +186,55 @@ function bodyBoxes(slim, legacy) {
 /* Armour always uses the standard (wide) humanoid model, as in game, and the
    64x32 layout with one arm and one leg mirrored across. */
 const OUTER = 1.0, INNER = 0.5;
-const ARMOR_BOXES = {
-  helmet: [{ uv: [0, 0], size: [8, 8, 8], pos: [0, 28, 0], inflate: OUTER }],
-  chestplate: [
-    { uv: [16, 16], size: [8, 12, 4], pos: [0, 18, 0], inflate: OUTER },
-    { uv: [40, 16], size: [4, 12, 4], pos: [-6, 18, 0], inflate: OUTER },
-    { uv: [40, 16], size: [4, 12, 4], pos: [6, 18, 0], inflate: OUTER, mirror: true },
-  ],
-  boots: [
-    { uv: [0, 16], size: [4, 12, 4], pos: [-2, 6, 0], inflate: OUTER },
-    { uv: [0, 16], size: [4, 12, 4], pos: [2, 6, 0], inflate: OUTER, mirror: true },
-  ],
-  leggings: [
-    { uv: [16, 16], size: [8, 12, 4], pos: [0, 18, 0], inflate: INNER },
-    { uv: [0, 16], size: [4, 12, 4], pos: [-2, 6, 0], inflate: INNER },
-    { uv: [0, 16], size: [4, 12, 4], pos: [2, 6, 0], inflate: INNER, mirror: true },
-  ],
-};
+
+/* Helmet and sleeves have to ride the same pose as the head and arms, or the
+   armour drifts off the body. */
+function armorBoxes(piece, pose) {
+  const head = headPose(pose);
+  const armR = armPose(pose, -1), armL = armPose(pose, 1);
+  switch (piece) {
+    case 'helmet':
+      return [{ uv: [0, 0], size: [8, 8, 8], pos: [0, 28, 0], inflate: OUTER, ...head }];
+    case 'chestplate':
+      return [
+        { uv: [16, 16], size: [8, 12, 4], pos: [0, 18, 0], inflate: OUTER },
+        { uv: [40, 16], size: [4, 12, 4], pos: [-6, 18, 0], inflate: OUTER, ...armR },
+        { uv: [40, 16], size: [4, 12, 4], pos: [6, 18, 0], inflate: OUTER, mirror: true, ...armL },
+      ];
+    case 'boots':
+      return [
+        { uv: [0, 16], size: [4, 12, 4], pos: [-2, 6, 0], inflate: OUTER },
+        { uv: [0, 16], size: [4, 12, 4], pos: [2, 6, 0], inflate: OUTER, mirror: true },
+      ];
+    case 'leggings':
+      return [
+        { uv: [16, 16], size: [8, 12, 4], pos: [0, 18, 0], inflate: INNER },
+        { uv: [0, 16], size: [4, 12, 4], pos: [-2, 6, 0], inflate: INNER },
+        { uv: [0, 16], size: [4, 12, 4], pos: [2, 6, 0], inflate: INNER, mirror: true },
+      ];
+    default:
+      return [];
+  }
+}
 
 /* Cape hangs from the shoulders on the back and flares out slightly. The
    texture is the standard 64x32 cape layout. */
-const CAPE_BOX = {
-  uv: [0, 0], size: [10, 16, 1], pos: [0, 16, -2.5],
-  pivot: [0, 24, -2.5], yaw180: true, rot: [0.14, 0, 0],
-};
+function capeBox(pose) {
+  return {
+    uv: [0, 0], size: [10, 16, 1], pos: [0, 16, -2.5],
+    pivot: [0, 24, -2.5], yaw180: true, rot: [0.14 + pose.capeSway, 0, 0],
+  };
+}
 
 /* Elytra: one 10x20x2 wing per side, folded against the back. */
-function elytraBoxes() {
+function elytraBoxes(pose) {
+  const flutter = pose ? pose.capeSway * 0.5 : 0;
   const wing = (sign, mirror) => ({
     uv: [22, 0], size: [10, 20, 2],
     pos: [0, 14, -1.2],
     pivot: [sign * 5, 23.5, -1.2],
     mirror,
-    rot: [0.26, sign * -0.26, sign * 0.26],
+    rot: [0.26, sign * -0.26, sign * (0.26 + flutter)],
   });
   return [wing(-1, false), wing(1, true)];
 }
@@ -244,6 +287,8 @@ class Viewer3D {
     this.spin = false;
     this.dirty = true;
     this.lastFrame = 0;
+    this.ticks = 0;
+    this.idle = !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
     this.attachControls();
   }
@@ -298,16 +343,17 @@ class Viewer3D {
 
   /* Textures are keyed off the canvas/image object, so a recoloured piece
      uploads once and is reused until its composite changes. */
-  texture(source) {
+  texture(source, linear) {
     let tex = this.textures.get(source);
     if (tex) return tex;
     const gl = this.gl;
+    const filter = linear ? gl.LINEAR : gl.NEAREST;
     tex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     this.textures.set(source, tex);
@@ -337,6 +383,48 @@ class Viewer3D {
     gl.drawArrays(gl.TRIANGLES, 0, data.length / 6);
   }
 
+  /* Backdrop is a screen-filling quad drawn before the model with depth off.
+     Positions are already in clip space, so the shader gets an identity MVP. */
+  drawBackdrop(source, cover) {
+    const gl = this.gl;
+    let u0 = 0, v0 = 0, u1 = 1, v1 = 1;
+    /* Procedural backdrops are uniform horizontally, so they stretch to fill —
+       cover-fitting them would crop the horizon out. Photos get cover. */
+    if (cover) {
+      const canvasAspect = this.canvas.width / this.canvas.height;
+      const texAspect = source.width / source.height;
+      if (texAspect > canvasAspect) {
+        const f = canvasAspect / texAspect;
+        u0 = (1 - f) / 2; u1 = 1 - u0;
+      } else {
+        const f = texAspect / canvasAspect;
+        v0 = (1 - f) / 2; v1 = 1 - v0;
+      }
+    }
+    const data = [
+      -1, -1, 0, u0, v1, 1,   1, -1, 0, u1, v1, 1,   1, 1, 0, u1, v0, 1,
+      -1, -1, 0, u0, v1, 1,   1, 1, 0, u1, v0, 1,   -1, 1, 0, u0, v0, 1,
+    ];
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.DYNAMIC_DRAW);
+    const stride = 6 * 4;
+    gl.enableVertexAttribArray(this.attr.pos);
+    gl.vertexAttribPointer(this.attr.pos, 3, gl.FLOAT, false, stride, 0);
+    gl.enableVertexAttribArray(this.attr.uv);
+    gl.vertexAttribPointer(this.attr.uv, 2, gl.FLOAT, false, stride, 12);
+    gl.enableVertexAttribArray(this.attr.shade);
+    gl.vertexAttribPointer(this.attr.shade, 1, gl.FLOAT, false, stride, 20);
+
+    const big = Math.max(source.width, source.height) > 128;
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.texture(source, big));
+    gl.uniform1i(this.uTex, 0);
+    gl.uniformMatrix4fv(this.uMVP, false, mat4Identity());
+    gl.disable(gl.DEPTH_TEST);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.enable(gl.DEPTH_TEST);
+  }
+
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.max(1, Math.round(this.canvas.clientWidth * dpr));
@@ -356,17 +444,12 @@ class Viewer3D {
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.disable(gl.CULL_FACE);          // inflated armour is viewed from inside at the neck
 
-    const bg = BACKGROUNDS[opts.bg];
-    if (bg) {
-      const r = parseInt(bg.slice(1, 3), 16) / 255;
-      const g = parseInt(bg.slice(3, 5), 16) / 255;
-      const b = parseInt(bg.slice(5, 7), 16) / 255;
-      gl.clearColor(r, g, b, 1);
-    } else {
-      gl.clearColor(0, 0, 0, 0);
-    }
+    gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(this.program);
+
+    const backdrop = backdropTexture(opts.bg);
+    if (backdrop) this.drawBackdrop(backdrop, opts.bg === 'custom');
 
     const aspect = this.canvas.width / this.canvas.height;
     const proj = mat4Perspective(0.9, aspect, 0.1, 500);
@@ -379,40 +462,41 @@ class Viewer3D {
     const legacy = skinIsLegacy();
     const slim = skinIsSlim();
 
+    const pose = idlePose(this.idle ? this.ticks : 0);
+
     if (opts.showBody !== false) {
-      const { base, overlay } = bodyBoxes(slim, legacy);
+      const { base, overlay } = bodyBoxes(slim, legacy, pose);
       this.drawGroup(base, skin, skin.width, skin.height, mvp);
       this.drawGroup(overlay, skin, skin.width, skin.height, mvp);
     }
 
     /* An equipped elytra replaces the cape rather than layering over it. */
     const cape = currentCape();
-    if (cape && !opts.elytra) this.drawGroup([CAPE_BOX], cape, 64, 32, mvp);
+    if (cape && !opts.elytra) this.drawGroup([capeBox(pose)], cape, 64, 32, mvp);
 
     for (const piece of ['leggings', 'boots', 'chestplate', 'helmet']) {
       const cfg = opts.pieces[piece];
       if (!cfg || !cfg.on) continue;
       const tex = pieceTexture(piece, cfg);
       if (!tex) continue;
-      this.drawGroup(ARMOR_BOXES[piece], tex, 64, 32, mvp);
+      this.drawGroup(armorBoxes(piece, pose), tex, 64, 32, mvp);
     }
 
     /* A player with a cape flies it as their elytra, exactly as in game. */
     if (opts.elytra) {
-      this.drawGroup(elytraBoxes(), cape || IMG['wings/elytra'], 64, 32, mvp);
+      this.drawGroup(elytraBoxes(pose), cape || IMG['wings/elytra'], 64, 32, mvp);
     }
   }
 
-  /* Renders continuously only while spinning; otherwise on demand. */
+  /* The idle pose keeps the loop running; without it we only draw on demand.
+     requestAnimationFrame already pauses when the tab is hidden. */
   start(getOpts) {
     const frame = now => {
-      if (this.spin) {
-        const dt = this.lastFrame ? (now - this.lastFrame) / 1000 : 0;
-        this.yaw += dt * 0.6;
-        this.dirty = true;
-      }
+      const dt = this.lastFrame ? Math.min((now - this.lastFrame) / 1000, 0.1) : 0;
       this.lastFrame = now;
-      if (this.dirty || this.canvas.clientWidth !== this.lastW) {
+      if (this.spin) this.yaw += dt * 0.6;
+      if (this.idle) this.ticks += dt * 20;              // game ticks
+      if (this.dirty || this.spin || this.idle || this.canvas.clientWidth !== this.lastW) {
         this.lastW = this.canvas.clientWidth;
         this.dirty = false;
         this.render(getOpts());

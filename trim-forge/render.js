@@ -223,13 +223,80 @@ function drawBody(ctx, s, ox, oy) {
   for (const [rect, dx, dy, mirror] of overlay) blit(ctx, skin, rect, dx, dy, mirror, s, ox, oy);
 }
 
-const BACKGROUNDS = {
-  dark: '#10131a',
-  stone: '#2b2b31',
-  grass: '#4b7a2c',
-  nether: '#3b1414',
-  none: null,
-};
+/* ------------------------------------------------------------ backdrops --
+   Painted procedurally at whatever size is asked for, so they cost nothing to
+   ship and stay sharp at any zoom. A dropped image becomes the "custom" one. */
+
+function flat(color) {
+  return (ctx, w, h) => { ctx.fillStyle = color; ctx.fillRect(0, 0, w, h); };
+}
+
+function scene(stops, ground) {
+  return (ctx, w, h) => {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    for (const [at, color] of stops) g.addColorStop(at, color);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    if (ground) {
+      const horizon = Math.round(h * 0.78);
+      ctx.fillStyle = ground[0];
+      ctx.fillRect(0, horizon, w, h - horizon);
+      ctx.fillStyle = ground[1];
+      ctx.fillRect(0, horizon, w, Math.max(1, Math.round(h * 0.012)));
+    }
+  };
+}
+
+const BACKDROPS = [
+  { id: 'none', name: 'None', paint: null },
+  { id: 'dark', name: 'Void', paint: flat('#10131a') },
+  { id: 'stone', name: 'Stone', paint: flat('#2b2b31') },
+  { id: 'day', name: 'Day', paint: scene([[0, '#5b93ec'], [0.62, '#9ec6f5'], [1, '#cfe3f7']], ['#5b8f3a', '#7cbf4f']) },
+  { id: 'sunset', name: 'Sunset', paint: scene([[0, '#221a3a'], [0.45, '#8a4a6b'], [0.8, '#f0894b'], [1, '#ffc07a']], ['#3a2a22', '#5c4030']) },
+  { id: 'night', name: 'Night', paint: scene([[0, '#05060f'], [0.7, '#121a3a'], [1, '#22305c']], ['#16202a', '#22303f']) },
+  { id: 'nether', name: 'Nether', paint: scene([[0, '#210606'], [0.6, '#5e1410'], [1, '#a8351a']], ['#3a1410', '#742418']) },
+  { id: 'end', name: 'End', paint: scene([[0, '#0b0810'], [0.65, '#1d1630'], [1, '#2f2450']], ['#c8c39a', '#e6e2c0']) },
+  { id: 'ocean', name: 'Ocean', paint: scene([[0, '#03202f'], [0.6, '#0a4f6e'], [1, '#1d8ab0']], ['#0b3c4a', '#1b7fa8']) },
+  { id: 'cave', name: 'Cave', paint: scene([[0, '#0a0a0d'], [0.75, '#1c1c22'], [1, '#2c2c34']], ['#232329', '#33333c']) },
+];
+
+let customBackdrop = null;
+function setBackdrop(img) { customBackdrop = img || null; }
+const currentBackdrop = () => customBackdrop;
+
+const backdropById = id => BACKDROPS.find(b => b.id === id);
+const backdropCache = new Map();
+
+/* Cached strip used as the 3D view's texture; 2D paints straight in. */
+function backdropTexture(id) {
+  if (id === 'custom') return customBackdrop;
+  const def = backdropById(id);
+  if (!def || !def.paint) return null;
+  const hit = backdropCache.get(id);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 256;
+  def.paint(c.getContext('2d'), c.width, c.height);
+  backdropCache.set(id, c);
+  return c;
+}
+
+/* Draws a backdrop into a 2D context, cover-fitted. Returns false for None. */
+function paintBackdrop(ctx, id, w, h) {
+  if (id === 'custom' && customBackdrop) {
+    const img = customBackdrop;
+    const scale = Math.max(w / img.width, h / img.height);
+    const dw = img.width * scale, dh = img.height * scale;
+    ctx.imageSmoothingEnabled = Math.max(img.width, img.height) > 128;
+    ctx.drawImage(img, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    ctx.imageSmoothingEnabled = false;
+    return true;
+  }
+  const def = backdropById(id);
+  if (!def || !def.paint) return false;
+  def.paint(ctx, w, h);
+  return true;
+}
 
 /* opts: { scale, pieces, showBody, bg, crop:{x,y,w,h} } — crop is in grid
    cells and is what the picker thumbnails use to frame a single piece. */
@@ -241,13 +308,8 @@ function renderFigure(canvas, opts) {
   const ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
-  const bg = BACKGROUNDS[opts.bg];
-  if (bg) {
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  } else {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  paintBackdrop(ctx, opts.bg, canvas.width, canvas.height);
 
   const ox = PAD - crop.x, oy = PAD - crop.y;
   if (opts.showBody !== false) drawBody(ctx, s, ox, oy);

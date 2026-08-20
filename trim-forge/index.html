@@ -37,7 +37,7 @@
       <div class="stage" id="stage">
         <canvas id="view3d"></canvas>
         <canvas id="view"></canvas>
-        <div class="drop-badge">Drop a skin PNG</div>
+        <div class="drop-badge">Drop a skin PNG &mdash; or any image for a backdrop</div>
       </div>
       <div class="stage-controls">
         <div class="ctrl">
@@ -51,6 +51,9 @@
         <div class="ctrl">
           <label>Backdrop</label>
           <div class="bg-row" id="bgRow"></div>
+          <button id="loadBackdrop" class="btn btn-small">Image&hellip;</button>
+          <button id="resetBackdrop" class="btn btn-small btn-quiet">Clear</button>
+          <input type="file" id="backdropFile" accept="image/*" hidden>
         </div>
         <div class="ctrl">
           <label class="check"><input type="checkbox" id="showBody" checked> Show body</label>

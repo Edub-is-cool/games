@@ -4,6 +4,7 @@
 const STORAGE_KEY = 'trim-forge-state-v3';
 const SKIN_KEY = 'trim-forge-skin-v1';
 const CAPE_KEY = 'trim-forge-cape-v1';
+const BACKDROP_KEY = 'trim-forge-backdrop-v1';
 const PIECE_IDS = ['helmet', 'chestplate', 'leggings', 'boots'];
 
 function defaultPiece(armor, pattern, trim) {
@@ -306,6 +307,52 @@ function readCapeFile(file) {
   reader.readAsDataURL(file);
 }
 
+function applyBackdropDataURL(dataURL, persist) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      setBackdrop(img);
+      state.bg = 'custom';
+      if (persist && dataURL.length < 700000) {          // keep localStorage sane
+        try { localStorage.setItem(BACKDROP_KEY, dataURL); } catch (e) { /* over quota */ }
+      }
+      refresh();
+      resolve();
+    };
+    img.onerror = () => reject(new Error('that file is not a readable image'));
+    img.src = dataURL;
+  });
+}
+
+function readBackdropFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    applyBackdropDataURL(reader.result, true)
+      .then(() => setSkinStatus(''))
+      .catch(err => setSkinStatus(err.message, true));
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetBackdrop() {
+  setBackdrop(null);
+  if (state.bg === 'custom') state.bg = 'dark';
+  try { localStorage.removeItem(BACKDROP_KEY); } catch (e) { /* ignore */ }
+  refresh();
+}
+
+function restoreBackdrop() {
+  try {
+    const raw = localStorage.getItem(BACKDROP_KEY);
+    if (!raw) return Promise.resolve();
+    const wanted = state.bg;
+    return applyBackdropDataURL(raw, false).then(() => { state.bg = wanted; }).catch(() => {});
+  } catch (e) {
+    return Promise.resolve();
+  }
+}
+
 function resetCape() {
   setCape(null);
   capeLabel = 'none';
@@ -347,6 +394,31 @@ function applySkinDataURL(dataURL, label, persist) {
     img.onerror = () => reject(new Error('that file is not a readable image'));
     img.src = dataURL;
   });
+}
+
+/* Skin-shaped files (64 or 128 wide, square or 2:1) are worn; anything else
+   is treated as a backdrop, so dropping a screenshot just works. */
+function routeDroppedFile(file) {
+  if (!file || !/^image\//.test(file.type)) {
+    return setSkinStatus('Drop a PNG image.', true);
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const skinShaped = img.width <= 128 && (img.height === img.width || img.height === img.width / 2);
+      if (skinShaped) {
+        applySkinDataURL(reader.result, file.name, true)
+          .then(() => setSkinStatus('')).catch(err => setSkinStatus(err.message, true));
+      } else {
+        applyBackdropDataURL(reader.result, true)
+          .then(() => setSkinStatus('')).catch(err => setSkinStatus(err.message, true));
+      }
+    };
+    img.onerror = () => setSkinStatus('that file is not a readable image', true);
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 function readSkinFile(file) {
@@ -431,12 +503,23 @@ function refresh() {
 function buildBgRow() {
   const host = $('bgRow');
   host.innerHTML = '';
-  for (const [id, color] of Object.entries(BACKGROUNDS)) {
+  const entries = BACKDROPS.map(b => [b.id, b.name]);
+  if (currentBackdrop()) entries.push(['custom', 'Your image']);
+
+  for (const [id, name] of entries) {
     const b = document.createElement('button');
     b.className = 'bg-swatch';
     b.dataset.bg = id;
-    b.title = id;
-    b.style.background = color || 'repeating-conic-gradient(#2a2a3a 0% 25%, #14141f 0% 50%) 0 / 10px 10px';
+    b.title = name;
+    if (id === 'none') {
+      b.style.background = 'repeating-conic-gradient(#2a2a3a 0% 25%, #14141f 0% 50%) 0 / 10px 10px';
+    } else {
+      const swatch = document.createElement('canvas');
+      swatch.width = 22; swatch.height = 22;
+      paintBackdrop(swatch.getContext('2d'), id, 22, 22);
+      b.style.backgroundImage = `url(${swatch.toDataURL()})`;
+      b.style.backgroundSize = 'cover';
+    }
     b.addEventListener('click', () => { state.bg = id; refresh(); });
     host.appendChild(b);
   }
@@ -482,6 +565,10 @@ function wire() {
     refresh();
   });
 
+  $('loadBackdrop').addEventListener('click', () => $('backdropFile').click());
+  $('backdropFile').addEventListener('change', e => readBackdropFile(e.target.files[0]));
+  $('resetBackdrop').addEventListener('click', resetBackdrop);
+
   $('loadCape').addEventListener('click', () => $('capeFile').click());
   $('capeFile').addEventListener('change', e => readCapeFile(e.target.files[0]));
   $('resetCape').addEventListener('click', resetCape);
@@ -500,7 +587,7 @@ function wire() {
     if (ev === 'dragleave' && stage.contains(e.relatedTarget)) return;
     stage.classList.remove('dropping');
   }));
-  stage.addEventListener('drop', e => readSkinFile(e.dataTransfer.files[0]));
+  stage.addEventListener('drop', e => routeDroppedFile(e.dataTransfer.files[0]));
 
   $('applyAll').addEventListener('click', () => {
     const src = sel();
@@ -573,7 +660,7 @@ buildToggleRow('viewToggle', [['3d', '3D'], ['flat', 'Flat']], 'view-btn', v => 
   state.view = v; refresh();
 });
 
-loadTextures().then(restoreSkin).then(restoreCape).then(() => {
+loadTextures().then(restoreSkin).then(restoreCape).then(restoreBackdrop).then(() => {
   document.body.classList.remove('loading');
   try {
     viewer = new Viewer3D($('view3d'));

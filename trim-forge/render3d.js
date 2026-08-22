@@ -258,8 +258,9 @@ function spriteGeometry(out, pixels, w, h, place) {
    forward, which is how a sword sits in the hand in third person. */
 function heldItemPlacement(pose) {
   const scale = 0.82;
-  const anchorX = 2.5, anchorY = 2.5;                // handle end of the sprite
-  const hand = [-6.5, 12.5 + pose.armX * 6, 2.5];    // rides the right arm's sway
+  const anchorX = 2, anchorY = 2;                    // the grip, on the sprite
+  /* sits inside the fist rather than floating in front of it */
+  const hand = [-6, 13.5 + pose.armX * 6, 0.5];
   const tilt = 0;                                    // the sprite's own diagonal is the grip angle
   return (lx, ly, lz) => {
     const x = (lx - anchorX) * scale;
@@ -277,9 +278,11 @@ function heldItemPlacement(pose) {
 function shieldBoxes(pose) {
   const sway = pose.armX * -1;
   const y = 15 + sway * 5;
+  /* held out from the off hand, clear of the torso */
+  const x = 10.5, z = 5, turn = -0.3;
   return [
-    { uv: [0, 0], size: [12, 22, 1], pos: [7, y, 4], pivot: [7, y, 3], rot: [0, -0.18, 0] },
-    { uv: [26, 0], size: [2, 6, 6], pos: [7, y, 0.5], pivot: [7, y, 3], rot: [0, -0.18, 0] },
+    { uv: [0, 0], size: [12, 22, 1], pos: [x, y, z + 1], pivot: [x, y, z], rot: [0, turn, 0] },
+    { uv: [26, 0], size: [2, 6, 6], pos: [x - 1.5, y - 1, z - 2], pivot: [x, y, z], rot: [0, turn, 0] },
   ];
 }
 
@@ -545,7 +548,23 @@ class Viewer3D {
     gl.enable(gl.DEPTH_TEST);
   }
 
+  /* Renders once at a multiple of the on-screen size and hands back a PNG,
+     so an exported shot isn't stuck at whatever the panel happens to be. */
+  snapshot(opts, multiplier) {
+    const w = this.canvas.width, h = this.canvas.height;
+    this.lockSize = true;
+    this.canvas.width = Math.round(this.canvas.clientWidth * multiplier);
+    this.canvas.height = Math.round(this.canvas.clientHeight * multiplier);
+    this.render(opts);
+    const url = this.canvas.toDataURL('image/png');
+    this.lockSize = false;
+    this.canvas.width = w; this.canvas.height = h;
+    this.dirty = true;
+    return url;
+  }
+
   resize() {
+    if (this.lockSize) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = Math.max(1, Math.round(this.canvas.clientWidth * dpr));
     const h = Math.max(1, Math.round(this.canvas.clientHeight * dpr));
@@ -603,7 +622,7 @@ class Viewer3D {
     }
 
     if (opts.shield) {
-      this.drawGroup(shieldBoxes(pose), IMG['shield/base'], 64, 64, mvp,
+      this.drawGroup(shieldBoxes(pose), shieldTexture(opts.banner), 64, 64, mvp,
                      opts.shieldEnchanted && 'glint/item');
     }
 

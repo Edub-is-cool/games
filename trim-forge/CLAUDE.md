@@ -100,8 +100,32 @@ make it work:
 full brightness drown the armour completely. On dark armour it reads clearly; on bright diamond
 it is barely there, which is what the game does too.
 
-Glint, held items, the shield, capes and the elytra are all **3D only**. The flat view is
-front-on, where most of them are invisible anyway.
+The flat view now draws glint and the shield too — it widens its crop to `FLAT_CROP_SHIELD` to
+make room. Capes, the elytra and held items stay 3D-only: they sit behind the figure or edge-on,
+so a front view has nothing useful to show.
+
+## Shield banners
+Pattern files are **luminance masks** — black is off, white is on — not alpha masks, and
+`shield_base.png` carries a white cloth field with its own shading. `shieldTexture()` blends each
+layer over the cloth by the mask and modulates it by that shading, which is what gives a banner
+its folds. Base colour is just another layer, drawn first with the `base` pattern. Six layers
+max, as in game.
+
+`shield_base_nopattern.png` is the plain shield and is used whenever there is no banner.
+
+## Sharing
+`encodeShare()` packs the set, gear and banner into base64url in the URL hash; `readShareFromURL`
+runs before the first render so a link wins over `localStorage`. Skin, cape and backdrop images
+are deliberately left out — they are far too big for a link.
+
+## Slim skins
+A slim (Alex) arm strip is 14px wide, not 16, so the last two columns of the wide arm layout are
+empty. Render a slim skin on the wide model and the back and side faces sample that emptiness,
+the cutout discards it, and the back of the arm appears to vanish. `detectSlim()` checks whether
+columns 54–55 of the arm rows are fully transparent and switches the model automatically on load.
+
+If someone reports missing faces on a skin, check this first — the box UVs themselves are
+correct and have been verified face by face.
 
 ## Model notes worth keeping
 - Armour inflates by **1.0** for helmet/chestplate/boots and **0.5** for leggings, matching the

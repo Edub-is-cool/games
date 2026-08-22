@@ -24,6 +24,18 @@ PALETTES = ['trim_palette', 'amethyst', 'copper', 'copper_darker', 'diamond',
 ARMOR = ['leather', 'leather_overlay', 'chainmail', 'copper', 'iron', 'gold',
          'diamond', 'netherite']
 HELMET_ONLY = ['turtle_scute']
+SHIELD_PATTERNS = [
+    'base', 'border', 'bricks', 'circle', 'creeper', 'cross', 'curly_border',
+    'diagonal_left', 'diagonal_right', 'diagonal_up_left', 'diagonal_up_right',
+    'flow', 'flower', 'globe', 'gradient', 'gradient_up', 'guster',
+    'half_horizontal', 'half_horizontal_bottom', 'half_vertical',
+    'half_vertical_right', 'mojang', 'piglin', 'rhombus', 'skull',
+    'small_stripes', 'square_bottom_left', 'square_bottom_right',
+    'square_top_left', 'square_top_right', 'straight_cross', 'stripe_bottom',
+    'stripe_center', 'stripe_downleft', 'stripe_downright', 'stripe_left',
+    'stripe_middle', 'stripe_right', 'stripe_top', 'triangle_bottom',
+    'triangle_top', 'triangles_bottom', 'triangles_top',
+]
 ITEMS = ['wooden_sword', 'stone_sword', 'iron_sword', 'golden_sword', 'diamond_sword',
          'netherite_sword', 'diamond_axe', 'netherite_axe', 'diamond_pickaxe',
          'netherite_pickaxe', 'bow', 'crossbow_standby', 'trident', 'mace']
@@ -44,6 +56,9 @@ def main(jar_path):
     wanted['player/steve'] = f'{TEX}entity/player/wide/steve.png'
     wanted['wings/elytra'] = f'{TEX}entity/equipment/wings/elytra.png'
     wanted['shield/base'] = f'{TEX}entity/shield/shield_base_nopattern.png'
+    wanted['shield/patterned'] = f'{TEX}entity/shield/shield_base.png'
+    for pat in SHIELD_PATTERNS:
+        wanted[f'shield/pattern/{pat}'] = f'{TEX}entity/shield/{pat}.png'
     for g in ['armor', 'item']:
         wanted[f'glint/{g}'] = f'{TEX}misc/enchanted_glint_{g}.png'
     for it in ITEMS:

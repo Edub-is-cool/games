@@ -31,6 +31,8 @@ function defaultState() {
     itemEnchanted: false,
     shield: false,
     shieldEnchanted: false,
+    banner: null,
+    bannerColor: '#1d1d21',
     cmdVersion: 'modern',
   };
 }
@@ -60,11 +62,62 @@ function saveState() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* private mode */ }
 }
 
+/* A set packs into the URL so it can be handed to someone. Skin, cape and
+   backdrop images stay out — they are far too big for a link. */
+function encodeShare() {
+  const packed = {
+    p: PIECE_IDS.map(id => {
+      const c = state.pieces[id];
+      return [c.on ? 1 : 0, c.armor, c.dye, c.pattern, c.trim, c.enchanted ? 1 : 0];
+    }),
+    e: state.elytra ? 1 : 0,
+    i: state.item,
+    ie: state.itemEnchanted ? 1 : 0,
+    s: state.shield ? 1 : 0,
+    se: state.shieldEnchanted ? 1 : 0,
+    b: state.banner,
+    bg: state.bg === 'custom' ? 'dark' : state.bg,
+    v: state.view,
+    sl: state.slim ? 1 : 0,
+  };
+  const json = JSON.stringify(packed);
+  return btoa(String.fromCharCode(...new TextEncoder().encode(json)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeShare(str) {
+  const b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  const bytes = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+  const packed = JSON.parse(new TextDecoder().decode(bytes));
+  PIECE_IDS.forEach((id, n) => {
+    const row = packed.p && packed.p[n];
+    if (!row) return;
+    const cfg = state.pieces[id];
+    cfg.on = !!row[0]; cfg.armor = row[1]; cfg.dye = row[2];
+    cfg.pattern = row[3]; cfg.trim = row[4]; cfg.enchanted = !!row[5];
+  });
+  state.elytra = !!packed.e;
+  state.item = packed.i || 'none';
+  state.itemEnchanted = !!packed.ie;
+  state.shield = !!packed.s;
+  state.shieldEnchanted = !!packed.se;
+  state.banner = packed.b || null;
+  if (packed.bg) state.bg = packed.bg;
+  if (packed.v) state.view = packed.v;
+  state.slim = !!packed.sl;
+}
+
+function readShareFromURL() {
+  const m = /[#&]s=([A-Za-z0-9\-_]+)/.exec(location.hash);
+  if (!m) return false;
+  try { decodeShare(m[1]); return true; } catch (e) { return false; }
+}
+
 const sel = () => state.pieces[state.selected];
 const viewOpts = () => ({
   pieces: state.pieces, showBody: state.showBody, bg: state.bg, elytra: state.elytra,
   item: state.item, itemEnchanted: state.itemEnchanted,
-  shield: state.shield, shieldEnchanted: state.shieldEnchanted,
+  shield: state.shield, shieldEnchanted: state.shieldEnchanted, banner: state.banner,
 });
 const $ = id => document.getElementById(id);
 
@@ -189,6 +242,88 @@ function buildPatternGrid() {
   }
 }
 
+const BANNER_MAX = 6;
+
+function dyeRow(host, current, onPick) {
+  host.innerHTML = '';
+  for (const dye of DYES) {
+    const chip = document.createElement('button');
+    chip.className = 'dye-chip' + (current && current.toLowerCase() === dye.hex.toLowerCase() ? ' active' : '');
+    chip.style.background = dye.hex;
+    chip.title = dye.name;
+    chip.addEventListener('click', () => onPick(dye.hex));
+    host.appendChild(chip);
+  }
+}
+
+function bannerOf() {
+  return state.banner || { base: '#f9fffe', layers: [] };
+}
+
+function buildBanner() {
+  const block = $('bannerBlock');
+  block.hidden = !state.shield;
+  if (!state.shield) return;
+
+  const banner = bannerOf();
+  dyeRow($('bannerBase'), state.banner ? banner.base : null, hex => {
+    state.banner = { base: hex, layers: state.banner ? state.banner.layers : [] };
+    refresh();
+  });
+  dyeRow($('bannerColor'), state.bannerColor, hex => { state.bannerColor = hex; refresh(); });
+
+  const stack = $('bannerStack');
+  stack.innerHTML = '';
+  if (!state.banner || !state.banner.layers.length) {
+    stack.innerHTML = '<span class="hint">No layers. Pick a base colour, then a pattern below.</span>';
+  }
+  (state.banner ? state.banner.layers : []).forEach((layer, i) => {
+    const row = document.createElement('div');
+    row.className = 'banner-layer';
+    const swatch = document.createElement('span');
+    swatch.className = 'layer-swatch';
+    swatch.style.background = layer.color;
+    const name = document.createElement('span');
+    const def = SHIELD_PATTERNS.find(p => p.id === layer.pattern);
+    name.textContent = def ? def.name : layer.pattern;
+    const kill = document.createElement('button');
+    kill.className = 'layer-remove';
+    kill.textContent = '×';
+    kill.title = 'Remove layer';
+    kill.addEventListener('click', () => {
+      state.banner.layers.splice(i, 1);
+      refresh();
+    });
+    row.append(swatch, name, kill);
+    stack.appendChild(row);
+  });
+
+  const grid = $('bannerPatterns');
+  grid.innerHTML = '';
+  const full = state.banner && state.banner.layers.length >= BANNER_MAX;
+  for (const pat of SHIELD_PATTERNS) {
+    const preview = {
+      base: banner.base,
+      layers: [...(state.banner ? state.banner.layers : []), { pattern: pat.id, color: state.bannerColor }],
+    };
+    const canvas = document.createElement('canvas');
+    const scale = 2;
+    canvas.width = 12 * scale; canvas.height = 22 * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(shieldTexture(preview), 1, 1, 12, 22, 0, 0, canvas.width, canvas.height);
+    const btn = thumbButton(pat.name, canvas, false, () => {
+      if (full) return;
+      const next = state.banner || { base: banner.base, layers: [] };
+      next.layers = [...next.layers, { pattern: pat.id, color: state.bannerColor }];
+      state.banner = next;
+      refresh();
+    });
+    if (full) btn.disabled = true;
+    grid.appendChild(btn);
+  }
+}
+
 function buildDyePresets() {
   const host = $('dyePresets');
   host.innerHTML = '';
@@ -236,9 +371,26 @@ function buildTemplateInfo() {
 const GLINT_MODERN = 'minecraft:enchantment_glint_override=true';
 const GLINT_LEGACY = 'Enchantments:[{id:"minecraft:unbreaking",lvl:1}]';
 
+const dyeIdOf = hex => (DYES.find(d => d.hex.toLowerCase() === String(hex).toLowerCase()) || DYES[0]).id;
+
 function giveLine(item, enchanted, modern) {
   if (!enchanted) return modern ? `/give @p ${item}` : `/give @p ${item} 1`;
   return modern ? `/give @p ${item}[${GLINT_MODERN}]` : `/give @p ${item}{${GLINT_LEGACY}} 1`;
+}
+
+/* Things the 1.20.4 syntax has no way to express. Better to say so than to
+   emit a command that silently fails in game. */
+function legacyWarnings() {
+  const notes = [];
+  for (const p of PIECES) {
+    const cfg = state.pieces[p.id];
+    if (!cfg.on) continue;
+    if (cfg.armor === 'copper') notes.push('copper armor needs 1.21.9+');
+    if (cfg.pattern !== 'none' && cfg.trim === 'resin') notes.push('resin trim needs 1.21.4+');
+  }
+  if (state.item === 'mace') notes.push('the mace needs 1.21+');
+  if (state.shield && state.banner) notes.push('shield banner NBT differs on 1.20.4 and is omitted');
+  return [...new Set(notes)];
 }
 
 function giveCommands() {
@@ -267,7 +419,28 @@ function giveCommands() {
 
   const held = HELD_ITEMS.find(i => i.id === state.item);
   if (held && held.item) lines.push(giveLine(`minecraft:${held.item}`, state.itemEnchanted, modern));
-  if (state.shield) lines.push(giveLine('minecraft:shield', state.shieldEnchanted, modern));
+
+  if (state.shield) {
+    if (modern && state.banner) {
+      const parts = [`minecraft:base_color="${dyeIdOf(state.banner.base)}"`];
+      if (state.banner.layers.length) {
+        const pats = state.banner.layers.map(l => {
+          const def = SHIELD_PATTERNS.find(p => p.id === l.pattern);
+          return `{pattern:"minecraft:${def ? def.item : l.pattern}",color:"${dyeIdOf(l.color)}"}`;
+        });
+        parts.push(`minecraft:banner_patterns=[${pats.join(',')}]`);
+      }
+      if (state.shieldEnchanted) parts.push(GLINT_MODERN);
+      lines.push(`/give @p minecraft:shield[${parts.join(',')}]`);
+    } else {
+      lines.push(giveLine('minecraft:shield', state.shieldEnchanted, modern));
+    }
+  }
+
+  if (!modern) {
+    const notes = legacyWarnings();
+    if (notes.length) lines.unshift(...notes.map(n => `# ${n}`));
+  }
   if (state.elytra) lines.push(modern ? '/give @p minecraft:elytra' : '/give @p minecraft:elytra 1');
   return lines.length ? lines.join('\n') : '# Nothing worn — pick an armor material for a slot.';
 }
@@ -395,6 +568,18 @@ function restoreCape() {
   }
 }
 
+/* A slim (Alex) arm strip is 14px wide, not 16, so the last two columns of
+   the wide arm layout are empty. Rendering a slim skin on the wide model makes
+   the back and side faces sample that emptiness, and the cutout discards it —
+   which looks exactly like the back of the arm going missing. Detect it rather
+   than making people notice and tick a box. */
+function detectSlim(canvas) {
+  if (canvas.height !== 64) return false;          // legacy skins are always wide
+  const d = canvas.getContext('2d').getImageData(54, 20, 2, 12).data;
+  for (let i = 3; i < d.length; i += 4) if (d[i] > 0) return false;
+  return true;
+}
+
 function applySkinDataURL(dataURL, label, persist) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -403,8 +588,9 @@ function applySkinDataURL(dataURL, label, persist) {
         const canvas = normaliseSkin(img);
         const ready = new Image();
         ready.onload = () => {
+          state.slim = detectSlim(canvas);
           setSkin(ready, state.slim);
-          skinLabel = label;
+          skinLabel = label + (state.slim ? ' (slim)' : '');
           if (persist) {
             try { localStorage.setItem(SKIN_KEY, JSON.stringify({ data: canvas.toDataURL('image/png'), label })); }
             catch (e) { /* over quota or private mode — keep it in memory */ }
@@ -512,6 +698,10 @@ function refresh() {
       pieces: state.pieces,
       showBody: state.showBody,
       bg: state.bg,
+      shield: state.shield,
+      shieldEnchanted: state.shieldEnchanted,
+      banner: state.banner,
+      crop: state.shield ? FLAT_CROP_SHIELD : FLAT_CROP,
     });
   }
 
@@ -520,6 +710,7 @@ function refresh() {
   buildTrimRow();
   buildPatternGrid();
   buildDyePresets();
+  buildBanner();
   buildTemplateInfo();
   $('giveCmd').textContent = giveCommands();
   document.querySelectorAll('.ver-btn').forEach(b => b.classList.toggle('active', b.dataset.ver === state.cmdVersion));
@@ -670,6 +861,19 @@ function wire() {
     refresh();
   });
 
+  $('copyLink').addEventListener('click', async () => {
+    const btn = $('copyLink');
+    const url = `${location.origin}${location.pathname}#s=${encodeShare()}`;
+    history.replaceState(null, '', `#s=${encodeShare()}`);
+    try {
+      await navigator.clipboard.writeText(url);
+      btn.textContent = 'Link copied!';
+    } catch (e) {
+      btn.textContent = 'Copy from the address bar';
+    }
+    setTimeout(() => { btn.textContent = 'Copy link'; }, 1800);
+  });
+
   $('copyCmd').addEventListener('click', async () => {
     const btn = $('copyCmd');
     try {
@@ -686,11 +890,14 @@ function wire() {
     const link = document.createElement('a');
     link.download = `trim-forge-${cfg.armor}-${cfg.pattern}-${cfg.trim}.png`;
     if (state.view === '3d' && viewer) {
-      viewer.render(viewOpts());
-      link.href = $('view3d').toDataURL('image/png');
+      link.href = viewer.snapshot(viewOpts(), 3);
     } else {
       const canvas = document.createElement('canvas');
-      renderFigure(canvas, { scale: 24, pieces: state.pieces, showBody: state.showBody, bg: state.bg });
+      renderFigure(canvas, {
+        scale: 24, pieces: state.pieces, showBody: state.showBody, bg: state.bg,
+        shield: state.shield, shieldEnchanted: state.shieldEnchanted, banner: state.banner,
+        crop: state.shield ? FLAT_CROP_SHIELD : FLAT_CROP,
+      });
       link.href = canvas.toDataURL('image/png');
     }
     link.click();
@@ -707,6 +914,8 @@ buildToggleRow('verToggle', [['modern', '1.21.5+'], ['legacy', '1.20.4']], 'ver-
 buildToggleRow('viewToggle', [['3d', '3D'], ['flat', 'Flat']], 'view-btn', v => {
   state.view = v; refresh();
 });
+
+readShareFromURL();
 
 loadTextures().then(restoreSkin).then(restoreCape).then(restoreBackdrop).then(() => {
   document.body.classList.remove('loading');

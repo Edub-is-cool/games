@@ -113,6 +113,20 @@
 
       <h3>Trim pattern</h3>
       <div id="patternGrid" class="thumb-grid"></div>
+
+      <div id="bannerBlock" hidden>
+        <h3>Shield banner</h3>
+        <div class="banner-row">
+          <span class="mini-label">Base</span>
+          <div id="bannerBase" class="dye-presets"></div>
+        </div>
+        <div class="banner-row">
+          <span class="mini-label">Layer</span>
+          <div id="bannerColor" class="dye-presets"></div>
+        </div>
+        <div id="bannerStack" class="banner-stack"></div>
+        <div id="bannerPatterns" class="thumb-grid banner-grid"></div>
+      </div>
     </section>
 
     <!-- ------------------------------------------------ details -->
@@ -127,7 +141,11 @@
           <div class="ver-toggle" id="verToggle"></div>
         </div>
         <pre id="giveCmd" class="cmd"></pre>
-        <button id="copyCmd" class="btn">Copy commands</button>
+        <div class="cmd-actions">
+          <button id="copyCmd" class="btn">Copy commands</button>
+          <button id="copyLink" class="btn">Copy link</button>
+        </div>
+        <p class="hint">A link carries the set, gear and banner &mdash; not your skin, cape or backdrop image.</p>
       </div>
     </section>
 

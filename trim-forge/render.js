@@ -171,6 +171,51 @@ function pieceTexture(piece, cfg) {
   return out;
 }
 
+/* --------------------------------------------------------------- shield --
+   Banner patterns are luminance masks: black is off, white is on. The base
+   texture carries a white cloth field with its own shading, so each layer is
+   blended over the cloth by the mask and modulated by that shading, which is
+   what gives a banner its folds. */
+
+const shieldCache = new Map();
+
+function shieldTexture(banner) {
+  if (!banner) return IMG['shield/base'];        // plain, no banner
+  const cacheKey = JSON.stringify(banner);
+  const hit = shieldCache.get(cacheKey);
+  if (hit) return hit;
+
+  const out = pixelsOf('shield/patterned');
+  const cloth = pixelsOf('shield/patterned');    // untouched copy, for shading
+  const layers = [{ pattern: 'base', color: banner.base }, ...banner.layers];
+
+  for (const layer of layers) {
+    const mask = pixelsOf(`shield/pattern/${layer.pattern}`);
+    if (!mask) continue;
+    const [dr, dg, db] = hexToRgb(layer.color);
+    for (let p = 0; p < out.data.length; p += 4) {
+      if (!out.data[p + 3]) continue;
+      const m = mask.data[p] / 255;              // luminance is the mask
+      if (m <= 0.01) continue;
+      const shade = cloth.data[p] / 255;         // cloth folds
+      out.data[p] += (dr * shade - out.data[p]) * m;
+      out.data[p + 1] += (dg * shade - out.data[p + 1]) * m;
+      out.data[p + 2] += (db * shade - out.data[p + 2]) * m;
+    }
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = out.width; canvas.height = out.height;
+  canvas.getContext('2d').putImageData(out, 0, 0);
+  shieldCache.set(cacheKey, canvas);
+  return canvas;
+}
+
+function hexToRgb(hex) {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
 function blit(ctx, src, rect, dx, dy, mirror, s, ox, oy) {
   const [sx, sy, w, h] = rect;
   const x = (dx + ox) * s, y = (dy + oy) * s;
@@ -182,12 +227,61 @@ function blit(ctx, src, rect, dx, dy, mirror, s, ox, oy) {
 
 /* ------------------------------------------------------------ rendering -- */
 
+/* The flat view can't animate, so its glint is a still sample of the sheet
+   masked to the piece — enough to read as enchanted in the thumbnails. */
+const glintOverlays = new WeakMap();
+
+function glintOverlay(tex, sheet) {
+  let bySheet = glintOverlays.get(tex);
+  if (!bySheet) { bySheet = new Map(); glintOverlays.set(tex, bySheet); }
+  const hit = bySheet.get(sheet);
+  if (hit) return hit;
+
+  const glint = IMG[sheet];
+  const c = document.createElement('canvas');
+  c.width = tex.width; c.height = tex.height;
+  const ctx = c.getContext('2d');
+  ctx.drawImage(glint, 0, 0, tex.width, tex.height, 0, 0, tex.width, tex.height);
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.drawImage(tex, 0, 0);
+  bySheet.set(sheet, c);
+  return c;
+}
+
 function drawPiece(ctx, piece, cfg, s, ox, oy) {
   const tex = pieceTexture(piece, cfg);
   if (!tex) return;
-  for (const [face, dx, dy, mirror] of PIECE_SPEC[piece].faces) {
+  const faces = PIECE_SPEC[piece].faces;
+  for (const [face, dx, dy, mirror] of faces) {
     blit(ctx, tex, ARMOR_FACE[face], dx, dy, mirror, s, ox, oy);
   }
+  if (!cfg.enchanted) return;
+  const sheen = glintOverlay(tex, 'glint/armor');
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.3;
+  for (const [face, dx, dy, mirror] of faces) {
+    blit(ctx, sheen, ARMOR_FACE[face], dx, dy, mirror, s, ox, oy);
+  }
+  ctx.restore();
+}
+
+/* Front face of the shield plate, stood beside the off hand. Only drawn when
+   the caller widens the crop to make room for it. */
+const SHIELD_FLAT = { rect: [1, 1, 12, 22], x: 11, y: 4 };
+
+function drawShieldFlat(ctx, banner, enchanted, s, ox, oy) {
+  const tex = shieldTexture(banner);
+  if (!tex) return;
+  const { rect, x, y } = SHIELD_FLAT;
+  blit(ctx, tex, rect, x, y, false, s, ox, oy);
+  if (!enchanted) return;
+  const sheen = glintOverlay(tex, 'glint/item');
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.3;
+  blit(ctx, sheen, rect, x, y, false, s, ox, oy);
+  ctx.restore();
 }
 
 /* Player skin is the 64x64 layout; legacy 64x32 skins mirror the right limbs
@@ -319,8 +413,13 @@ function renderFigure(canvas, opts) {
     const cfg = opts.pieces[piece];
     if (cfg && cfg.on) drawPiece(ctx, piece, cfg, s, ox, oy);
   }
+  if (opts.shield) drawShieldFlat(ctx, opts.banner, opts.shieldEnchanted, s, ox, oy);
   return canvas;
 }
+
+/* The flat view widens to this when a shield is shown */
+const FLAT_CROP = { x: 0, y: 0, w: CANVAS_W, h: CANVAS_H };
+const FLAT_CROP_SHIELD = { x: 0, y: 0, w: 24, h: CANVAS_H };
 
 /* Framing used by the picker thumbnails for each piece */
 const PIECE_CROPS = {

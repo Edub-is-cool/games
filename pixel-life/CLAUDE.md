@@ -147,6 +147,7 @@ Loaded after disasters.js (it registers powers).
 ## Interface (ui2.js)
 - **Layers tab:** color borders by kingdoms, cities, alliance blocs, religions, cultures or languages (`overlayGroup`, used by `rebuildOverlay`), or mark creatures by clan or subspecies; toggle war lines and Eye of Insight (rings creatures carrying undiscovered traits).
 - **World → 📋 Lists:** sortable lists of kingdoms, cities, wars, alliances, armies, plots, religions, cultures, languages, clans, subspecies and books; names jump the camera there. Renamed things keep `pastNames`.
+- **Creature info header:** a portrait (the creature's own sprite via `portraitOf`, cached as a data URL on the sprite), its name with ✏️, then a colored health bar and ❤️ hp / max (no separate Health row).
 - **Unit inspector:** mind summary and a family tree (grandparents to grandchildren); arrows to home, lover, parents, children and target. **Thought bubbles** show what villagers are thinking. **Event pop-ups** for big events.
 - **Camera:** Ctrl+1–9 saves a bookmark, 1–9 jumps back; saves keep the camera and bookmarks. Speeds ½× to 100×. **God name** (World tab) shows in the title and in books and faiths. Statistics add a wealth/renown chart and hover tooltips with changes.
 

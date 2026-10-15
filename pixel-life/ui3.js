@@ -24,7 +24,7 @@ function drawMinimap() {
   if (!miniOpen || !worldCanvas) return;
   const [mw, mh] = miniSize();
   if (miniCanvas.width !== mw || miniCanvas.height !== mh) { miniCanvas.width = miniBase.width = mw; miniCanvas.height = miniBase.height = mh; miniFrame = 0; }
-  if (miniFrame++ % 30 === 0) {
+  if (miniFrame++ % 30 === 0 || miniFrame < 4) {   // also the first frames, before the map is drawn
     const g = miniBase.getContext('2d');
     g.imageSmoothingEnabled = true;
     g.drawImage(worldCanvas, 0, 0, mw, mh);

@@ -1988,6 +1988,12 @@ function inspectAt(wx, wy, sx, sy) {
   life.selected = null;
 }
 
+// the creature's own sprite (kingdom colors, gear, subspecies tint) as a picture
+function portraitOf(u, k) {
+  const spr = unitSprite(u.race, k ? k.color : '#8d8d8d', gearOf(u), false, false, typeof subOf === 'function' ? subOf(u)?.tint : undefined);
+  return (spr.portrait ||= spr.toDataURL());
+}
+
 function infoHtml() {
   const sel = life.selected;
   if (!sel) return '';
@@ -2010,7 +2016,12 @@ function infoHtml() {
       : u.carry ? `Carrying ${u.carry.n} ${u.carry.type}`
       : u.task ? { farm: 'Farmer', wood: 'Woodcutter', stone: 'Miner', hunt: 'Hunter', idle: 'Resting' }[u.task.type]
       : v ? 'Villager' : 'Wanderer';
-    return `<h3>${u.name}${pen('unit', u.id)}</h3>` + rows([
+    // header: a portrait of the creature, its name, and a health bar
+    const hp = Math.max(0, Math.ceil(u.hp)), max = maxHp(u), pct = Math.max(0, Math.min(100, (hp / max) * 100));
+    return `<div class="unit-head"><img class="portrait" src="${portraitOf(u, k)}" alt="">
+      <div class="unit-title"><h3>${u.name}${pen('unit', u.id)}</h3>
+        <div class="hp-bar" title="Health"><i style="width:${pct}%;background:${pct > 50 ? '#3fae3a' : pct > 25 ? '#e0a020' : '#d8302a'}"></i></div>
+        <small>❤️ ${hp} / ${max}</small></div></div>` + rows([
       ['Race', r.name + pen('race', u.race)],
       r.civ && ['Kingdom', k ? swatch(k.color) + k.name + pen('kingdom', k.id) : 'None'],
       r.civ && ['Village', v ? v.name + pen('village', v.id) : 'None'],
@@ -2021,7 +2032,6 @@ function infoHtml() {
       u.parents && u.parents.length && ['Parents', u.parents.map((id, i) => unitLink(id, (u.parentNames || [])[i])).join(', ')],
       r.civ && ['Children', childrenOf(u)],
       ['Age', `${Math.floor(u.age / YEAR)} years`],
-      ['Health', `${Math.max(0, Math.ceil(u.hp))} / ${maxHp(u)}`],
       ['Doing', job],
       ...unitExtraRows(u),
       u.traits && u.traits.length && ['Traits', u.traits.map(t => traitIcon(t) + ' ' + TRAITS[t].name).join(', ')],

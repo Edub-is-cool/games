@@ -744,3 +744,12 @@ button.active { border-color: var(--accent); background: #3d3a26; }
 #info .bio { margin: 0; padding-left: 0; list-style: none; }
 #info .bio li { padding: 2px 0; border-bottom: 1px solid rgba(58, 36, 16, 0.25); font-size: 12px; }
 #info .bio .yr { color: var(--muted); margin-right: 4px; font-size: 11px; }
+
+/* creature info header: portrait, name, health bar */
+.unit-head { display: flex; align-items: center; gap: 10px; margin: 0 28px 8px 0; }
+.unit-head .portrait { width: 64px; height: 64px; object-fit: contain; image-rendering: pixelated; background: rgba(255, 255, 255, 0.18); border: 2px solid #4a2e17; border-radius: 6px; padding: 4px; flex: none; }
+.unit-title { flex: 1; min-width: 0; }
+#info .unit-title h3 { margin: 0 0 4px; }
+.hp-bar { height: 8px; background: #4a2e17; border: 1px solid #2a1808; border-radius: 4px; overflow: hidden; }
+.hp-bar i { display: block; height: 100%; }
+.unit-title small { font-size: 11px; color: var(--muted); }

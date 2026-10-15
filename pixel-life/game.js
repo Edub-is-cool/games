@@ -526,6 +526,7 @@ function drawFineTile(x, y) {
           else if (sy === last) f *= 0.88;
         } else if (isWater(t) && hash2(fx >> 1, fy, seed + 29) > 0.92) f *= 1.08;   // ripples
         else if (TILES[t].ore) { pix[fy * FW + fx] = orePixel(t, src === i, x, y, sx, sy, f); continue; }
+        else if (PLANT_ART[t]) { pix[fy * FW + fx] = plantPixel(t, src === i, x, y, sx, sy, f); continue; }
         pix[fy * FW + fx] = shadeColor(base[src], f);
       }
     }
@@ -550,6 +551,25 @@ function orePixel(t, own, x, y, sx, sy, f) {
   if (ch === 'n') return shadeColor(nugget, f);
   return (sx + sy * 3 + x) % 7 === 0 ? shadeColor(rock, 0.8) : rock;   // a few dark cracks
 }
+
+// Plants are drawn too, on the color of the ground around them:
+// a round berry bush, flowers on stems, red-capped mushrooms.
+const PLANT_ART = {};
+const FLOWER_COLORS = [0xf8a0d0, 0xf8e050, 0xf4f4f4, 0xb07ae8, 0xf06a5a];
+function plantPixel(t, own, x, y, sx, sy, f) {
+  const W = state.W, tiles = state.tiles;
+  // the ground it grows on: a neighbouring ground tile, or its own color
+  let ground = abgr(TILES[t].color);
+  for (const j of [y * W + x - 1, y * W + x + 1, (y - 1) * W + x, (y + 1) * W + x]) {
+    if (j >= 0 && j < tiles.length && isGround(tiles[j])) { ground = base[j]; break; }
+  }
+  if (!own) return shadeColor(ground, f);
+  const art = PLANT_ART[t], ch = art.rows[sy][hash2(x, y, state.seed + 47) > 0.5 ? 3 - sx : sx];
+  if (ch === 'f') return abgr(FLOWER_COLORS[(hash2(x * 7 + sx, y * 5 + sy, state.seed + 53) * FLOWER_COLORS.length) | 0]);
+  const c = art.pal[ch];
+  return c === undefined ? shadeColor(ground, f) : shadeColor(abgr(c), f);
+}
+function plantArt(key, rows, pal) { if (T[key] !== undefined) PLANT_ART[T[key]] = { rows, pal }; }
 
 function flushDirty() {
   if (!dirty || !dirty.list.length) return;

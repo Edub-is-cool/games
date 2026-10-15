@@ -96,6 +96,10 @@ for (const [key, o] of Object.entries(ORES)) addTile(key, { name: o.name, color:
 addTile('BUSH',      { name: 'Fruit Bush',  color: 0x3f8a2e, plant: true, food: true, group: 'Plants', burn: 0.02, dots: [0.25, 0xd8302a] });
 addTile('FLOWERS',   { name: 'Flowers',     color: 0x5fa83a, plant: true, group: 'Plants', burn: 0.01, dots: [0.4, 0xf8a0d0] });
 addTile('MUSHROOMS', { name: 'Mushrooms',   color: 0x5a7a3a, plant: true, group: 'Plants', burn: 0.01, dots: [0.3, 0xe04a3a] });
+// how each plant is drawn (plantPixel in game.js): '.' is the ground, 'f' a flower of a random color
+plantArt('BUSH', ['.hb.', 'bbrb', 'rbbb', '.bb.'], { b: 0x2f6e22, h: 0x4f9a38, r: 0xe0302a });
+plantArt('FLOWERS', ['f..f', 's.fs', 's.s.', '..s.'], { s: 0x2f7a22 });
+plantArt('MUSHROOMS', ['.rr.', 'rwrr', '.ss.', '.ss.'], { r: 0xd8302a, w: 0xf8f4ec, s: 0xeadcc0 });
 
 // ---------- Creep ----------
 // Ground grown by monster cores (creatures2.js); it spreads while its core lives.

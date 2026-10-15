@@ -147,7 +147,8 @@ Loaded after disasters.js (it registers powers).
 ## Interface (ui2.js)
 - **Layers tab:** color borders by kingdoms, cities, alliance blocs, religions, cultures or languages (`overlayGroup`, used by `rebuildOverlay`), or mark creatures by clan or subspecies; toggle war lines and Eye of Insight (rings creatures carrying undiscovered traits).
 - **World → 📋 Lists:** sortable lists of kingdoms, cities, wars, alliances, armies, plots, religions, cultures, languages, clans, subspecies and books; names jump the camera there. Renamed things keep `pastNames`.
-- **Creature info header:** a portrait (the creature's own sprite via `portraitOf`, cached as a data URL on the sprite), its name with ✏️, then a colored health bar and ❤️ hp / max (no separate Health row).
+- **Creature card** (`unitCard` in ui3.js, used by `infoHtml`): a top bar with the race icon, the name (✏️) in an inset box and a badge (👑 ruler, kingdom swatch, 🐾/🌿); a framed portrait (`portraitOf`) standing on the color of the tile it's on; and pill bars for what it's doing, ❤️ health, 🔮 mana (casters only, else '-'), 🧪 stamina and 🍖 fullness (hunters). Sized to fit the 172px docked box.
+- **Editor tabs** (`refreshEditor` wrapper in ui3.js): Follow/Favorite/Control stay on top; below are ✨ Statuses (mood and active statuses, refreshed live), 🧬 Traits (DNA and trait chips), 🎒 Inventory (equipment) and 📖 Story (life story, refreshed live). The chosen tab is remembered (`infoTab`).
 - **Unit inspector:** mind summary and a family tree (grandparents to grandchildren); arrows to home, lover, parents, children and target. **Thought bubbles** show what villagers are thinking. **Event pop-ups** for big events.
 - **Camera:** Ctrl+1–9 saves a bookmark, 1–9 jumps back; saves keep the camera and bookmarks. Speeds ½× to 100×. **God name** (World tab) shows in the title and in books and faiths. Statistics add a wealth/renown chart and hover tooltips with changes.
 

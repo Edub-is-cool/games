@@ -2016,12 +2016,8 @@ function infoHtml() {
       : u.carry ? `Carrying ${u.carry.n} ${u.carry.type}`
       : u.task ? { farm: 'Farmer', wood: 'Woodcutter', stone: 'Miner', hunt: 'Hunter', idle: 'Resting' }[u.task.type]
       : v ? 'Villager' : 'Wanderer';
-    // header: a portrait of the creature, its name, and a health bar
-    const hp = Math.max(0, Math.ceil(u.hp)), max = maxHp(u), pct = Math.max(0, Math.min(100, (hp / max) * 100));
-    return `<div class="unit-head"><img class="portrait" src="${portraitOf(u, k)}" alt="">
-      <div class="unit-title"><h3>${u.name}${pen('unit', u.id)}</h3>
-        <div class="hp-bar" title="Health"><i style="width:${pct}%;background:${pct > 50 ? '#3fae3a' : pct > 25 ? '#e0a020' : '#d8302a'}"></i></div>
-        <small>❤️ ${hp} / ${max}</small></div></div>` + rows([
+    // header: the creature card (portrait, name, health, mana, stamina, fullness; ui3.js)
+    return unitCard(u, k, job) + rows([
       ['Race', r.name + pen('race', u.race)],
       r.civ && ['Kingdom', k ? swatch(k.color) + k.name + pen('kingdom', k.id) : 'None'],
       r.civ && ['Village', v ? v.name + pen('village', v.id) : 'None'],

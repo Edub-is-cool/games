@@ -235,13 +235,106 @@ function storyTick() {
 const _citiesTickUi3 = citiesTick;
 citiesTick = function () { _citiesTickUi3(); if (state.tick % 20 === 0) storyTick(); };
 
-const _infoHtmlUi3 = infoHtml;
-infoHtml = function () {
-  const html = _infoHtmlUi3();
-  const u = life.selected && life.selected.unit;
-  if (!u || !u.bio || !u.bio.length) return html;
-  return html + `<h4>📖 Life story</h4><ul class="bio">${u.bio.map(([t, text]) => `<li><span class="yr">Year ${Math.floor(t / YEAR) + 1}</span> ${text}</li>`).join('')}</ul>`;
+// ---------- Creature card ----------
+// The top of a creature's info: its icon, name and a badge; a framed portrait
+// standing on the ground it's on; and pill bars for what it's doing, health,
+// mana, stamina and how full it is.
+const hexColor = c => '#' + c.toString(16).padStart(6, '0');
+function cardBar(value, max, color, label) {
+  const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
+  return `<div class="card-bar"><i style="width:${pct}%;background:${color}"></i><b>${label}</b></div>`;
+}
+function unitCard(u, k, job) {
+  const r = RACES[u.race];
+  const hp = Math.max(0, Math.ceil(u.hp)), max = maxHp(u), hpPct = hp / max;
+  const tile = state.tiles[Math.floor(u.y) * state.W + Math.floor(u.x)];
+  const ruler = k && k.king === u.id;
+  const badge = ruler ? '👑' : k ? `<span class="card-swatch" style="background:${k.color}"></span>` : r.prey ? '🐾' : '🌿';
+  const caster = typeof isCaster === 'function' && isCaster(u);
+  const hunter = !!r.prey && !r.monster && !r.undead;
+  const full = hunter ? Math.max(0, 1 - (u.hunger || 0) / (4 * YEAR)) : 1;
+  return `<div class="card">
+    <div class="card-top"><img class="card-icon" src="${raceIcon(u.race)}" alt=""><div class="card-name">${u.name}${pen('unit', u.id)}</div><span class="card-badge" title="${ruler ? 'Ruler of the ' + k.name : k ? k.name : r.name}">${badge}</span></div>
+    <div class="card-mid">
+      <div class="card-portrait" style="--ground:${hexColor(TILES[tile]?.color ?? 0x5fa83a)}"><img src="${portraitOf(u, k)}" alt=""></div>
+      <div class="card-stats">
+        <div class="card-pill"><span class="card-ico">👣</span><span class="card-doing">${job}</span><span class="card-ico">👣</span></div>
+        <div class="card-pill"><span class="card-ico">❤️</span>${cardBar(hp, max, hpPct > 0.5 ? '#2f9a2a' : hpPct > 0.25 ? '#d89a1a' : '#c62828', `${hp}/${max}`)}</div>
+        <div class="card-pill"><span class="card-ico">🔮</span>${caster ? cardBar(u.mana ?? 50, 100, '#3a6ad8', `${Math.round(u.mana ?? 50)}/100`) : cardBar(0, 1, '#3a6ad8', '-')}</div>
+        <div class="card-row">
+          <div class="card-pill"><span class="card-ico">🧪</span>${cardBar(u.stamina ?? 100, 100, '#2f9a2a', `${Math.round(u.stamina ?? 100)}/100`)}</div>
+          <div class="card-pill"><span class="card-ico">🍖</span>${cardBar(full, 1, '#a8a8a8', Math.round(full * 100) + '%')}</div>
+        </div>
+      </div>
+    </div></div>`;
+}
+
+// ---------- Tabs on the creature editor ----------
+// Statuses, Traits (DNA and trait chips), Inventory (equipment) and Story
+// (life story); the Follow / Favorite / Control buttons stay on top.
+const INFO_TABS = [['statuses', '✨', 'Statuses'], ['traits', '🧬', 'Traits'], ['inventory', '🎒', 'Inventory'], ['story', '📖', 'Story']];
+let infoTab = 'traits';
+const STATUS_NAMES = {
+  blessed: ['😇', 'Blessed'], cursed: ['🕸', 'Cursed'], shield: ['🛡️', 'Shielded'], sick: ['🤒', 'Plague'], immune: ['💉', 'Immune'],
+  mad: ['😡', 'Mad'], frozen: ['❄️', 'Frozen'], sleep: ['💤', 'Asleep'], poison: ['☠️', 'Poisoned'], burning: ['🔥', 'Burning'],
+  stun: ['💫', 'Stunned'], love: ['❤️', 'In love'], pregnant: ['🤰', 'Expecting'], egg: ['🥚', 'An egg'], festive: ['🎉', 'Festive'],
+  coffee: ['☕', 'Caffeinated'], powerup: ['⚡', 'Powered up'], angry: ['💢', 'Angry'], crying: ['😢', 'Crying'], tantrum: ['🤬', 'Tantrum'],
+  inspired: ['💡', 'Inspired'], desire: ['💭', 'Longing'], boat: ['⛵', 'Sailing'],
 };
+function statusesHtml(u) {
+  const list = Object.entries(STATUS_NAMES).filter(([k]) => u[k] && u[k] !== 0).map(([, [i, n]]) => `<span class="status-chip">${i} ${n}</span>`);
+  const mood = typeof moodLabel === 'function' ? moodLabel(u.happy ?? 60) : '';
+  return `<p class="hint">${mood ? 'Mood: ' + mood : ''}</p>` + (list.length ? `<div class="status-list">${list.join('')}</div>` : '<p class="hint">Nothing special going on.</p>');
+}
+function storyHtml(u) {
+  return u.bio && u.bio.length ? `<ul class="bio">${u.bio.map(([t, text]) => `<li><span class="yr">Year ${Math.floor(t / YEAR) + 1}</span> ${text}</li>`).join('')}</ul>`
+    : '<p class="hint">Their story is still being written.</p>';
+}
+
+const _refreshEditorUi3 = refreshEditor;
+refreshEditor = function (force) {
+  const before = infoEdit.firstChild;
+  _refreshEditorUi3(force);
+  const u = life.selected && life.selected.unit;
+  if (!u || u.dead || infoEdit.firstChild === before || infoEdit.querySelector('.info-tabs')) return;
+  // sort what the editor built into sections by its headings
+  const nodes = [...infoEdit.childNodes];
+  const sections = { top: [], inventory: [], traits: [] };
+  let cur = 'top';
+  for (const n of nodes) {
+    if (n.tagName === 'H4') cur = n.textContent === 'Equipment' ? 'inventory' : 'traits';
+    sections[cur].push(n);
+  }
+  infoEdit.textContent = '';
+  infoEdit.append(...sections.top);
+  const tabs = document.createElement('div');
+  tabs.className = 'info-tabs';
+  tabs.innerHTML = INFO_TABS.map(([k, i, n]) => `<button type="button" data-tab-info="${k}" class="${k === infoTab ? 'on' : ''}"><span>${i}</span>${n}</button>`).join('');
+  infoEdit.append(tabs);
+  for (const [key] of INFO_TABS) {
+    const box = document.createElement('div');
+    box.className = 'info-section';
+    box.dataset.section = key;
+    box.hidden = key !== infoTab;
+    if (sections[key]) box.append(...sections[key]);
+    infoEdit.append(box);
+  }
+  fillLiveTabs(u);
+};
+function fillLiveTabs(u) {
+  const st = infoEdit.querySelector('[data-section="statuses"]'), sy = infoEdit.querySelector('[data-section="story"]');
+  if (st && !st.hidden) st.innerHTML = statusesHtml(u);
+  if (sy && !sy.hidden) sy.innerHTML = storyHtml(u);
+}
+infoEdit.addEventListener('click', e => {
+  const b = e.target.closest('[data-tab-info]');
+  if (!b) return;
+  infoTab = b.dataset.tabInfo;
+  for (const x of infoEdit.querySelectorAll('[data-tab-info]')) x.classList.toggle('on', x === b);
+  for (const box of infoEdit.querySelectorAll('.info-section')) box.hidden = box.dataset.section !== infoTab;
+  const u = life.selected && life.selected.unit;
+  if (u) fillLiveTabs(u);
+});
 
 // ---------- Placement each frame ----------
 const _updateHudUi3 = updateHud;
@@ -251,6 +344,8 @@ updateHud = function () {
   const docked = infoEl.classList.contains('dock');
   miniWrap.style.bottom = (docked ? infoEl : toolbarEl).offsetHeight + 8 + 'px';
   if (!timelineEl.hidden && state.tick % 10 === 0) renderTimeline();
+  const sel = life.selected && life.selected.unit;
+  if (sel && !sel.dead && (infoTab === 'statuses' || infoTab === 'story') && hudFrame % 12 === 0) fillLiveTabs(sel);
 };
 addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;

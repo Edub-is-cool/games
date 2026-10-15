@@ -120,6 +120,36 @@
       background: linear-gradient(135deg, #0b0f16 0%, #1c2534 50%, #0b0f16 100%);
     }
 
+    /* Pixel Life: a mixed-up rainbow that slowly drifts */
+    .card:nth-child(10) .card-banner,
+    .card:nth-child(10) .play-btn {
+      background: linear-gradient(120deg, #ff3b3b, #ffd23f, #00e5a0, #40a0ff, #c04dff, #ff8a1f, #3be8ff, #ff4fa8, #7cff4a, #ff3b3b);
+      background-size: 200% 200%;
+      animation: rainbow-drift 12s linear infinite;
+    }
+    .card:nth-child(10) .play-btn {
+      color: #0a0a0f;
+      text-shadow: 0 0 4px rgba(255,255,255,0.6);
+      animation-duration: 6s;
+    }
+    .card:nth-child(10):hover { border-color: #ff4fa8; }
+    .card:nth-child(10) .genre {
+      background: linear-gradient(90deg, #ff3b3b, #ffd23f, #00e5a0, #40a0ff, #c04dff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    @keyframes rainbow-drift {
+      0%   { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .card:nth-child(10) .card-banner,
+      .card:nth-child(10) .play-btn { animation: none; }
+    }
+
     .card-body {
       padding: 1.5rem;
       flex: 1;

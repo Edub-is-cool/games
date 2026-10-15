@@ -1205,22 +1205,40 @@ function captureVillage(v, kid) {
 }
 
 // When a capital falls, its ruler and the lords of its cities run to the nearest
-// city of an allied kingdom (if there is one) and give up their titles.
+// city of an allied kingdom (if there is one) and give up their titles. Their
+// close families (the royal family, for the ruler) living in those cities go too.
 function rulersFlee(oldK, taken, kid) {
   const allies = Object.keys(alliesOf(oldK)).map(id => life.kingdoms.get(+id)).filter(a => a && a.id !== kid);
   if (!allies.length) return;
+  const inTaken = u => u && !u.dead && taken.some(c => c.id === u.village);
   const king = oldK.king && life.byId.get(oldK.king);
   const rulers = [king, ...taken.map(c => c.lord && life.byId.get(c.lord))]
-    .filter((u, i, all) => u && !u.dead && all.indexOf(u) === i && taken.some(c => c.id === u.village));
+    .filter((u, i, all) => inTaken(u) && all.indexOf(u) === i);
+  const fled = new Set();
   for (const u of rulers) {
+    if (fled.has(u)) continue;
     const refuge = nearestVillage(u.x, u.y, Infinity, o => allies.some(a => a.id === o.kingdom));
     if (!refuge) continue;
-    for (const c of taken) if (c.lord === u.id) c.lord = 0;
-    if (u === king) { oldK.king = 0; u.king = 0; }
-    joinVillage(u, refuge);   // they walk (or sail) there
-    u.role = 'worker';
-    chronicle(`🏃 ${u.name} fled the fall of the ${oldK.name} to ${refuge.name} in the ${life.kingdoms.get(refuge.kingdom).name}`);
+    const party = [u, ...closeFamily(u).filter(o => inTaken(o) && !fled.has(o))];
+    for (const o of party) {
+      for (const c of taken) if (c.lord === o.id) c.lord = 0;
+      if (o === king) { oldK.king = 0; o.king = 0; }
+      joinVillage(o, refuge);   // they walk (or sail) there
+      o.role = 'worker';
+      fled.add(o);
+    }
+    const kin = party.length - 1;
+    chronicle(`🏃 ${u.name}${kin ? ` and ${kin} of ${u === king ? 'the royal family' : 'their family'}` : ''} fled the fall of the ${oldK.name} to ${refuge.name} in the ${life.kingdoms.get(refuge.kingdom).name}`);
   }
+}
+
+// partner, parents, children, grandchildren, brothers and sisters
+function closeFamily(u) {
+  const parents = u.parents || [];
+  const kids = new Set(life.units.filter(o => !o.dead && o.parents && o.parents.includes(u.id)).map(o => o.id));
+  return life.units.filter(o => !o.dead && o !== u && (
+    o.id === u.love || o.love === u.id || parents.includes(o.id) || kids.has(o.id) ||
+    (o.parents && o.parents.some(p => kids.has(p) || parents.includes(p)))));
 }
 
 function updateVillage(v) {

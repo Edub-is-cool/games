@@ -144,6 +144,9 @@ Loaded after disasters.js (it registers powers).
 - **Sapient animals:** each adult animal has a tiny chance per tick (`MUTATION_CHANCE`) to wake up along with up to 4 nearby adults of its kind. They become a new civilized race (`makeSapientRace`, key `<animal>_folk`, e.g. "Sapient Sheep") with the animal's sprite plus a cloak in the kingdom color, and they found their own kingdom (Herd or Pack). These races are created at runtime, saved by name in `life.sapient`, and cleared on a new world. They also show up in the Creatures tab for spawning. A **Monolith** (Powers tab) makes this happen much faster nearby.
 - Tuning numbers live at the top of `creatures.js` (`RACES`) and in `updateVillage` / `doJob`.
 
+## Creature sprites
+Creature art is written as small ASCII grids (`art` in `RACES`) and drawn with `makeSprite`, then `refineSprite` doubles it with Scale2x (smoothing staircase edges into finer pixels) and adds a top highlight, an underside shadow and a soft outline. Refined sprites carry `res = 2`, and `drawLife` divides their size by it so creatures stay the same size on screen.
+
 ## Controls
 - **Left click / drag:** use the selected tool (Terrain tab paints tiles, Shape tab raises/lowers)
 - **Move the camera:** the game starts on the **Move Camera** tool, so left-drag pans. With any tool: right/middle drag or **Shift + drag** pans, two-finger trackpad scrolling pans, **WASD / arrows** pan.

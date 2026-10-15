@@ -1555,8 +1555,58 @@ function unitSprite(race, cloth, gear, flip, flash) {
     const r = RACES[race];
     const pal = gearPalette({ ...r.colors, c: cloth, l: '#3a2f2a', m: '#c9ced6' }, gear);
     if (flash) for (const k in pal) pal[k] = '#ffffff';
-    return makeSprite(gearArt(r.art, gear), pal, flip);
+    return refineSprite(makeSprite(gearArt(r.art, gear), pal, flip));
   });
+}
+
+// Creatures are drawn with pixels half the size: the sprite is doubled with
+// Scale2x (which rounds off staircase edges), then shaded with a highlight on
+// top, a shadow underneath and a thin outline. `res` tells the drawing code
+// how many sprite pixels make up one original art pixel.
+function refineSprite(src) {
+  const w = src.width, h = src.height;
+  const s = src.getContext('2d').getImageData(0, 0, w, h);
+  const p = new Uint32Array(s.data.buffer);
+  const at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : p[y * w + x]);
+  const W = w * 2 + 2, H = h * 2 + 2;   // one pixel of room for the outline
+  const out = new Uint32Array(W * H);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const P = at(x, y), A = at(x, y - 1), B = at(x + 1, y), C = at(x - 1, y), D = at(x, y + 1);
+      const o = (y * 2 + 1) * W + x * 2 + 1;
+      out[o] = C === A && C !== D && A !== B ? A : P;
+      out[o + 1] = A === B && A !== C && B !== D ? B : P;
+      out[o + W] = D === C && D !== B && C !== A ? C : P;
+      out[o + W + 1] = B === D && B !== A && D !== C ? D : P;
+    }
+  }
+  // shade: lit from above, darker underneath, outlined
+  const solid = i => (out[i] >>> 24) > 0;
+  const shaded = new Uint32Array(out);
+  const tone = (c, f) => {
+    const r = Math.min(255, (c & 255) * f), g = Math.min(255, ((c >>> 8) & 255) * f), b = Math.min(255, ((c >>> 16) & 255) * f);
+    return ((c & 0xff000000) | (b << 16) | (g << 8) | r) >>> 0;
+  };
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (solid(i)) {
+        if (y > 0 && !solid(i - W)) shaded[i] = tone(out[i], 1.18);
+        else if (y < H - 1 && !solid(i + W)) shaded[i] = tone(out[i], 0.72);
+      } else if ((x > 0 && solid(i - 1)) || (x < W - 1 && solid(i + 1)) || (y > 0 && solid(i - W)) || (y < H - 1 && solid(i + W))) {
+        shaded[i] = 0x8c141414;   // soft dark outline
+      }
+    }
+  }
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const g = c.getContext('2d');
+  const img = g.createImageData(W, H);
+  new Uint32Array(img.data.buffer).set(shaded);
+  g.putImageData(img, 0, 0);
+  c.res = 2;
+  return c;
 }
 
 const BOAT_ART = [
@@ -1751,7 +1801,8 @@ function drawLife(ox, oy, z) {
     const spr = u.boat && r.civ ? boatSprite(k ? k.color : '#e8e2d0', u.dir < 0, u.flash > 0)
       : unitSprite(u.race, k ? k.color : '#8d8d8d', gearOf(u), flip, u.flash > 0, subOf(u)?.tint);
     const sc = Math.max(1, Math.round((isAdult(u) ? s : s * 0.7) * sizeMult(u)));
-    const w = spr.width * sc, h = spr.height * sc;
+    // refined sprites have two pixels per art pixel, so each covers half as much screen
+    const w = spr.width * sc / (spr.res || 1), h = spr.height * sc / (spr.res || 1);
     const sx = Math.round(ox + x * z - w / 2), sy = Math.round(oy + y * z - h);
     if (sel && sel.unit === u) {
       ctx.strokeStyle = '#ffd34d';

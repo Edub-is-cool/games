@@ -332,28 +332,40 @@ function newWorld(sizeKey) {
 const view = document.getElementById('view');
 const ctx = view.getContext('2d');
 let dpr = 1;
-let worldCanvas, wctx, img, pix;
+let worldCanvas, wctx, img, pix, base, half;
 let dirty = null;
+
+// The ground is drawn with SUB × SUB fine pixels per tile: corners round off
+// where different kinds of land meet, and each fine pixel gets a little grain.
+const SUB = 4;   // two Scale2x passes, so this must stay 4
+const CHUNK = 16;   // dirty tracking works in CHUNK × CHUNK tile blocks
 
 function initBuffers() {
   const { W, H } = state;
   worldCanvas = document.createElement('canvas');
-  worldCanvas.width = W;
-  worldCanvas.height = H;
+  worldCanvas.width = W * SUB;
+  worldCanvas.height = H * SUB;
   wctx = worldCanvas.getContext('2d');
-  img = wctx.createImageData(W, H);
+  img = wctx.createImageData(W * SUB, H * SUB);
   pix = new Uint32Array(img.data.buffer);
-  dirty = { x0: 0, y0: 0, x1: W - 1, y1: H - 1 };
+  base = new Uint32Array(W * H);
+  half = new Int32Array(W * H * 4);
+  const cols = Math.ceil(W / CHUNK), rows = Math.ceil(H / CHUNK);
+  dirty = { cols, rows, flags: new Uint8Array(cols * rows).fill(1), list: [] };
+  for (let i = 0; i < cols * rows; i++) dirty.list.push(i);
 }
 
-// Tile colors depend on neighbors (relief + shoreline), so pad by one tile.
+// Tile colors depend on neighbors (relief, shoreline) and the smoothing looks
+// two tiles out, so pad by two.
 function markDirty(x0, y0, x1, y1) {
-  x0 = Math.max(0, x0 - 1); y0 = Math.max(0, y0 - 1);
-  x1 = Math.min(state.W - 1, x1 + 1); y1 = Math.min(state.H - 1, y1 + 1);
-  if (!dirty) dirty = { x0, y0, x1, y1 };
-  else {
-    dirty.x0 = Math.min(dirty.x0, x0); dirty.y0 = Math.min(dirty.y0, y0);
-    dirty.x1 = Math.max(dirty.x1, x1); dirty.y1 = Math.max(dirty.y1, y1);
+  if (!dirty) return;
+  x0 = Math.max(0, x0 - 2); y0 = Math.max(0, y0 - 2);
+  x1 = Math.min(state.W - 1, x1 + 2); y1 = Math.min(state.H - 1, y1 + 2);
+  for (let cy = (y0 / CHUNK) | 0; cy <= (y1 / CHUNK) | 0; cy++) {
+    for (let cx = (x0 / CHUNK) | 0; cx <= (x1 / CHUNK) | 0; cx++) {
+      const i = cy * dirty.cols + cx;
+      if (!dirty.flags[i]) { dirty.flags[i] = 1; dirty.list.push(i); }
+    }
   }
 }
 
@@ -421,14 +433,84 @@ function tileColor(x, y) {
   return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
 }
 
-function flushDirty() {
-  if (!dirty) return;
-  const { W } = state;
-  for (let y = dirty.y0; y <= dirty.y1; y++) {
-    for (let x = dirty.x0; x <= dirty.x1; x++) pix[y * W + x] = tileColor(x, y);
+function shadeColor(c, f) {
+  const r = Math.min(255, (c & 255) * f) | 0, g = Math.min(255, ((c >>> 8) & 255) * f) | 0, b = Math.min(255, ((c >>> 16) & 255) * f) | 0;
+  return (0xff000000 | (b << 16) | (g << 8) | r) >>> 0;
+}
+
+// Pass 1 of the smoothing: Scale2x on the tile map. For each tile, which tile
+// each of its four half-cells copies (rounding off staircase edges).
+function smoothTile(x, y) {
+  const { W, H, tiles } = state;
+  const i = y * W + x, P = tiles[i];
+  const n = (dx, dy) => {
+    const nx = Math.min(W - 1, Math.max(0, x + dx)), ny = Math.min(H - 1, Math.max(0, y + dy));
+    return ny * W + nx;
+  };
+  const a = n(0, -1), b = n(1, 0), c = n(-1, 0), d = n(0, 1);
+  const A = tiles[a], B = tiles[b], C = tiles[c], D = tiles[d];
+  const o = i * 4;
+  half[o] = C === A && C !== D && A !== B && A !== P ? a : i;
+  half[o + 1] = A === B && A !== C && B !== D && B !== P ? b : i;
+  half[o + 2] = D === C && D !== B && C !== A && C !== P ? c : i;
+  half[o + 3] = B === D && B !== A && D !== C && D !== P ? d : i;
+}
+
+// Pass 2: Scale2x again on the half-cells gives SUB = 4 fine pixels per tile,
+// then each fine pixel gets a little grain, and trees get round canopies.
+function drawFineTile(x, y) {
+  const { W, H, tiles, seed } = state;
+  const FW = W * SUB, HW = W * 2, HH = H * 2;
+  const cell = (X, Y) => {
+    X = Math.min(HW - 1, Math.max(0, X)); Y = Math.min(HH - 1, Math.max(0, Y));
+    return half[((Y >> 1) * W + (X >> 1)) * 4 + (Y & 1) * 2 + (X & 1)];
+  };
+  const i = y * W + x, last = SUB - 1;
+  for (let hy = 0; hy < 2; hy++) {
+    for (let hx = 0; hx < 2; hx++) {
+      const X = x * 2 + hx, Y = y * 2 + hy;
+      const p = cell(X, Y), a = cell(X, Y - 1), b = cell(X + 1, Y), c = cell(X - 1, Y), d = cell(X, Y + 1);
+      const P = tiles[p], A = tiles[a], B = tiles[b], C = tiles[c], D = tiles[d];
+      const quad = [
+        C === A && C !== D && A !== B && A !== P ? a : p,
+        A === B && A !== C && B !== D && B !== P ? b : p,
+        D === C && D !== B && C !== A && C !== P ? c : p,
+        B === D && B !== A && D !== C && D !== P ? d : p,
+      ];
+      for (let q = 0; q < 4; q++) {
+        const sx = hx * 2 + (q & 1), sy = hy * 2 + (q >> 1);
+        const src = quad[q], fx = x * SUB + sx, fy = y * SUB + sy;
+        let f = 0.93 + hash2(fx, fy, seed + 23) * 0.14;   // fine grain
+        const t = tiles[src];
+        if (isTree(t)) {
+          // round canopies: lit on top, shadowed at the bottom corners
+          if ((sx === 0 || sx === last) && (sy === 0 || sy === last)) f *= sy === last ? 0.7 : 0.85;
+          else if (sy === 1 && sx === 1) f *= 1.2;
+          else if (sy === last) f *= 0.88;
+        } else if (isWater(t) && hash2(fx >> 1, fy, seed + 29) > 0.92) f *= 1.08;   // ripples
+        pix[fy * FW + fx] = shadeColor(base[src], f);
+      }
+    }
   }
-  wctx.putImageData(img, 0, 0, dirty.x0, dirty.y0, dirty.x1 - dirty.x0 + 1, dirty.y1 - dirty.y0 + 1);
-  dirty = null;
+}
+
+function flushDirty() {
+  if (!dirty || !dirty.list.length) return;
+  const { W, H } = state;
+  const chunks = dirty.list;
+  dirty.list = [];
+  for (const ci of chunks) {
+    const x0 = (ci % dirty.cols) * CHUNK, y0 = ((ci / dirty.cols) | 0) * CHUNK;
+    const x1 = Math.min(W, x0 + CHUNK), y1 = Math.min(H, y0 + CHUNK);
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) { base[y * W + x] = tileColor(x, y); smoothTile(x, y); }
+  }
+  for (const ci of chunks) {
+    dirty.flags[ci] = 0;
+    const x0 = (ci % dirty.cols) * CHUNK, y0 = ((ci / dirty.cols) | 0) * CHUNK;
+    const x1 = Math.min(W, x0 + CHUNK), y1 = Math.min(H, y0 + CHUNK);
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) drawFineTile(x, y);
+    wctx.putImageData(img, 0, 0, x0 * SUB, y0 * SUB, (x1 - x0) * SUB, (y1 - y0) * SUB);
+  }
 }
 
 function render() {

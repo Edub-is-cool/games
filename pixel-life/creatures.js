@@ -451,10 +451,10 @@ function resetLife() {
 
 function initOverlay() {
   overlayCanvas = document.createElement('canvas');
-  overlayCanvas.width = state.W;
-  overlayCanvas.height = state.H;
+  overlayCanvas.width = state.W * SUB;   // as fine as the ground (game.js)
+  overlayCanvas.height = state.H * SUB;
   octx = overlayCanvas.getContext('2d');
-  oimg = octx.createImageData(state.W, state.H);
+  oimg = octx.createImageData(state.W * SUB, state.H * SUB);
   opix = new Uint32Array(oimg.data.buffer);
   life.territoryDirty = true;
 }
@@ -1564,23 +1564,30 @@ function unitSprite(race, cloth, gear, flip, flash) {
 // Scale2x (which rounds off staircase edges), then shaded with a highlight on
 // top, a shadow underneath and a thin outline. `res` tells the drawing code
 // how many sprite pixels make up one original art pixel.
-function refineSprite(src) {
-  const w = src.width, h = src.height;
+function refineSprite(src, passes = 2) {
+  let w = src.width, h = src.height;
   const s = src.getContext('2d').getImageData(0, 0, w, h);
-  const p = new Uint32Array(s.data.buffer);
-  const at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? 0 : p[y * w + x]);
-  const W = w * 2 + 2, H = h * 2 + 2;   // one pixel of room for the outline
-  const out = new Uint32Array(W * H);
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const P = at(x, y), A = at(x, y - 1), B = at(x + 1, y), C = at(x - 1, y), D = at(x, y + 1);
-      const o = (y * 2 + 1) * W + x * 2 + 1;
-      out[o] = C === A && C !== D && A !== B ? A : P;
-      out[o + 1] = A === B && A !== C && B !== D ? B : P;
-      out[o + W] = D === C && D !== B && C !== A ? C : P;
-      out[o + W + 1] = B === D && B !== A && D !== C ? D : P;
+  let p = new Uint32Array(s.data.buffer);
+  // Scale2x, run `passes` times: each pass doubles the pixels and rounds off staircases
+  for (let n = 0; n < passes; n++) {
+    const q = p, qw = w, qh = h;
+    const at = (x, y) => (x < 0 || y < 0 || x >= qw || y >= qh ? 0 : q[y * qw + x]);
+    w = qw * 2; h = qh * 2;
+    p = new Uint32Array(w * h);
+    for (let y = 0; y < qh; y++) {
+      for (let x = 0; x < qw; x++) {
+        const P = at(x, y), A = at(x, y - 1), B = at(x + 1, y), C = at(x - 1, y), D = at(x, y + 1);
+        const o = y * 2 * w + x * 2;
+        p[o] = C === A && C !== D && A !== B ? A : P;
+        p[o + 1] = A === B && A !== C && B !== D ? B : P;
+        p[o + w] = D === C && D !== B && C !== A ? C : P;
+        p[o + w + 1] = B === D && B !== A && D !== C ? D : P;
+      }
     }
   }
+  const W = w + 2, H = h + 2;   // one pixel of room for the outline
+  const out = new Uint32Array(W * H);
+  for (let y = 0; y < h; y++) out.set(p.subarray(y * w, y * w + w), (y + 1) * W + 1);
   // shade: lit from above, darker underneath, outlined
   const solid = i => (out[i] >>> 24) > 0;
   const shaded = new Uint32Array(out);
@@ -1606,7 +1613,7 @@ function refineSprite(src) {
   const img = g.createImageData(W, H);
   new Uint32Array(img.data.buffer).set(shaded);
   g.putImageData(img, 0, 0);
-  c.res = 2;
+  c.res = 2 ** passes;
   return c;
 }
 
@@ -1624,7 +1631,7 @@ function boatSprite(sail, flip, flash) {
   return cached(`boat|${sail}|${flip}|${flash}`, () => {
     const pal = { m: '#3a2f2a', f: sail, h: '#6b4423', n: '#8a5a30' };
     if (flash) for (const k in pal) pal[k] = '#ffffff';
-    return makeSprite(BOAT_ART, pal, flip);
+    return refineSprite(makeSprite(BOAT_ART, pal, flip));
   });
 }
 
@@ -1670,7 +1677,7 @@ function buildingSprite(type, race, flag, flash) {
     const r = RACES[race];
     const pal = { r: r.roof, w: r.wall, d: '#3b2a1f', k: '#ffd76a', p: '#3a2f2a', f: flag, n: '#7a5532', o: '#5a3d22' };
     if (flash) pal.w = pal.r = '#ffffff';
-    return makeSprite(BUILDING_ART[type], pal, false);
+    return refineSprite(makeSprite(BUILDING_ART[type], pal, false));
   });
 }
 
@@ -1691,7 +1698,7 @@ const MONOLITH_ART = [
 
 function monolithSprite(lit) {
   return cached(`monolith|${lit}`, () =>
-    makeSprite(MONOLITH_ART, { s: '#2b2a33', h: '#45434f', g: lit ? '#bff4ff' : '#3f6f80', d: '#1a1920' }, false));
+    refineSprite(makeSprite(MONOLITH_ART, { s: '#2b2a33', h: '#45434f', g: lit ? '#bff4ff' : '#3f6f80', d: '#1a1920' }, false)));
 }
 
 const GEYSER_ART = [
@@ -1704,7 +1711,7 @@ const GEYSER_ART = [
 function geyserSprite(acid, lit) {
   const pool = acid ? (lit ? '#d4ff7a' : '#8fd630') : (lit ? '#bfe6ff' : '#4fa3e0');
   return cached(`geyser|${acid}|${lit}`, () =>
-    makeSprite(GEYSER_ART, { r: '#6b6470', p: pool, d: acid ? '#4d7a12' : '#24618f' }, false));
+    refineSprite(makeSprite(GEYSER_ART, { r: '#6b6470', p: pool, d: acid ? '#4d7a12' : '#24618f' }, false)));
 }
 
 function raceIcon(race) {
@@ -1732,16 +1739,36 @@ function rebuildOverlay() {
     kingdomOfVillage.set(v.id, g[0]);
     if (!rgb.has(g[0])) rgb.set(g[0], hexToRgb(g[1]));
   }
-  const kAt = i => kingdomOfVillage.get(owner[i]) || 0;
-
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const i = y * W + x;
-      const k = owner[i] ? kAt(i) : 0;
+  // which group owns each tile, smoothed with two Scale2x passes to SUB × SUB
+  let w = W, h = H;
+  let km = new Int32Array(W * H);
+  for (let i = 0; i < W * H; i++) km[i] = owner[i] ? kingdomOfVillage.get(owner[i]) || 0 : 0;
+  for (let n = 0; n < 2; n++) {
+    const q = km, qw = w, qh = h;
+    w *= 2; h *= 2;
+    km = new Int32Array(w * h);
+    for (let y = 0; y < qh; y++) {
+      for (let x = 0; x < qw; x++) {
+        const i = y * qw + x, P = q[i];
+        const A = y > 0 ? q[i - qw] : P, D = y < qh - 1 ? q[i + qw] : P;
+        const C = x > 0 ? q[i - 1] : P, B = x < qw - 1 ? q[i + 1] : P;
+        const o = y * 2 * w + x * 2;
+        km[o] = C === A && C !== D && A !== B ? A : P;
+        km[o + 1] = A === B && A !== C && B !== D ? B : P;
+        km[o + w] = D === C && D !== B && C !== A ? C : P;
+        km[o + w + 1] = B === D && B !== A && D !== C ? D : P;
+      }
+    }
+  }
+  // a faint fill, and a border two fine pixels wide where the owner changes
+  const at = (x, y) => (x < 0 || y < 0 || x >= w || y >= h ? -1 : km[y * w + x]);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x, k = km[i];
       const c = k && rgb.get(k);
       if (!c) { opix[i] = 0; continue; }
-      const border = x === 0 || y === 0 || x === W - 1 || y === H - 1 ||
-        kAt(i - 1) !== k || kAt(i + 1) !== k || kAt(i - W) !== k || kAt(i + W) !== k;
+      const border = at(x - 1, y) !== k || at(x + 1, y) !== k || at(x, y - 1) !== k || at(x, y + 1) !== k ||
+        at(x - 2, y) !== k || at(x + 2, y) !== k || at(x, y - 2) !== k || at(x, y + 2) !== k;
       const a = border ? 220 : 55;
       opix[i] = ((a << 24) | (c[2] << 16) | (c[1] << 8) | c[0]) >>> 0;
     }
@@ -1765,7 +1792,7 @@ function drawLife(ox, oy, z) {
     const k = v && life.kingdoms.get(v.kingdom);
     const spr = buildingSprite(b.type, v.race, k ? k.color : '#888888', b.flash > 0, v.tier, b.type === 'temple' ? life.religions.get(v.religion)?.color : undefined);
     if (b.flash > 0) b.flash--;
-    const w = spr.width * s, h = spr.height * s;
+    const w = spr.width * s / (spr.res || 1), h = spr.height * s / (spr.res || 1);
     ctx.drawImage(spr, Math.round(ox + (b.x + b.w / 2) * z - w / 2), Math.round(oy + (b.y + b.h) * z - h), w, h);
   }
 
@@ -1773,14 +1800,14 @@ function drawLife(ox, oy, z) {
     if (m.x < vx0 || m.x > vx1 || m.y < vy0 || m.y > vy1) continue;
     const spr = monolithSprite(m.glow > 0.3);
     m.glow = Math.max(0, m.glow - 0.02);
-    const w = spr.width * s, h = spr.height * s;
+    const w = spr.width * s / (spr.res || 1), h = spr.height * s / (spr.res || 1);
     ctx.drawImage(spr, Math.round(ox + (m.x + 0.5) * z - w / 2), Math.round(oy + (m.y + 1) * z - h), w, h);
   }
 
   for (const g of life.geysers) {
     if (g.x < vx0 || g.x > vx1 || g.y < vy0 || g.y > vy1) continue;
     const spr = geyserSprite(g.acid, g.erupt > 0);
-    const w = spr.width * s, h = spr.height * s;
+    const w = spr.width * s / (spr.res || 1), h = spr.height * s / (spr.res || 1);
     ctx.drawImage(spr, Math.round(ox + (g.x + 0.5) * z - w / 2), Math.round(oy + (g.y + 1) * z - h), w, h);
   }
 
@@ -1802,7 +1829,7 @@ function drawLife(ox, oy, z) {
     const spr = u.boat && r.civ ? boatSprite(k ? k.color : '#e8e2d0', u.dir < 0, u.flash > 0)
       : unitSprite(u.race, k ? k.color : '#8d8d8d', gearOf(u), flip, u.flash > 0, subOf(u)?.tint);
     const sc = Math.max(1, Math.round((isAdult(u) ? s : s * 0.7) * sizeMult(u)));
-    // refined sprites have two pixels per art pixel, so each covers half as much screen
+    // refined sprites have several pixels per art pixel (spr.res), so each covers less screen
     const w = spr.width * sc / (spr.res || 1), h = spr.height * sc / (spr.res || 1);
     const sx = Math.round(ox + x * z - w / 2), sy = Math.round(oy + y * z - h);
     if (sel && sel.unit === u) {

@@ -417,8 +417,8 @@ function drawStructures(ox, oy, z) {
   const s = Math.max(1, Math.round(z / 4));
   for (const st of life.structures) {
     const spec = STRUCTURES[st.kind];
-    const spr = cached(`st|${st.kind}`, () => makeSprite(STRUCTURE_ART[spec.art], { p: spec.color, d: '#202020', o: '#f08a1a', g: '#4a8a2a', k: '#ffe060' }, false));
-    const w = spr.width * s * 1.5, h = spr.height * s * 1.5;
+    const spr = cached(`st|${st.kind}`, () => refineSprite(makeSprite(STRUCTURE_ART[spec.art], { p: spec.color, d: '#202020', o: '#f08a1a', g: '#4a8a2a', k: '#ffe060' }, false)));
+    const w = spr.width * s * 1.5 / spr.res, h = spr.height * s * 1.5 / spr.res;
     ctx.drawImage(spr, Math.round(ox + st.x * z - w / 2), Math.round(oy + st.y * z - h + z / 2), w, h);
   }
 }

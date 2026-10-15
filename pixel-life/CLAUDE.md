@@ -144,8 +144,10 @@ Loaded after disasters.js (it registers powers).
 - **Sapient animals:** each adult animal has a tiny chance per tick (`MUTATION_CHANCE`, about one awakening per century in a normal world) to wake up along with up to 4 nearby adults of its kind. They become a new civilized race (`makeSapientRace`, key `<animal>_folk`, e.g. "Sapient Sheep") with the animal's sprite plus a cloak in the kingdom color, and they found their own kingdom (Herd or Pack). These races are created at runtime, saved by name in `life.sapient`, and cleared on a new world. They also show up in the Creatures tab for spawning. A **Monolith** (Powers tab) makes this happen much faster nearby.
 - Tuning numbers live at the top of `creatures.js` (`RACES`) and in `updateVillage` / `doJob`.
 
-## Creature sprites
-Creature art is written as small ASCII grids (`art` in `RACES`) and drawn with `makeSprite`, then `refineSprite` doubles it with Scale2x (smoothing staircase edges into finer pixels) and adds a top highlight, an underside shadow and a soft outline. Refined sprites carry `res = 2`, and `drawLife` divides their size by it so creatures stay the same size on screen.
+## Fine pixels
+- **Sprites:** creature art is written as small ASCII grids (`art` in `RACES`) and drawn with `makeSprite`. `refineSprite(src, passes = 2)` runs Scale2x twice (4 fine pixels per art pixel, smoothing staircase edges) and adds a top highlight, an underside shadow and a soft outline. Refined sprites carry `res = 4`, and every draw divides its size by `spr.res` so things stay the same size on screen. Creatures, boats, buildings (`buildingSprite`, both versions), monoliths, geysers and monster structures are all refined. Button icons (`raceIcon`) are not.
+- **Ground:** the world canvas holds `SUB` (4) × `SUB` fine pixels per tile. `tileColor` still gives each tile's color (into `base`); `smoothTile` runs Scale2x on the tile map (into `half`), and `drawFineTile` runs it again and adds a fine grain, round tree canopies and water ripples. Dirty tracking works in `CHUNK` × `CHUNK` tile blocks (`markDirty` pads two tiles because the smoothing looks two tiles out).
+- **Borders:** `rebuildOverlay` smooths the owner map the same way, so kingdom borders are drawn at `SUB` × with a line two fine pixels wide.
 
 ## Controls
 - **Left click / drag:** use the selected tool (Terrain tab paints tiles, Shape tab raises/lowers)
@@ -157,7 +159,7 @@ Creature art is written as small ASCII grids (`art` in `RACES`) and drawn with `
 - **[ / ]** or the slider: brush size (1–40). **B** or the shape buttons: brush shape (circle, square, diamond, spray). Brush powers use the shape too. **Space**: pause / resume
 - **Creatures tab:** click (or hold) to spawn a creature.
 - **Inspecting:** with nothing selected (the Move Camera tool), tap a creature or village without dragging to open its details (`pointer.tap` in `endPointer`). There is no Inspect button.
-- **Unselect:** whenever a tool is selected, a button with a red ✕ and the tool's name sits on the left just above the toolbar (`#deselect`, placed in `finishPanel`); it, or **Esc**, goes back to Move Camera.
+- **Unselect:** whenever a tool is selected, a button sits on the left just above the toolbar (`#deselect`, placed in `finishPanel`); the tool name sits on top with a big red ✕ under it. It, or **Esc**, goes back to Move Camera.
 - **Renaming:** in the Inspect panel, the ✏️ next to a name renames it: a creature, village, kingdom, language, culture, religion, family clan, or a whole species (`pen`, `RENAMABLE`, `renameRace`). Species names are saved in `raceNames` and reset on a new world.
 - **Powers tab:** click to use; the outline shows the area it hits
 - **Pick Up (Creatures tab):** press on a creature to grab it (and up to 11 nearby), drag, release to drop. Walkers dropped in water drown (`held`, `moveHeld`).

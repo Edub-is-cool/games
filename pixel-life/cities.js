@@ -300,7 +300,7 @@ buildingSprite = function (type, race, flag, flash, tier = 2, symbolColor) {
       n: '#7a5532', o: '#f08a1a', y: '#ffe060', b: '#3f74c9', s: '#c8c4bc' };
     if (flash) pal.w = pal.r = '#ffffff';
     const art = type === 'house' ? (HOUSE_STYLES[style] || HOUSE_STYLES.human) : CITY_ART[type] || BUILDING_ART[type];
-    return makeSprite(art, pal, false);
+    return refineSprite(makeSprite(art, pal, false));
   });
 };
 
@@ -321,7 +321,7 @@ function drawCities(ox, oy, z) {
     }
   }
   for (const t of life.traders) {
-    const spr = boatSprite(t.color, t.tx < t.x, false), s = Math.max(1, Math.round(z / 4));
+    const spr = boatSprite(t.color, t.tx < t.x, false), s = Math.max(1, Math.round(z / 4)) / spr.res;
     ctx.drawImage(spr, Math.round(ox + t.x * z - spr.width * s / 2), Math.round(oy + t.y * z - spr.height * s), spr.width * s, spr.height * s);
   }
 }

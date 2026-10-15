@@ -993,7 +993,7 @@ function updateAnimal(u, r) {
       return;
     }
   }
-  if (isAdult(u) && u.hunger < YEAR && rand() < r.breed * gene(u, 'fertility') && life.animals < MAX_ANIMALS &&
+  if (isAdult(u) && u.hunger < YEAR && rand() < r.breed * gene(u, 'fertility') * breedSeason() && life.animals < MAX_ANIMALS &&
       life.counts[u.race] < (state.W * state.H) / (r.cap * ANIMAL_SPREAD)) {
     const mate = nearest(u.x, u.y, 10, o => o !== u && o.race === u.race && isAdult(o));
     if (mate && spawnUnit(u.race, u.x, u.y, 0, [u, mate])) life.counts[u.race]++;
@@ -1483,7 +1483,7 @@ function doJob(u, v) {
     }
     else if (tile === T.FARM) {
       const golden = life.kingdoms.get(v.kingdom)?.goldenUntil > state.tick ? 1.5 : 1;
-      u.carry = { type: 'food', n: Math.round(7 * bonus * golden * cultureMult(u, 'farmers', 1.3) * (v.has && v.has.windmill ? 1.25 : 1)) };
+      u.carry = { type: 'food', n: Math.round(7 * bonus * golden * harvestSeason() * cultureMult(u, 'farmers', 1.3) * (v.has && v.has.windmill ? 1.25 : 1)) };
     }
   } else if (t.type === 'wood' && isTree(tile)) {
     u.carry = { type: 'wood', n: Math.round(3 * bonus) };

@@ -49,3 +49,4 @@ Games/
 - Each game is self-contained in its own directory with its own CLAUDE.md
 - The root `index.html` is a static landing page — no build tools, no dependencies
 - Keep the landing page lightweight and purely static HTML/CSS
+- **Music:** every game and the landing page has background music made live with Web Audio (`bgm.js`, one copy per game so each stays self-contained; Pixel Life uses its own `music.js`). Each page loads it with `<script src="bgm.js" data-style="...">`; styles: arcade (landing), march (Battle), cave (Dark Tunnels), tavern (Farkle), quest (Dragon Cave), bouncy (Emoji Battle), space (Ore-bit), lofi (Drum Pro, off by default), calm (Trim Forge), hoppy (The Jumping Cup). `data-pos` (tl/tr/bl/br) places the 🎵 toggle. Vite games keep it in `public/` and need a rebuild; Dark Tunnels adds it through `html/head_include` in `export_presets.cfg`.

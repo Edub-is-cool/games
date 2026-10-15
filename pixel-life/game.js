@@ -824,23 +824,27 @@ function hasSave() {
   try { return !!localStorage.getItem(SAVE_KEY); } catch { return false; }
 }
 
-function saveWorld() {
+// key picks the save slot (ui3.js); meta adds a name, date and picture to it
+function saveWorld(key = SAVE_KEY, meta = {}) {
   const data = {
     v: 2, W: state.W, H: state.H, seed: state.seed, tick: state.tick, laws: state.laws, cam: state.cam, bookmarks: state.bookmarks,
-    worldSize: state.worldSize, tiles: bytesToB64(state.tiles), life: serializeLife(),
+    worldSize: state.worldSize, tiles: bytesToB64(state.tiles), life: serializeLife(), ...meta,
   };
+  let ok = true;
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    localStorage.setItem(key, JSON.stringify(data));
     toast('World saved');
   } catch {
-    toast('Could not save in this browser');
+    ok = false;
+    toast('Could not save: this browser is out of room (try deleting another save)');
   }
   renderPanel();
+  return ok;
 }
 
-function loadWorld() {
+function loadWorld(key = SAVE_KEY) {
   let data;
-  try { data = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { data = null; }
+  try { data = JSON.parse(localStorage.getItem(key)); } catch { data = null; }
   if (!data || (data.v !== 1 && data.v !== 2)) { toast('No saved world'); return; }
   state.W = data.W;
   state.H = data.H;
@@ -921,11 +925,11 @@ const PANELS = {
     return [
       { heading: 'This world' },
       { action: () => openWorldGen(), label: '🌍 New World' },   // the World Generator (worldgen.js)
-      { action: saveWorld, label: '💾 Save' },
-      { action: loadWorld, label: '📂 Load', disabled: !hasSave() },
+      { action: () => openSaves(), label: '💾 Saves' },   // save slots (ui3.js)
       { action: show('share'), label: '📤 Share Map' },
       { action: show('laws'), label: '⚖ World Laws' },
       { action: show('history'), label: '📜 History' },
+      { action: () => openTimeline(), label: '🕰 Timeline' },   // ui3.js
       { action: show('stats'), label: '📈 Statistics' },
       { action: show('favorites'), label: '⭐ Favorites' },
       { action: show('achievements'), label: `🏆 Achievements ${progress.achievements.length}/${Object.keys(ACHIEVEMENTS).length}` },

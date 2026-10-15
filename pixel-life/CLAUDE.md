@@ -119,6 +119,12 @@ Loaded after disasters.js (it registers powers).
 - **Day & night:** `dayPhase` advances in real time (`DAY_SECONDS` = 40 at 1×, up to 5× faster at high speeds, frozen while paused). `darkness()` dims the map at night and `drawWindowLights` puts a warm glow on houses and halls. Drawn by wrapping `drawAge`.
 - Both are World Laws (`seasons`, `dayNight`, group Nature).
 
+## Royal families (royals.js)
+- **Heirs:** when a ruler dies or leaves, `kingOf` (wrapped) crowns their heir (`heirOf`): eldest living child in the kingdom, else their partner, else a sibling (`k.rulerParents` remembers the ruler's parents for this). Only if there's no heir does the old rule (most renowned adult of the capital) pick someone.
+- **Succession wars:** with no heir, a kingdom of 3+ cities has a 50% chance that its farthest city claims the crown (`rebel` from world.js, so it becomes a new kingdom at war with the old one).
+- **Royal marriages:** every 2 years (`politicsTick` wrapper) two rulers of kingdoms not at war or allied, both adult and unmarried, may marry (`love` set on both) and their kingdoms become allies.
+- A ruler's info shows their Heir and who they're Married to.
+
 ## World Generator (worldgen.js)
 - Opening the **World** tab (or its 🌍 New World button) opens a big panel over almost the whole screen (`#worldGen`, `openWorldGen`), with a live preview (`drawPreview`: the same world generated small, plus land % and top biomes) and ✨ Create World.
 - Options (`genState` → `genOptions` → `newWorld(sizeKey, gen)` → `generateWorld(W, H, seed, shape, options)`, defaults in `GEN_DEFAULTS` in game.js): template (Island, Continents, Pangaea, Archipelago, Earth, Blank Slate), size (presets or custom width/height), land amount (or let the template decide), landmass size (noise scale), number of continents, coastline roughness (warp), mountains (land relief), forests, bushes & flowers, ore veins, rivers, lakes, polar ice, temperature and moisture offsets, which climate biomes are allowed (`allowedBiome` swaps in the closest allowed one by `BIOME_CLIMATE`), number and kinds of rare biome patches (`RARE_BIOMES` in terrain2.js), enchanted grove, corruption patch, wildlife law, starting peoples (6 of each placed on their home terrain), and a seed (text or number; same seed + settings = same world).

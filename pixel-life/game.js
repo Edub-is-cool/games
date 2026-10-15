@@ -825,6 +825,8 @@ state.groups = {};
 
 function renderPanel() {
   panelEl.textContent = '';
+  const row = document.createElement('div');
+  row.className = 'panel-row';
   const items = PANELS[state.tab]();
   const groups = [];
   let loose = [];
@@ -847,10 +849,10 @@ function renderPanel() {
       chip.onclick = () => { state.groups[state.tab] = g.title; renderPanel(); };
       bar.append(chip);
     }
-    for (const item of loose) addPanelButton(item);
     panelEl.append(bar);
-    shown = open.items;
+    shown = [...loose, ...open.items];
   }
+  panelEl.append(row);
   for (const item of shown) addPanelButton(item);
   finishPanel();
 }
@@ -879,13 +881,22 @@ function addPanelButton(item) {
       btn.classList.toggle('active', !!item.active);
       btn.onclick = item.action;
     }
-    panelEl.append(btn);
+    (panelEl.querySelector('.panel-row') || panelEl).append(btn);
 }
+
+// the button row scrolls sideways; a plain mouse wheel scrolls it too
+panelEl.addEventListener('wheel', e => {
+  const row = e.target.closest('.panel-row');
+  if (!row || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+  row.scrollLeft += e.deltaY;
+  e.preventDefault();
+}, { passive: false });
 
 function finishPanel() {
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('active', b.dataset.tab === state.tab);
   brushEl.hidden = !state.panelOpen || ['world', 'creatures', 'layers'].includes(state.tab);
   panelEl.hidden = !state.panelOpen;
+  document.getElementById('toolbar').classList.toggle('folded', !state.panelOpen);
   document.getElementById('fold').textContent = state.panelOpen ? '▾' : '▴';
   view.classList.toggle('possess', state.tool === 'control');
   view.classList.toggle('hand', state.tool === 'hand');

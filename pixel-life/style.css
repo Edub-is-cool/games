@@ -357,3 +357,54 @@ button.active { border-color: var(--accent); background: #3d3a26; }
 
 #zoomBar { position: fixed; left: 10px; bottom: 50%; transform: translateY(50%); display: flex; flex-direction: column; gap: 4px; }
 #zoomBar button { width: 34px; height: 34px; justify-content: center; padding: 0; font-size: 18px; background: var(--panel); }
+
+/* wooden toolbar: solid light brown with a silver edge, always the same
+   height; the buttons sit in rows that scroll left to right */
+#toolbar {
+  height: 172px;
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  background: #c9a46e;
+  border: 3px solid #c0c4cc;
+  box-shadow: 0 0 0 1px #6f747c, inset 0 0 0 1px #eef0f4;
+  backdrop-filter: none;
+}
+#toolbar.folded { height: auto; }
+#tabs button { color: #3a2410; background: #e0c79d; border-color: #8a6a3e; }
+#tabs button:hover { background: #ead6b2; }
+#tabs button.active { color: #3a2410; background: #f3e3c3; border-color: #3a2410; }
+#panel { width: 100%; flex: 1; min-height: 0; max-height: none; display: flex; flex-direction: column; flex-wrap: nowrap; overflow: hidden; }
+.groups { flex: none; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; border-bottom-color: #9c7a4a; scrollbar-width: thin; }
+#toolbar .group-tab { flex: none; color: #4a2e17; border-color: #8a6a3e; background: transparent; }
+#toolbar .group-tab:hover { background: #d8bb8b; }
+#toolbar .group-tab.active { color: #3a2410; border-color: #3a2410; background: #e0c79d; }
+.panel-row {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, auto);
+  align-content: start;
+  justify-content: start;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-color: #5a3a1e #b8915a;
+}
+#panel .panel-row button {
+  white-space: nowrap;
+  color: #f5e6c8;
+  background: #4a2e17;
+  border: 2px solid #d4a63a;
+}
+#panel .panel-row button:hover { background: #5c3a1e; }
+#panel .panel-row button.active { background: #6b4320; border-color: #ffe27a; box-shadow: 0 0 0 1px #ffe27a; color: #fff; }
+#panel .panel-row button:disabled { opacity: 0.5; cursor: default; }
+#brush { flex: none; color: #4a2e17; }
+#brushVal { color: #3a2410; }
+#shapes button { color: #f5e6c8; background: #4a2e17; border-color: #d4a63a; }
+#shapes button.active { border-color: #ffe27a; background: #6b4320; }
+#brush input { accent-color: #4a2e17; }
+#tabs { flex: none; flex-wrap: nowrap; max-width: 100%; overflow-x: auto; justify-content: safe center; scrollbar-width: none; }
+#tabs button { flex: none; }

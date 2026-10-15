@@ -151,7 +151,7 @@ Creature art is written as small ASCII grids (`art` in `RACES`) and drawn with `
 - **Left click / drag:** use the selected tool (Terrain tab paints tiles, Shape tab raises/lowers)
 - **Move the camera:** the game starts on the **Move Camera** tool, so left-drag pans. With any tool: right/middle drag or **Shift + drag** pans, two-finger trackpad scrolling pans, **WASD / arrows** pan.
 - **Zoom:** mouse wheel, trackpad pinch, **+ / -**, or the **+ − ⌂** buttons on the left (⌂ shows the whole world).
-- **Toolbar:** tabs on top, then a row of group tabs (Destruction, Nature, ...) and only that group's buttons. **▾** folds the toolbar down to its tabs; clicking the open tab again does the same.
+- **Toolbar:** a solid light-brown bar with a silver edge, always 172px tall. Tabs on top, then a row of group tabs (Destruction, Nature, ...) and only that group's buttons, laid out two rows high in `.panel-row`, which scrolls left to right (the mouse wheel scrolls it too). Tool buttons are dark brown with a gold outline. **▾** folds the toolbar down to its tabs; clicking the open tab again does the same.
 - The game loop is guarded (`frame` → `frameBody`): an error shows one warning toast instead of freezing the game.
 - **Mouse wheel**, **+ / -**: zoom. Touch: two-finger pinch to pan and zoom
 - **[ / ]** or the slider: brush size (1–40). **B** or the shape buttons: brush shape (circle, square, diamond, spray). Brush powers use the shape too. **Space**: pause / resume

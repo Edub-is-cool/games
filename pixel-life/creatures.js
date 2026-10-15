@@ -1362,13 +1362,15 @@ function findDockSpot(v) {
 
 function sendSettlers(v) {
   if (!laws.expansion) return;
-  let target = null;
-  for (let i = 0; i < 20 && !target; i++) {
+  const spots = [];
+  for (let i = 0; i < 30 && spots.length < 8; i++) {
     // seafaring kingdoms look much farther, across the water
     const a = rand() * Math.PI * 2, r = 18 + rand() * (life.sailing.has(v.kingdom) ? 50 : 16);
     const x = Math.floor(v.x + Math.cos(a) * r), y = Math.floor(v.y + Math.sin(a) * r);
-    if (inBounds(x, y) && walkable(x, y) && RACES[v.race].home.includes(state.tiles[y * state.W + x])) target = { x: x + 0.5, y: y + 0.5 };
+    if (inBounds(x, y) && walkable(x, y) && RACES[v.race].home.includes(state.tiles[y * state.W + x])) spots.push({ x: x + 0.5, y: y + 0.5 });
   }
+  // settlers would rather live by a river (rivers.js)
+  const target = spots.find(p => nearRiver(Math.floor(p.x), Math.floor(p.y), 4)) || spots[0];
   if (!target) return;
   let n = 0;
   for (const u of life.units) {

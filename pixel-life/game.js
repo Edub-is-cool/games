@@ -175,7 +175,7 @@ const state = {
 // Options for the World Generator (worldgen.js). 1 means "as usual" for the
 // sliders; land: null lets each shape pick its own amount of land.
 const GEN_DEFAULTS = {
-  land: null, landmass: 1, roughness: 1, continents: 3, mountains: 1, forests: 1, plants: 1, ores: 1,
+  land: null, landmass: 1, roughness: 1, continents: 3, mountains: 1, forests: 1, plants: 1, ores: 1, rivers: 1, lakes: 1,
   heat: 0, wet: 0, ice: true, biomes: null, rare: 2, rareBiomes: null, enchanted: true, corruption: false,
 };
 
@@ -212,6 +212,7 @@ function generateWorld(W, H, seed, shape = 'island', options = {}) {
     }
   }
   const sea = seaLevelShift(heights, shape, seed, o.land);
+  const relief = new Float32Array(W * H);   // final heights, for rivers to run downhill
 
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
@@ -219,6 +220,7 @@ function generateWorld(W, H, seed, shape = 'island', options = {}) {
       const ny = (y / H) * 2 - 1;
       let h = remapHeight(heights[y * W + x], sea);
       if (h > 0.425) h = 0.425 + (h - 0.425) * o.mountains;   // flatter or more mountainous land
+      relief[y * W + x] = h;
 
       // climate: cold toward the top and bottom of the map and up high
       const temp = 1.05 - Math.abs(ny) * 1.15 + (fbm(heat, wx * 0.8, wy * 0.8, 4) - 0.5) * 1.3 - Math.max(0, h - 0.5) * 1.5 + o.heat;
@@ -238,6 +240,7 @@ function generateWorld(W, H, seed, shape = 'island', options = {}) {
       tiles[y * W + x] = t;
     }
   }
+  carveWater(tiles, relief, W, H, seed, o);   // rivers and lakes (rivers.js)
   if (o.enchanted) sprinklePatch(tiles, W, H, seed, 'enchanted');
   if (o.corruption) sprinklePatch(tiles, W, H, seed + 5, 'corrupt');
   decorateWorld(tiles, W, H, seed, o);

@@ -10,7 +10,7 @@ const GEN_PEOPLES = ['human', 'elf', 'orc', 'dwarf'];
 const genState = {
   shape: 'island', size: 'medium', W: WORLD_SIZES.medium.W, H: WORLD_SIZES.medium.H,
   autoLand: true, land: 0.45, landmass: 1, roughness: 1, continents: 3,
-  mountains: 1, forests: 1, plants: 1, ores: 1, heat: 0, wet: 0, ice: true,
+  mountains: 1, forests: 1, plants: 1, ores: 1, rivers: 1, lakes: 1, heat: 0, wet: 0, ice: true,
   biomes: [...GEN_BIOMES], rare: 2, rareBiomes: [...RARE_BIOMES], enchanted: true, corruption: false,
   wildlife: true, peoples: [], seed: '',
 };
@@ -28,7 +28,7 @@ function genOptions(seed) {
   return {
     W: g.W, H: g.H, seed,
     land: g.autoLand ? null : g.land, landmass: g.landmass, roughness: g.roughness, continents: g.continents,
-    mountains: g.mountains, forests: g.forests, plants: g.plants, ores: g.ores,
+    mountains: g.mountains, forests: g.forests, plants: g.plants, ores: g.ores, rivers: g.rivers, lakes: g.lakes,
     heat: g.heat, wet: g.wet, ice: g.ice, biomes: g.biomes, rare: g.rare, rareBiomes: g.rareBiomes,
     enchanted: g.enchanted, corruption: g.corruption,
   };
@@ -51,7 +51,7 @@ const choice = (key, value, label) => `<button type="button" class="gen-choice${
 const pct = v => Math.round(v * 100) + '%';
 const times = v => (+v).toFixed(1) + '×';
 const FORMATS = {
-  land: pct, landmass: times, roughness: times, continents: v => v, mountains: times, forests: times, plants: times, ores: times,
+  land: pct, landmass: times, roughness: times, continents: v => v, mountains: times, forests: times, plants: times, ores: times, rivers: times, lakes: times,
   heat: v => (v < -0.15 ? '❄ cold ' : v > 0.15 ? '🔥 hot ' : '') + (v > 0 ? '+' : '') + (+v).toFixed(2),
   wet: v => (v < -0.1 ? '🏜 dry ' : v > 0.1 ? '💧 wet ' : '') + (v > 0 ? '+' : '') + (+v).toFixed(2),
   rare: v => v, W: v => v, H: v => v,
@@ -86,6 +86,8 @@ function renderWorldGen() {
           ${slider('forests', 'Forests', 0, 2, 0.1, times)}
           ${slider('plants', 'Bushes & flowers', 0, 3, 0.1, times)}
           ${slider('ores', 'Ore veins', 0, 3, 0.1, times)}
+          ${slider('rivers', 'Rivers', 0, 3, 0.1, times)}
+          ${slider('lakes', 'Lakes', 0, 3, 0.1, times)}
           ${check('ice', 'Frozen seas near the poles')}
         </section>
         <section><h3>Climate</h3>
@@ -168,7 +170,7 @@ genEl.addEventListener('click', e => {
     schedulePreview();
   } else if (b.classList.contains('gen-reset')) {
     Object.assign(genState, {
-      autoLand: true, land: 0.45, landmass: 1, roughness: 1, continents: 3, mountains: 1, forests: 1, plants: 1, ores: 1,
+      autoLand: true, land: 0.45, landmass: 1, roughness: 1, continents: 3, mountains: 1, forests: 1, plants: 1, ores: 1, rivers: 1, lakes: 1,
       heat: 0, wet: 0, ice: true, biomes: [...GEN_BIOMES], rare: 2, rareBiomes: [...RARE_BIOMES], enchanted: true, corruption: false,
     });
     renderWorldGen();

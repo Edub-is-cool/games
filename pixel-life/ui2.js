@@ -191,18 +191,10 @@ chronicle = function (msg) {
 };
 
 // renamed things keep their past names, and the history records it
-document.getElementById('infoBody').addEventListener('click', e => {
-  const a = e.target.closest('[data-rename]');
-  if (!a || !RENAMABLE[a.dataset.rename]) return;
-  const thing = RENAMABLE[a.dataset.rename](decodeURIComponent(a.dataset.id));
-  if (!thing) return;
-  const old = thing.name;
-  setTimeout(() => {
-    if (thing.name === old) return;
-    (thing.pastNames ||= []).push(old);
-    chronicle(`✏️ ${old} is now known as ${thing.name}`);
-  }, 0);
-}, true);
+onRenamed = (thing, old) => {
+  (thing.pastNames ||= []).push(old);
+  chronicle(`✏️ ${old} is now known as ${thing.name}`);
+};
 
 // ---------- Lists of everything ----------
 const LISTS = {
@@ -369,12 +361,12 @@ addEventListener('keydown', e => {
 
 // ---------- The god's name ----------
 function setGodName() {
-  const name = prompt('What is your name, O God?', progress.godName || '');
-  if (!name) return;
-  progress.godName = name.replace(/[<>&"]/g, '').trim().slice(0, 24);
-  saveProgress();
-  document.querySelector('.brand').textContent = `Pixel Life · ${progress.godName}`;
-  toast(`🙏 The world now knows you as ${progress.godName}`);
+  askName(progress.godName || '', name => {
+    progress.godName = name;
+    saveProgress();
+    document.querySelector('.brand').textContent = `Pixel Life · ${progress.godName}`;
+    toast(`🙏 The world now knows you as ${progress.godName}`);
+  }, 'What is your name, O God?', 24);
 }
 if (progress.godName) document.querySelector('.brand').textContent = `Pixel Life · ${progress.godName}`;
 

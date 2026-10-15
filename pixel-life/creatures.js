@@ -2057,10 +2057,29 @@ const RENAMABLE = {
   religion: id => life.religions.get(+id),
 };
 
-function askName(old) {
-  const name = prompt('New name:', old);
-  return name && name.replace(/[<>&"]/g, '').trim().slice(0, 32);
+// An in-game name box (browser prompt() popups can be blocked). Calls done(name)
+// with the cleaned-up name if the player saves one.
+function askName(old, done, title = 'New name', max = 32) {
+  const box = document.getElementById('nameBox'), input = document.getElementById('nameInput');
+  document.getElementById('nameTitle').textContent = title;
+  input.maxLength = max;
+  input.value = old || '';
+  box.hidden = false;
+  input.focus();
+  input.select();
+  const close = () => { box.hidden = true; box.onsubmit = null; document.getElementById('nameCancel').onclick = null; };
+  box.onsubmit = e => {
+    e.preventDefault();
+    const name = input.value.replace(/[<>&"]/g, '').trim().slice(0, max);
+    close();
+    if (name && name !== old) done(name);
+  };
+  document.getElementById('nameCancel').onclick = close;
+  input.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
 }
+
+// called after something in RENAMABLE gets a new name (ui2.js records past names)
+let onRenamed = (thing, old) => {};
 
 function renameRace(key, name) {
   const r = RACES[key];
@@ -2076,20 +2095,22 @@ document.getElementById('infoBody').addEventListener('click', e => {
   if (!a) return;
   e.stopPropagation();
   const kind = a.dataset.rename, id = decodeURIComponent(a.dataset.id);
+  const after = () => { life.territoryDirty = true; hudFrame = 0; };
   if (kind === 'race') {
-    const name = askName(RACES[id].name);
-    if (name) { renameRace(id, name); renderPanel(); }
+    askName(RACES[id].name, name => { renameRace(id, name); renderPanel(); after(); });
   } else if (kind === 'clan') {
-    const name = askName(id);
-    if (name) for (const u of life.units) if (u.clan === id) u.clan = name;
+    askName(id, name => { for (const u of life.units) if (u.clan === id) u.clan = name; after(); });
   } else {
     const thing = RENAMABLE[kind](id);
-    const name = thing && askName(thing.name);
-    if (name) thing.name = name;
-    if (name && kind === 'unit' && thing.race === 'fox' && name.toUpperCase() === 'EWAHLSTER') becomeSuperFox(thing);
+    if (!thing) return;
+    askName(thing.name, name => {
+      const old = thing.name;
+      thing.name = name;
+      onRenamed(thing, old);
+      if (kind === 'unit' && thing.race === 'fox' && name.toUpperCase() === 'EWAHLSTER') becomeSuperFox(thing);
+      after();
+    });
   }
-  life.territoryDirty = true;
-  hudFrame = 0;
 });
 
 function religionLabel(id) {

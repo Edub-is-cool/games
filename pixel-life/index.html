@@ -34,6 +34,11 @@
     <button id="zoomFit" title="Show the whole world">⌂</button>
   </div>
   <div id="popup" hidden></div>
+  <form id="nameBox" hidden>
+    <label for="nameInput" id="nameTitle">New name</label>
+    <input id="nameInput" type="text" maxlength="32" autocomplete="off" spellcheck="false">
+    <div class="name-actions"><button type="button" id="nameCancel">Cancel</button><button type="submit">Save</button></div>
+  </form>
   <button id="deselect" hidden title="Unselect (Esc)"><span id="deselectName"></span><span class="x">✕</span></button>
 
   <div id="controlBar" hidden>

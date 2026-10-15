@@ -217,15 +217,23 @@
 
     .play-btn:hover { opacity: 0.85; }
 
-    .card:nth-child(1) .play-btn { background: var(--accent-1); }
-    .card:nth-child(2) .play-btn { background: var(--accent-2); }
-    .card:nth-child(3) .play-btn { background: var(--accent-3); color: #0a0a0f; }
-    .card:nth-child(4) .play-btn { background: var(--accent-4); color: #0a0a0f; }
-    .card:nth-child(5) .play-btn { background: var(--accent-5); }
-    .card:nth-child(6) .play-btn { background: var(--accent-6); }
-    .card:nth-child(7) .play-btn { background: var(--accent-7); color: #0a0a0f; }
-    .card:nth-child(8) .play-btn { background: var(--accent-8); color: #0a0a0f; }
-    .card:nth-child(9) .play-btn { background: var(--accent-9); color: #0a0a0f; }
+    /* every Play button is a drifting rainbow, each with its colors in a different order */
+    .play-btn {
+      background-size: 200% 200%;
+      animation: rainbow-drift 6s linear infinite;
+      color: #0a0a0f;
+      text-shadow: 0 0 4px rgba(255,255,255,0.6);
+    }
+    .card:nth-child(1) .play-btn { background-image: linear-gradient(120deg, #40a0ff, #ff4fa8, #ffd23f, #00e5a0, #ff8a1f, #ff3b3b, #7cff4a, #c04dff, #3be8ff, #40a0ff); }
+    .card:nth-child(2) .play-btn { background-image: linear-gradient(120deg, #00e5a0, #c04dff, #ff8a1f, #3be8ff, #ffd23f, #ff4fa8, #40a0ff, #7cff4a, #ff3b3b, #00e5a0); }
+    .card:nth-child(3) .play-btn { background-image: linear-gradient(120deg, #ffd23f, #40a0ff, #ff3b3b, #7cff4a, #ff4fa8, #3be8ff, #ff8a1f, #00e5a0, #c04dff, #ffd23f); }
+    .card:nth-child(4) .play-btn { background-image: linear-gradient(120deg, #c04dff, #7cff4a, #3be8ff, #ff3b3b, #ff8a1f, #40a0ff, #00e5a0, #ffd23f, #ff4fa8, #c04dff); }
+    .card:nth-child(5) .play-btn { background-image: linear-gradient(120deg, #ff4fa8, #00e5a0, #40a0ff, #ffd23f, #c04dff, #7cff4a, #ff3b3b, #3be8ff, #ff8a1f, #ff4fa8); }
+    .card:nth-child(6) .play-btn { background-image: linear-gradient(120deg, #ff8a1f, #3be8ff, #ff4fa8, #40a0ff, #7cff4a, #ffd23f, #c04dff, #ff3b3b, #00e5a0, #ff8a1f); }
+    .card:nth-child(7) .play-btn { background-image: linear-gradient(120deg, #7cff4a, #ff3b3b, #c04dff, #ff4fa8, #00e5a0, #ff8a1f, #3be8ff, #40a0ff, #ffd23f, #7cff4a); }
+    .card:nth-child(8) .play-btn { background-image: linear-gradient(120deg, #3be8ff, #ffd23f, #00e5a0, #c04dff, #ff3b3b, #40a0ff, #ff4fa8, #ff8a1f, #7cff4a, #3be8ff); }
+    .card:nth-child(9) .play-btn { background-image: linear-gradient(120deg, #ff3b3b, #ffd23f, #ff8a1f, #3be8ff, #7cff4a, #ff4fa8, #00e5a0, #40a0ff, #c04dff, #ff3b3b); }
+    @media (prefers-reduced-motion: reduce) { .play-btn { animation: none; } }
 
     footer {
       text-align: center;

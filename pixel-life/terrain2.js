@@ -197,7 +197,7 @@ const TREE_LOOKS = {
   celestial: { A: '#ffffff' }, infernal: { shape: 'dead', T: '#a83a1a', t: '#ff8a2a' }, singularity: { shape: 'dead', T: '#5a3a8a', t: '#b06cff' },
   paradox: { A: '#f8f040' },
 };
-const TREE_ZOOM = 8;   // screen pixels per tile (per dpr) before trees become sprites
+const TREE_ZOOM = 6;   // screen pixels per tile (per dpr) before trees become sprites
 function treeSpriteFor(t, variant, flip) {
   return cached(`tree|${t}|${variant}|${flip}`, () => {
     const look = TREE_LOOKS[TILES[t].biome] || {};

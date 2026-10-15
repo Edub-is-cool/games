@@ -238,7 +238,7 @@ pixel-life/
 ├── music.js       (background music, Web Audio)
 └── main.js        (startup, runs last)
 ```
-Plain `<script>` tags (no modules) share top-level names, so load order matters: `game.js` → `terrain2.js` → `creatures.js` → `society.js` → `gear.js` → `world.js` → `powers.js` → `disasters.js` → `creatures2.js` → `traits2.js` → `cities.js` → `politics.js` → `ui2.js` → `worldgen.js` → `music.js` → `main.js`. Later files extend earlier ones by adding to shared tables (`TILES`, `RACES`, `TRAITS`, `POWERS`, `POWER_GROUPS`, `LAWS`) and by wrapping functions (`const _f = f; f = function (...) { ... }`), so hooks in the older files stay small. Saves are `v: 2` (terrain + `life`); `v: 1` saves still load with no creatures.
+Plain `<script>` tags (no modules) share top-level names, so load order matters: `game.js` → `terrain2.js` → `creatures.js` → `society.js` → `gear.js` → `world.js` → `powers.js` → `disasters.js` → `creatures2.js` → `traits2.js` → `cities.js` → `politics.js` → `ui2.js` → `worldgen.js` → `music.js` → `rivers.js` → `seasons.js` → `royals.js` → `navy.js` → `ui3.js` → `sfx.js` → `main.js`. Later files extend earlier ones by adding to shared tables (`TILES`, `RACES`, `TRAITS`, `POWERS`, `POWER_GROUPS`, `LAWS`) and by wrapping functions (`const _f = f; f = function (...) { ... }`), so hooks in the older files stay small. Saves are `v: 2` (terrain + `life`); `v: 1` saves still load with no creatures.
 The world is one tile per pixel on an offscreen canvas, scaled up by the camera. Only changed tiles are recolored (`markDirty` / `flushDirty`). If `game.js` grows large, split by concern: `world.js`, `ui.js`.
 
 ## No Pay-to-Play Rules

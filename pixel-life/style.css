@@ -408,3 +408,18 @@ button.active { border-color: var(--accent); background: #3d3a26; }
 #brush input { accent-color: #4a2e17; }
 #tabs { flex: none; flex-wrap: nowrap; max-width: 100%; overflow-x: auto; justify-content: safe center; scrollbar-width: none; }
 #tabs button { flex: none; }
+
+/* top bar matches the wooden toolbar */
+#topbar {
+  background: #c9a46e;
+  border: 3px solid #c0c4cc;
+  box-shadow: 0 0 0 1px #6f747c, inset 0 0 0 1px #eef0f4;
+  backdrop-filter: none;
+  color: #3a2410;
+}
+#topbar .brand { color: #ffd34d; text-shadow: 1px 1px 0 #3a2410, -1px -1px 0 #3a2410, 1px -1px 0 #3a2410, -1px 1px 0 #3a2410; }
+#topbar #date { color: #4a2e17; }
+#speeds button { color: #f5e6c8; background: #4a2e17; border: 2px solid #d4a63a; }
+#speeds button:hover { background: #5c3a1e; }
+#speeds button.active { background: #6b4320; border-color: #ffe27a; box-shadow: 0 0 0 1px #ffe27a; color: #fff; }
+#topbar #pop, #topbar #pop * { color: #3a2410; }

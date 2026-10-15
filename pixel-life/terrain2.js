@@ -171,10 +171,12 @@ function fertilize(x, y) {
 }
 
 // a few ore veins and special patches at world generation
-function decorateWorld(tiles, W, H, seed) {
+// o: World Generator options (ores, rare, rareBiomes, plants; see GEN_DEFAULTS in game.js)
+const RARE_BIOMES = ['mushroom', 'meadow', 'clover', 'crystal', 'candy', 'lemon', 'garlic', 'celestial', 'birch', 'maple'];
+function decorateWorld(tiles, W, H, seed, o = GEN_DEFAULTS) {
   let s = seed;
   const rnd = () => hash2(s++, 31, seed);
-  const veins = Math.round((W * H) / 1800);
+  const veins = Math.round((W * H) / 1800 * o.ores);
   for (let v = 0; v < veins; v++) {
     let x = 0, y = 0, found = false;
     for (let tries = 0; tries < 60 && !found; tries++) {
@@ -189,13 +191,13 @@ function decorateWorld(tiles, W, H, seed) {
       if (vx >= 0 && vy >= 0 && vx < W && vy < H && (tiles[vy * W + vx] === T.HILLS || tiles[vy * W + vx] === T.MOUNTAIN)) tiles[vy * W + vx] = ore;
     }
   }
-  // two rare biome patches per world, and bushes and flowers here and there
-  const rare = ['mushroom', 'meadow', 'clover', 'crystal', 'candy', 'lemon', 'garlic', 'celestial', 'birch', 'maple'];
-  for (let p = 0; p < 2; p++) {
+  // a few rare biome patches (two by default), and bushes and flowers here and there
+  const rare = o.rareBiomes && o.rareBiomes.length ? o.rareBiomes : o.rareBiomes ? [] : RARE_BIOMES;
+  for (let p = 0; p < (rare.length ? o.rare : 0); p++) {
     const key = rare[(rnd() * rare.length) | 0];
     for (let tries = 0; tries < 200; tries++) {
       const cx = (rnd() * W) | 0, cy = (rnd() * H) | 0;
-      if (biomeOf(tiles[cy * W + cx]) !== 'grassland') continue;
+      if (!isPlant(tiles[cy * W + cx]) || biomeOf(tiles[cy * W + cx]) === key) continue;
       const r = 5 + rnd() * 5;
       for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let x = Math.floor(cx - r); x <= cx + r; x++) {
         if (x < 0 || y < 0 || x >= W || y >= H || Math.hypot(x - cx, y - cy) > r * (0.75 + rnd() * 0.4)) continue;
@@ -205,7 +207,7 @@ function decorateWorld(tiles, W, H, seed) {
       break;
     }
   }
-  for (let k = 0; k < (W * H) / 60; k++) {
+  for (let k = 0; k < (W * H) / 60 * o.plants; k++) {
     const i = (rnd() * W * H) | 0, t = tiles[i];
     if (t === T.GRASS || t === T.JUNGLE_FLOOR) tiles[i] = rnd() < 0.5 ? T.BUSH : T.FLOWERS;
     else if (t === T.SWAMP) tiles[i] = T.MUSHROOMS;

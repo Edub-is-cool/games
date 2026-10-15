@@ -110,6 +110,10 @@ Loaded after disasters.js (it registers powers).
 - **Diplomacy powers:** Spite, Friendship, Inspiration, Whisper of War, Discord, Unity (click a kingdom).
 - **More world laws** (`MORE_LAWS`, grouped in the World Laws panel): 100 people, expansion, stealing borders, terramorphing, angry villagers, armies, plots, rites, handsome migrants, babies, hunger, peaceful monsters, evolution, Gene Spaghetti, Mutant Box, Glitched Noosphere, clouds of life, natural disasters, invasions, Gaia's Covenant, forever creep, eternal lava, forever cold, high flora, erosion, minerals, biome overgrowth, entanglewood, root pranks, nectar nap, exploding mushrooms.
 
+## World Generator (worldgen.js)
+- Opening the **World** tab (or its 🌍 New World button) opens a big panel over almost the whole screen (`#worldGen`, `openWorldGen`), with a live preview (`drawPreview`: the same world generated small, plus land % and top biomes) and ✨ Create World.
+- Options (`genState` → `genOptions` → `newWorld(sizeKey, gen)` → `generateWorld(W, H, seed, shape, options)`, defaults in `GEN_DEFAULTS` in game.js): template (Island, Continents, Pangaea, Archipelago, Earth, Blank Slate), size (presets or custom width/height), land amount (or let the template decide), landmass size (noise scale), number of continents, coastline roughness (warp), mountains (land relief), forests, bushes & flowers, ore veins, polar ice, temperature and moisture offsets, which climate biomes are allowed (`allowedBiome` swaps in the closest allowed one by `BIOME_CLIMATE`), number and kinds of rare biome patches (`RARE_BIOMES` in terrain2.js), enchanted grove, corruption patch, wildlife law, starting peoples (6 of each placed on their home terrain), and a seed (text or number; same seed + settings = same world).
+
 ## Interface (ui2.js)
 - **Layers tab:** color borders by kingdoms, cities, alliance blocs, religions, cultures or languages (`overlayGroup`, used by `rebuildOverlay`), or mark creatures by clan or subspecies; toggle war lines and Eye of Insight (rings creatures carrying undiscovered traits).
 - **World → 📋 Lists:** sortable lists of kingdoms, cities, wars, alliances, armies, plots, religions, cultures, languages, clans, subspecies and books; names jump the camera there. Renamed things keep `pastNames`.
@@ -189,9 +193,10 @@ pixel-life/
 ├── cities.js      (city buildings, styles and tiers, books, money, trade, ruins, materials, walls)
 ├── politics.js    (kings, armies, plots, rites, meta traits, subspecies, ages, invasions, more laws)
 ├── ui2.js         (map layers, lists, mind and family tree, thought bubbles, pop-ups, bookmarks)
+├── worldgen.js    (the World Generator panel)
 └── main.js        (startup, runs last)
 ```
-Plain `<script>` tags (no modules) share top-level names, so load order matters: `game.js` → `terrain2.js` → `creatures.js` → `society.js` → `gear.js` → `world.js` → `powers.js` → `disasters.js` → `creatures2.js` → `traits2.js` → `cities.js` → `politics.js` → `ui2.js` → `main.js`. Later files extend earlier ones by adding to shared tables (`TILES`, `RACES`, `TRAITS`, `POWERS`, `POWER_GROUPS`, `LAWS`) and by wrapping functions (`const _f = f; f = function (...) { ... }`), so hooks in the older files stay small. Saves are `v: 2` (terrain + `life`); `v: 1` saves still load with no creatures.
+Plain `<script>` tags (no modules) share top-level names, so load order matters: `game.js` → `terrain2.js` → `creatures.js` → `society.js` → `gear.js` → `world.js` → `powers.js` → `disasters.js` → `creatures2.js` → `traits2.js` → `cities.js` → `politics.js` → `ui2.js` → `worldgen.js` → `main.js`. Later files extend earlier ones by adding to shared tables (`TILES`, `RACES`, `TRAITS`, `POWERS`, `POWER_GROUPS`, `LAWS`) and by wrapping functions (`const _f = f; f = function (...) { ... }`), so hooks in the older files stay small. Saves are `v: 2` (terrain + `life`); `v: 1` saves still load with no creatures.
 The world is one tile per pixel on an offscreen canvas, scaled up by the camera. Only changed tiles are recolored (`markDirty` / `flushDirty`). If `game.js` grows large, split by concern: `world.js`, `ui.js`.
 
 ## No Pay-to-Play Rules

@@ -172,26 +172,37 @@ const state = {
 };
 
 // ---------- World generation ----------
-function generateWorld(W, H, seed, shape = 'island') {
+// Options for the World Generator (worldgen.js). 1 means "as usual" for the
+// sliders; land: null lets each shape pick its own amount of land.
+const GEN_DEFAULTS = {
+  land: null, landmass: 1, roughness: 1, continents: 3, mountains: 1, forests: 1, plants: 1, ores: 1,
+  heat: 0, wet: 0, ice: true, biomes: null, rare: 2, rareBiomes: null, enchanted: true, corruption: false,
+};
+
+function generateWorld(W, H, seed, shape = 'island', options = {}) {
+  const o = { ...GEN_DEFAULTS, ...options };
   const tiles = new Uint8Array(W * H);
   // Blank Slate: nothing but open ocean, ready to be shaped by hand
   if (shape === 'blank') return tiles.fill(T.DEEP);
-  // a few big landmasses for the Continents shape
-  const blobs = Array.from({ length: 3 }, (_, i) => ({ x: hash2(i, 1, seed) * 1.2 - 0.6, y: hash2(i, 2, seed) * 1.0 - 0.5, r: 0.4 + hash2(i, 3, seed) * 0.2 }));
+  // a few big landmasses for the Continents shape, spread around the map
+  const blobs = Array.from({ length: o.continents }, (_, i) => {
+    const a = (i / o.continents) * Math.PI * 2 + hash2(i, 4, seed) * 1.2, d = o.continents > 1 ? 0.25 + hash2(i, 1, seed) * 0.3 : 0;
+    return { x: Math.cos(a) * d, y: Math.sin(a) * d * 0.8, r: (0.4 + hash2(i, 3, seed) * 0.2) * Math.sqrt(3 / Math.max(3, o.continents)) };
+  });
   const height = makeNoise(seed);
   const warp = makeNoise(seed + 31);
   const trees = makeNoise(seed + 101);
   const heat = makeNoise(seed + 211);
   const wet = makeNoise(seed + 307);
-  const scale = 5 / Math.max(W, H);
+  const scale = 5 / Math.max(W, H) / o.landmass;   // a bigger landmass setting stretches the noise
 
   // heights first, so the sea level can be moved before tiles are chosen
   const heights = new Float32Array(W * H);
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const wx = x * scale, wy = y * scale;
-      const dx = (fbm(warp, wx, wy, 3) - 0.5) * 1.6;
-      const dy = (fbm(warp, wx + 40, wy + 40, 3) - 0.5) * 1.6;
+      const dx = (fbm(warp, wx, wy, 3) - 0.5) * 1.6 * o.roughness;
+      const dy = (fbm(warp, wx + 40, wy + 40, 3) - 0.5) * 1.6 * o.roughness;
       const n = fbm(height, wx + dx, wy + dy, 6);
 
       // island falloff: 0 in the middle, 1 at the edges
@@ -200,24 +211,26 @@ function generateWorld(W, H, seed, shape = 'island') {
       heights[y * W + x] = shapeHeight(shape, n, nx, ny, edge, x / W, y / H, blobs);
     }
   }
-  const sea = seaLevelShift(heights, shape, seed);
+  const sea = seaLevelShift(heights, shape, seed, o.land);
 
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const wx = x * scale, wy = y * scale;
       const ny = (y / H) * 2 - 1;
-      const h = remapHeight(heights[y * W + x], sea);
+      let h = remapHeight(heights[y * W + x], sea);
+      if (h > 0.425) h = 0.425 + (h - 0.425) * o.mountains;   // flatter or more mountainous land
 
       // climate: cold toward the top and bottom of the map and up high
-      const temp = 1.05 - Math.abs(ny) * 1.15 + (fbm(heat, wx * 0.8, wy * 0.8, 4) - 0.5) * 1.3 - Math.max(0, h - 0.5) * 1.5;
-      const moist = fbm(wet, wx * 1.2 + 9, wy * 1.2 + 9, 4);
+      const temp = 1.05 - Math.abs(ny) * 1.15 + (fbm(heat, wx * 0.8, wy * 0.8, 4) - 0.5) * 1.3 - Math.max(0, h - 0.5) * 1.5 + o.heat;
+      const moist = fbm(wet, wx * 1.2 + 9, wy * 1.2 + 9, 4) + o.wet;
 
       let t;
-      if (h < 0.40) t = temp < 0.1 && h > 0.3 ? T.ICE : h < 0.33 ? T.DEEP : T.SHALLOW;
+      if (h < 0.40) t = o.ice && temp < 0.1 && h > 0.3 ? T.ICE : h < 0.33 ? T.DEEP : T.SHALLOW;
       else if (h < 0.425) t = T.SAND;
       else if (h < 0.56) {
-        const b = BIOMES[climateBiome(temp, moist, h)];
-        t = b.tree !== null && fbm(trees, wx * 3, wy * 3, 4) > b.trees ? b.tree : b.ground;
+        const b = BIOMES[allowedBiome(climateBiome(temp, moist, h), temp, moist, o.biomes)];
+        // more forests lower the bar a tree has to clear; none means no trees at all
+        t = b.tree !== null && o.forests > 0 && fbm(trees, wx * 3, wy * 3, 4) > b.trees - (o.forests - 1) * 0.12 ? b.tree : b.ground;
       }
       else if (h < 0.62) t = T.HILLS;
       else if (h < 0.68) t = T.MOUNTAIN;
@@ -225,8 +238,9 @@ function generateWorld(W, H, seed, shape = 'island') {
       tiles[y * W + x] = t;
     }
   }
-  sprinkleMagic(tiles, W, H, seed);
-  decorateWorld(tiles, W, H, seed);
+  if (o.enchanted) sprinklePatch(tiles, W, H, seed, 'enchanted');
+  if (o.corruption) sprinklePatch(tiles, W, H, seed + 5, 'corrupt');
+  decorateWorld(tiles, W, H, seed, o);
   return tiles;
 }
 
@@ -239,11 +253,12 @@ const LAND_RANGE = {
   island: [0.3, 0.55], continents: [0.35, 0.65], pangaea: [0.45, 0.8], archipelago: [0.3, 0.5], earth: [MIN_LAND, MAX_LAND],
 };
 
-function seaLevelShift(heights, shape, seed) {
+function seaLevelShift(heights, shape, seed, wanted = null) {
   const sorted = Float32Array.from(heights).sort();
   const land = 1 - lowerBound(sorted, SEA) / sorted.length;
   const [lo, hi] = LAND_RANGE[shape] || [MIN_LAND, MAX_LAND];
-  const target = shape === 'earth' ? Math.min(hi, Math.max(lo, land)) : lo + hash2(seed, 99, 7) * (hi - lo);
+  const target = wanted !== null ? wanted   // the World Generator's land slider
+    : shape === 'earth' ? Math.min(hi, Math.max(lo, land)) : lo + hash2(seed, 99, 7) * (hi - lo);
   if (Math.abs(target - land) < 0.005) return null;
   // the height that leaves exactly `target` of the map above the sea
   const idx = Math.min(sorted.length - 1, Math.max(0, Math.floor(sorted.length * (1 - target))));
@@ -294,35 +309,52 @@ function climateBiome(temp, moist, h) {
   return 'grassland';
 }
 
-// A small enchanted patch, like WorldBox's rare biomes. Corruption only comes from the player.
-function sprinkleMagic(tiles, W, H, seed) {
+// Where a biome has been switched off in the World Generator, the land takes the
+// allowed biome whose climate is closest instead.
+const BIOME_CLIMATE = {
+  tundra: [0.15, 0.5], birch: [0.36, 0.7], grassland: [0.5, 0.5], swamp: [0.5, 0.75],
+  savanna: [0.68, 0.42], desert: [0.85, 0.3], jungle: [0.85, 0.7],
+};
+function allowedBiome(key, temp, moist, allowed) {
+  if (!allowed || allowed.includes(key)) return key;
+  if (!allowed.length) return 'grassland';
+  let best = allowed[0], bd = Infinity;
+  for (const k of allowed) {
+    const [ct, cm] = BIOME_CLIMATE[k] || [0.5, 0.5];
+    const d = (temp - ct) ** 2 + (moist - cm) ** 2;
+    if (d < bd) { bd = d; best = k; }
+  }
+  return best;
+}
+
+// A small patch of one biome (the enchanted grove; corruption if the World Generator asks).
+function sprinklePatch(tiles, W, H, seed, key) {
   let s = seed;
   const rnd = () => hash2(s++, 17, seed);
-  for (const key of ['enchanted']) {
-    const b = BIOMES[key];
-    for (let tries = 0; tries < 200; tries++) {
-      const cx = (rnd() * W) | 0, cy = (rnd() * H) | 0;
-      if (biomeOf(tiles[cy * W + cx]) !== 'grassland') continue;
-      const r = 4 + rnd() * 4;
-      for (let y = Math.floor(cy - r); y <= cy + r; y++) {
-        for (let x = Math.floor(cx - r); x <= cx + r; x++) {
-          if (x < 0 || y < 0 || x >= W || y >= H || Math.hypot(x - cx, y - cy) > r * (0.75 + rnd() * 0.4)) continue;
-          const t = tiles[y * W + x];
-          if (isPlant(t)) tiles[y * W + x] = isTree(t) ? b.tree : b.ground;
-        }
+  const b = BIOMES[key];
+  for (let tries = 0; tries < 200; tries++) {
+    const cx = (rnd() * W) | 0, cy = (rnd() * H) | 0;
+    if (!isPlant(tiles[cy * W + cx])) continue;
+    const r = 4 + rnd() * 4;
+    for (let y = Math.floor(cy - r); y <= cy + r; y++) {
+      for (let x = Math.floor(cx - r); x <= cx + r; x++) {
+        if (x < 0 || y < 0 || x >= W || y >= H || Math.hypot(x - cx, y - cy) > r * (0.75 + rnd() * 0.4)) continue;
+        const t = tiles[y * W + x];
+        if (isPlant(t)) tiles[y * W + x] = isTree(t) ? b.tree : b.ground;
       }
-      break;
     }
+    break;
   }
 }
 
-function newWorld(sizeKey) {
-  const size = WORLD_SIZES[sizeKey];
+// gen (from the World Generator) can set W, H, seed and any GEN_DEFAULTS option
+function newWorld(sizeKey, gen = null) {
+  const size = WORLD_SIZES[sizeKey] || WORLD_SIZES.medium;
   state.worldSize = sizeKey;
-  state.W = size.W;
-  state.H = size.H;
-  state.seed = (Math.random() * 1e9) | 0;
-  state.tiles = generateWorld(size.W, size.H, state.seed, state.worldShape);
+  state.W = gen?.W || size.W;
+  state.H = gen?.H || size.H;
+  state.seed = gen?.seed ?? (Math.random() * 1e9) | 0;
+  state.tiles = generateWorld(state.W, state.H, state.seed, state.worldShape, gen || {});
   state.tick = 0;
   initBuffers();
   resetLife();
@@ -884,16 +916,8 @@ const PANELS = {
   world: () => {
     const show = what => () => { life.selected = { [what]: true }; hudFrame = 0; };
     return [
-      { heading: 'Map shape' },
-      ...Object.entries(WORLD_SHAPES).map(([key, name]) => ({
-        action: () => { state.worldShape = key; renderPanel(); }, label: name, active: state.worldShape === key,
-      })),
-      { heading: 'New world' },
-      ...Object.entries(WORLD_SIZES).map(([key, s]) => ({
-        action: () => { newWorld(key); toast(`New ${s.label.toLowerCase()} ${WORLD_SHAPES[state.worldShape].toLowerCase()} world`); },
-        label: `New ${s.label}`,
-      })),
       { heading: 'This world' },
+      { action: () => openWorldGen(), label: '🌍 New World' },   // the World Generator (worldgen.js)
       { action: saveWorld, label: '💾 Save' },
       { action: loadWorld, label: '📂 Load', disabled: !hasSave() },
       { action: show('share'), label: '📤 Share Map' },

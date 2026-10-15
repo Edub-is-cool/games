@@ -641,3 +641,58 @@ button.active { border-color: var(--accent); background: #3d3a26; }
 }
 #panel .panel-row button.tile { width: 70px; height: 66px; }
 #panel .panel-row .name { word-break: normal; overflow-wrap: normal; letter-spacing: -0.2px; }
+
+/* ---------- World Generator: a big wooden panel over almost the whole screen ---------- */
+#worldGen {
+  --wood: #946a3c;
+  position: fixed;
+  inset: calc(2.5vh + env(safe-area-inset-top, 0px)) 2.5vw calc(2.5vh + env(safe-area-inset-bottom, 0px));
+  z-index: 25;
+  display: flex;
+  flex-direction: column;
+  color: #22140a;
+  background:
+    linear-gradient(var(--wood), var(--wood)) padding-box,
+    linear-gradient(120deg, #7d838c 0%, #f4f6f9 14%, #a9afb8 28%, #ffffff 42%, #8d939c 58%, #e6e9ee 74%, #ffffff 84%, #7d838c 100%) border-box;
+  border: 4px solid transparent;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px #5a5f66, 0 10px 40px rgba(0, 0, 0, 0.55);
+}
+#worldGen[hidden] { display: none; }
+.gen-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 2px solid #6b4a26; }
+.gen-head h2 { margin: 0; font-size: 18px; color: #2e1806; }
+#worldGen button { color: #f5e6c8; background: #4a2e17; border: 2px solid #d4a63a; }
+#worldGen button:hover { background: #5c3a1e; }
+#worldGen .gen-close { width: 36px; height: 36px; justify-content: center; padding: 0; font-size: 18px; color: #fff; background: #c62828; border-color: #7a1010; }
+.gen-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 380px); gap: 16px; padding: 12px 14px; }
+.gen-options { overflow-y: auto; padding-right: 8px; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; align-content: start; }
+.gen-options section { background: rgba(255, 255, 255, 0.12); border: 1px solid #6b4a26; border-radius: 8px; padding: 8px 10px; }
+.gen-options h3 { margin: 0 0 6px; font-size: 13px; color: #2e1806; text-transform: uppercase; letter-spacing: 1px; }
+.gen-choices { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 4px; }
+#worldGen .gen-choice { flex-direction: column; gap: 2px; min-width: 76px; padding: 5px 6px; font-size: 11px; justify-content: center; }
+#worldGen .gen-choice.on { background: #6b4320; border-color: #ffe27a; box-shadow: 0 0 0 1px #ffe27a; color: #fff; }
+.gen-choice small { font-size: 9px; opacity: 0.8; }
+.gen-ico { font-size: 20px; line-height: 1; }
+.gen-row { display: grid; grid-template-columns: 9.5em 1fr 5.5em; align-items: center; gap: 8px; margin: 5px 0; font-size: 12px; }
+.gen-row input { width: 100%; accent-color: #4a2e17; }
+.gen-row input:disabled { opacity: 0.35; }
+.gen-row:has(input:disabled) span, .gen-row:has(input:disabled) output { opacity: 0.45; }
+.gen-row output { text-align: right; font-size: 11px; white-space: nowrap; }
+.gen-check { display: inline-flex; align-items: center; gap: 4px; margin: 3px 10px 3px 0; font-size: 12px; cursor: pointer; }
+.gen-check input { accent-color: #4a2e17; }
+.gen-checks { display: flex; flex-wrap: wrap; }
+.gen-hint { margin: 0 0 4px; font-size: 10px; color: #3a240f; opacity: 0.85; }
+.gen-seed { display: flex; gap: 6px; }
+.gen-seed input { flex: 1; font: inherit; padding: 5px 8px; color: #22140a; background: #f1e2c4; border: 2px solid #4a2e17; border-radius: 5px; }
+.gen-side { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.gen-preview { width: 100%; height: auto; image-rendering: pixelated; border: 3px solid #4a2e17; border-radius: 6px; background: #2a4f9e; }
+.gen-stats { margin: 0; font-size: 11px; min-height: 2.6em; }
+#worldGen .gen-create { justify-content: center; padding: 12px; font-size: 16px; font-weight: 700; background: #2f6a2a; border-color: #ffe27a; margin-top: auto; }
+#worldGen .gen-create:hover { background: #3a7f33; }
+#worldGen .gen-reset { justify-content: center; }
+@media (max-width: 760px) {
+  .gen-body { grid-template-columns: 1fr; overflow-y: auto; }
+  .gen-options { overflow: visible; grid-template-columns: 1fr; padding-right: 0; }
+  .gen-side { order: -1; }
+  .gen-row { grid-template-columns: 7.5em 1fr 4.5em; }
+}

@@ -942,22 +942,39 @@ function renderPanel() {
   finishPanel();
 }
 
+// a leading emoji or symbol in a label ("🔥 Fire", "▲ Raise Land") becomes the tile's picture
+const LABEL_PIC = /^((?:\p{Extended_Pictographic}|[^\p{L}\p{N}\s])[\uFE0F\u200D\p{Extended_Pictographic}\p{Emoji_Modifier}]*)\s+(.+)$/u;
+
+// Tool buttons are square tiles: a picture on top, the name in small print below.
 function addPanelButton(item) {
     const btn = document.createElement('button');
+    btn.className = 'tile';
+    const pic = document.createElement('span');
+    pic.className = 'pic';
+    let name = String(item.label);
     if (item.swatch) {
       const sw = document.createElement('span');
       sw.className = 'sw';
       sw.style.background = item.swatch;
-      btn.append(sw);
-    }
-    if (item.icon) {
+      pic.append(sw);
+    } else if (item.icon) {
       const icon = document.createElement('img');
       icon.className = 'icon';
       icon.src = item.icon;
       icon.alt = '';
-      btn.append(icon);
+      pic.append(icon);
     }
-    btn.append(item.label);
+    const m = name.match(LABEL_PIC);
+    if (m) {
+      if (!pic.childNodes.length) pic.textContent = m[1];
+      name = m[2];
+    }
+    if (pic.childNodes.length) btn.append(pic);
+    const label = document.createElement('span');
+    label.className = 'name';
+    label.textContent = name;
+    btn.append(label);
+    btn.title = name;
     if (item.tool) {
       btn.classList.toggle('active', state.tool === item.tool);
       btn.onclick = () => { state.toolLabel = item.label; selectTool(item.tool); };

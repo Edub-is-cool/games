@@ -1186,6 +1186,7 @@ function captureVillage(v, kid) {
   const oldK = life.kingdoms.get(v.kingdom), newK = life.kingdoms.get(kid);
   const wasCapital = oldK && oldK.capital === v.id;
   const taken = wasCapital ? villagesOf(oldK.id) : [v];
+  if (wasCapital) rulersFlee(oldK, taken, kid);
   for (const c of taken) {
     const hall = life.buildings.get(c.hall);
     if (hall && c === v) hall.hp = hall.maxHp / 2;
@@ -1201,6 +1202,25 @@ function captureVillage(v, kid) {
     : `${newK.name} captured ${v.name}`);
   if (!oldK) return;
   if (!villagesOf(oldK.id).length) destroyKingdom(oldK);
+}
+
+// When a capital falls, its ruler and the lords of its cities run to the nearest
+// city of an allied kingdom (if there is one) and give up their titles.
+function rulersFlee(oldK, taken, kid) {
+  const allies = Object.keys(alliesOf(oldK)).map(id => life.kingdoms.get(+id)).filter(a => a && a.id !== kid);
+  if (!allies.length) return;
+  const king = oldK.king && life.byId.get(oldK.king);
+  const rulers = [king, ...taken.map(c => c.lord && life.byId.get(c.lord))]
+    .filter((u, i, all) => u && !u.dead && all.indexOf(u) === i && taken.some(c => c.id === u.village));
+  for (const u of rulers) {
+    const refuge = nearestVillage(u.x, u.y, Infinity, o => allies.some(a => a.id === o.kingdom));
+    if (!refuge) continue;
+    for (const c of taken) if (c.lord === u.id) c.lord = 0;
+    if (u === king) { oldK.king = 0; u.king = 0; }
+    joinVillage(u, refuge);   // they walk (or sail) there
+    u.role = 'worker';
+    chronicle(`🏃 ${u.name} fled the fall of the ${oldK.name} to ${refuge.name} in the ${life.kingdoms.get(refuge.kingdom).name}`);
+  }
 }
 
 function updateVillage(v) {

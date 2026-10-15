@@ -4,7 +4,8 @@
 const YEAR = TICKS_PER_MONTH * 12;
 const ADULT_AGE = 16;      // years, civilized races
 const MAX_UNITS = 3500;
-const MAX_ANIMALS = 1300;   // leaves room for people to keep having children
+const MAX_ANIMALS = 650;    // leaves room for people to keep having children
+const ANIMAL_SPREAD = 2;    // each species lives at most one per (cap * spread) tiles
 const CELL = 8;            // spatial grid cell size in tiles
 
 // what grazing animals run from; big ones only fear big hunters
@@ -285,7 +286,7 @@ const makeName = race => pick(NAME_PARTS[race][0]) + pick(NAME_PARTS[race][1]);
 
 // ---------- Sapient animals ----------
 // Now and then a few animals wake up clever and become a new civilized race.
-const MUTATION_CHANCE = 3e-7;   // per adult animal per tick, scaled by intellect
+const MUTATION_CHANCE = 8e-8;   // per adult animal per tick, scaled by intellect
 const SAPIENT_NAMES = [['Ba', 'Mo', 'Ru', 'Fi', 'Ka', 'Lo', 'Ne', 'Pi', 'Sa', 'Tu', 'Wo', 'Za'],
                        ['ba', 'mo', 'rk', 'ff', 'la', 'sh', 'nn', 'wl', 'py', 'zi']];
 const SAPIENT_ROOFS = ['#8a4fa8', '#4f7aa8', '#a8784f', '#4fa87a', '#a84f6a'];
@@ -1013,7 +1014,7 @@ function updateAnimal(u, r) {
     }
   }
   if (isAdult(u) && u.hunger < YEAR && rand() < r.breed * gene(u, 'fertility') && life.animals < MAX_ANIMALS &&
-      life.counts[u.race] < (state.W * state.H) / r.cap) {
+      life.counts[u.race] < (state.W * state.H) / (r.cap * ANIMAL_SPREAD)) {
     const mate = nearest(u.x, u.y, 10, o => o !== u && o.race === u.race && isAdult(o));
     if (mate && spawnUnit(u.race, u.x, u.y, 0, [u, mate])) life.counts[u.race]++;
   }

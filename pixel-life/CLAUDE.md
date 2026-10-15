@@ -149,6 +149,10 @@ Loaded after disasters.js (it registers powers).
 - **Sapient animals:** each adult animal has a tiny chance per tick (`MUTATION_CHANCE`, about one awakening per century in a normal world) to wake up along with up to 4 nearby adults of its kind. They become a new civilized race (`makeSapientRace`, key `<animal>_folk`, e.g. "Sapient Sheep") with the animal's sprite plus a cloak in the kingdom color, and they found their own kingdom (Herd or Pack). These races are created at runtime, saved by name in `life.sapient`, and cleared on a new world. They also show up in the Creatures tab for spawning. A **Monolith** (Powers tab) makes this happen much faster nearby.
 - Tuning numbers live at the top of `creatures.js` (`RACES`) and in `updateVillage` / `doJob`.
 
+## Music (music.js)
+- Background music made live with Web Audio (no sound files): soft pad chords, a bass note and a wandering plucked melody (`playBeat`, scheduled ahead by `scheduleMusic`). Peacetime plays C major pentatonic; while any kingdom is at war (`anyWar`) it switches to A minor with a drum.
+- Browsers block sound until the player does something, so it starts on the first click or key (`firstTouch`). The 🎵 / 🔇 button at the end of the top bar, or **M**, toggles it; the choice is saved in `localStorage` (`pixellife-music`).
+
 ## Fine pixels
 - **Sprites:** creature art is written as small ASCII grids (`art` in `RACES`) and drawn with `makeSprite`. `refineSprite(src, passes = 2)` runs Scale2x twice (4 fine pixels per art pixel, smoothing staircase edges) and adds a top highlight, an underside shadow and a soft outline. Refined sprites carry `res = 4` (times a race's `detail`, via `detailed()`), and every draw divides its size by `spr.res` so things stay the same size on screen. Creatures, boats, buildings (`buildingSprite`, both versions), monoliths, geysers and monster structures are all refined. Button icons (`raceIcon`) are not.
 - **Animal art:** the 37 real animals are hand-drawn at double detail in `ANIMAL_ART` at the bottom of `creatures2.js` (which sets their `colors`, `art`, `facesLeft` and `detail: 2`, overriding the stat-only definitions). Never use the letters c l m n a b x o H for animal colors: the gear palette (`gearPalette`) overwrites them. Sapient forms copy the art and put the cloak on the body rows just above the legs.
@@ -194,9 +198,10 @@ pixel-life/
 ├── politics.js    (kings, armies, plots, rites, meta traits, subspecies, ages, invasions, more laws)
 ├── ui2.js         (map layers, lists, mind and family tree, thought bubbles, pop-ups, bookmarks)
 ├── worldgen.js    (the World Generator panel)
+├── music.js       (background music, Web Audio)
 └── main.js        (startup, runs last)
 ```
-Plain `<script>` tags (no modules) share top-level names, so load order matters: `game.js` → `terrain2.js` → `creatures.js` → `society.js` → `gear.js` → `world.js` → `powers.js` → `disasters.js` → `creatures2.js` → `traits2.js` → `cities.js` → `politics.js` → `ui2.js` → `worldgen.js` → `main.js`. Later files extend earlier ones by adding to shared tables (`TILES`, `RACES`, `TRAITS`, `POWERS`, `POWER_GROUPS`, `LAWS`) and by wrapping functions (`const _f = f; f = function (...) { ... }`), so hooks in the older files stay small. Saves are `v: 2` (terrain + `life`); `v: 1` saves still load with no creatures.
+Plain `<script>` tags (no modules) share top-level names, so load order matters: `game.js` → `terrain2.js` → `creatures.js` → `society.js` → `gear.js` → `world.js` → `powers.js` → `disasters.js` → `creatures2.js` → `traits2.js` → `cities.js` → `politics.js` → `ui2.js` → `worldgen.js` → `music.js` → `main.js`. Later files extend earlier ones by adding to shared tables (`TILES`, `RACES`, `TRAITS`, `POWERS`, `POWER_GROUPS`, `LAWS`) and by wrapping functions (`const _f = f; f = function (...) { ... }`), so hooks in the older files stay small. Saves are `v: 2` (terrain + `life`); `v: 1` saves still load with no creatures.
 The world is one tile per pixel on an offscreen canvas, scaled up by the camera. Only changed tiles are recolored (`markDirty` / `flushDirty`). If `game.js` grows large, split by concern: `world.js`, `ui.js`.
 
 ## No Pay-to-Play Rules

@@ -423,3 +423,48 @@ button.active { border-color: var(--accent); background: #3d3a26; }
 #speeds button:hover { background: #5c3a1e; }
 #speeds button.active { background: #6b4320; border-color: #ffe27a; box-shadow: 0 0 0 1px #ffe27a; color: #fff; }
 #topbar #pop, #topbar #pop * { color: #3a2410; }
+
+/* the toolbar runs from one side of the screen to the other */
+#toolbar {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: none;
+  transform: none;
+  border-width: 3px 0 0;
+  border-radius: 0;
+  box-shadow: 0 -1px 0 #6f747c, inset 0 1px 0 #eef0f4;
+  padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  height: calc(172px + env(safe-area-inset-bottom, 0px));
+}
+#toolbar.folded { height: auto; }
+#info { max-height: calc(100vh - 250px); }
+
+/* zoom buttons match the toolbar buttons */
+#zoomBar button { color: #f5e6c8; background: #4a2e17; border: 2px solid #d4a63a; }
+#zoomBar button:hover { background: #5c3a1e; }
+
+/* unselect button: sits on the left just above the toolbar */
+#deselect {
+  position: fixed;
+  left: 10px;
+  z-index: 5;
+  color: #f5e6c8;
+  background: #4a2e17;
+  border: 2px solid #d4a63a;
+  font-size: 12px;
+  padding: 3px 9px 3px 5px;
+}
+#deselect:hover { background: #5c3a1e; }
+#deselect .x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: #c62828;
+  color: #fff;
+  font-weight: 800;
+}

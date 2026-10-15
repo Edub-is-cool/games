@@ -783,7 +783,6 @@ const PANELS = {
     const all = Object.keys(RACES).filter(k => !RACES[k].hidden || progress.unlocked.includes(k));
     const mythic = k => RACES[k].monster || RACES[k].undead || RACES[k].wizard || RACES[k].hero || RACES[k].mythic || k === 'unicorn' || k === 'faerie';
     return [
-      { tool: 'inspect', label: '🔍 Inspect / Edit' },
       { tool: 'control', label: '🎮 Control' },
       { tool: 'grab', label: '✋ Pick Up' },
       { heading: 'Peoples' }, ...spawn(all.filter(k => RACES[k].civ)),
@@ -875,7 +874,7 @@ function addPanelButton(item) {
     btn.append(item.label);
     if (item.tool) {
       btn.classList.toggle('active', state.tool === item.tool);
-      btn.onclick = () => selectTool(item.tool);
+      btn.onclick = () => { state.toolLabel = item.label; selectTool(item.tool); };
     } else {
       btn.disabled = !!item.disabled;
       btn.classList.toggle('active', !!item.active);
@@ -900,7 +899,18 @@ function finishPanel() {
   document.getElementById('fold').textContent = state.panelOpen ? '▾' : '▴';
   view.classList.toggle('possess', state.tool === 'control');
   view.classList.toggle('hand', state.tool === 'hand');
+  // a red ✕ just above the toolbar, on the left, unselects the current tool
+  const toolbar = document.getElementById('toolbar');
+  deselectEl.hidden = state.tool === 'hand';
+  deselectEl.style.bottom = toolbar.offsetHeight + 8 + 'px';
+  document.getElementById('deselectName').textContent = state.toolLabel || '';
 }
+
+const deselectEl = document.getElementById('deselect');
+deselectEl.onclick = () => {
+  if (state.tool === 'control') stopControl();
+  selectTool('hand');
+};
 
 function selectTool(tool) {
   state.tool = tool;
@@ -1019,6 +1029,8 @@ view.addEventListener('pointerdown', e => {
 
   if (e.button === 1 || e.button === 2 || e.shiftKey || state.tool === 'hand') {
     pointer.mode = 'pan';
+    // a tap (no drag) with nothing selected opens the creature or village under it
+    pointer.tap = state.tool === 'hand' && e.button === 0 && pointers.size === 1 ? { x: p.x, y: p.y } : null;
   } else {
     pointer.mode = 'tool';
     pointer.lastTile = null;
@@ -1105,6 +1117,15 @@ function moveHeld() {
 }
 
 function endPointer(e) {
+  const tap = pointer.tap;
+  pointer.tap = null;
+  if (tap && e.type === 'pointerup' && pointers.size === 1 && Math.hypot(pointer.sx - tap.x, pointer.sy - tap.y) < 6) {
+    const w = screenToWorld(pointer.sx, pointer.sy);
+    const before = life.selected;
+    inspectAt(w.x, w.y, pointer.sx, pointer.sy);
+    if (!life.selected) life.selected = before;   // tapping empty ground leaves the panel alone
+    hudFrame = 0;
+  }
   pointers.delete(e.pointerId);
   if (held.size && pointers.size === 0) {
     held.clear();   // let go: wherever they land is where they are (water drowns walkers)
@@ -1146,7 +1167,7 @@ addEventListener('keydown', e => {
   if (e.key === ' ') { e.preventDefault(); setSpeed(state.speed ? 0 : state.lastSpeed); }
   else if (e.key === '[') setBrush(state.brush - 1);
   else if (e.key === ']') setBrush(state.brush + 1);
-  else if (e.key === 'Escape') stopControl('You let go');
+  else if (e.key === 'Escape') { stopControl('You let go'); if (state.tool !== 'hand') selectTool('hand'); }
   else if (e.key.toLowerCase() === 'b') {
     const keys = Object.keys(BRUSH_SHAPES);
     setBrushShape(keys[(keys.indexOf(state.brushShape) + 1) % keys.length]);

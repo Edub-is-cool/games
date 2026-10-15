@@ -151,11 +151,13 @@ Creature art is written as small ASCII grids (`art` in `RACES`) and drawn with `
 - **Left click / drag:** use the selected tool (Terrain tab paints tiles, Shape tab raises/lowers)
 - **Move the camera:** the game starts on the **Move Camera** tool, so left-drag pans. With any tool: right/middle drag or **Shift + drag** pans, two-finger trackpad scrolling pans, **WASD / arrows** pan.
 - **Zoom:** mouse wheel, trackpad pinch, **+ / -**, or the **+ − ⌂** buttons on the left (⌂ shows the whole world).
-- **Toolbar:** a solid light-brown bar with a silver edge, always 172px tall. Tabs on top, then a row of group tabs (Destruction, Nature, ...) and only that group's buttons, laid out two rows high in `.panel-row`, which scrolls left to right (the mouse wheel scrolls it too). Tool buttons are dark brown with a gold outline. **▾** folds the toolbar down to its tabs; clicking the open tab again does the same.
+- **Toolbar:** a solid light-brown bar with a silver edge across the whole bottom of the screen, always 172px tall (the top bar and zoom buttons use the same colors). Tabs on top, then a row of group tabs (Destruction, Nature, ...) and only that group's buttons, laid out two rows high in `.panel-row`, which scrolls left to right (the mouse wheel scrolls it too). Tool buttons are dark brown with a gold outline. **▾** folds the toolbar down to its tabs; clicking the open tab again does the same.
 - The game loop is guarded (`frame` → `frameBody`): an error shows one warning toast instead of freezing the game.
 - **Mouse wheel**, **+ / -**: zoom. Touch: two-finger pinch to pan and zoom
 - **[ / ]** or the slider: brush size (1–40). **B** or the shape buttons: brush shape (circle, square, diamond, spray). Brush powers use the shape too. **Space**: pause / resume
-- **Creatures tab:** click (or hold) to spawn a creature; **Inspect** shows details for a creature or village
+- **Creatures tab:** click (or hold) to spawn a creature.
+- **Inspecting:** with nothing selected (the Move Camera tool), tap a creature or village without dragging to open its details (`pointer.tap` in `endPointer`). There is no Inspect button.
+- **Unselect:** whenever a tool is selected, a button with a red ✕ and the tool's name sits on the left just above the toolbar (`#deselect`, placed in `finishPanel`); it, or **Esc**, goes back to Move Camera.
 - **Renaming:** in the Inspect panel, the ✏️ next to a name renames it: a creature, village, kingdom, language, culture, religion, family clan, or a whole species (`pen`, `RENAMABLE`, `renameRace`). Species names are saved in `raceNames` and reset on a new world.
 - **Powers tab:** click to use; the outline shows the area it hits
 - **Pick Up (Creatures tab):** press on a creature to grab it (and up to 11 nearby), drag, release to drop. Walkers dropped in water drown (`held`, `moveHeld`).

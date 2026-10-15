@@ -295,7 +295,7 @@ unitSprite = function (race, cloth, gear, flip, flash, tint) {
       pal[k] = '#' + ((ch[0] << 16) | (ch[1] << 8) | ch[2]).toString(16).padStart(6, '0');
     }
     if (flash) for (const k in pal) pal[k] = '#ffffff';
-    return refineSprite(makeSprite(gearArt(r.art, gear), pal, flip));
+    return detailed(refineSprite(makeSprite(gearArt(r.art, gear), pal, flip)), r);
   });
 };
 

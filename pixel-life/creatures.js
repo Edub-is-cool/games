@@ -41,56 +41,38 @@ const RACES = {
   sheep: {
     name: 'Sheep', plural: 'Sheep', hp: 10, dmg: 0, speed: 0.6, life: 14,
     breed: 0.006, cap: 400, flees: PREDATORS, habitat: ['grassland'],
-    colors: { w: '#f2f2ea', d: '#3b3632' }, facesLeft: true,
-    art: ['.wwww.', 'dwwwww', '.wwww.', '.d..d.'],
   },
   camel: {
     name: 'Camel', plural: 'Camels', hp: 18, dmg: 0, speed: 0.7, life: 30,
     breed: 0.003, cap: 800, flees: PREDATORS, habitat: ['desert', 'savanna'],
-    colors: { y: '#c9a063', d: '#5a4128' }, facesLeft: true,
-    art: ['yy....', 'dy.yy.', '.yyyyy', '.yyyyy', '.y..y.', '.y..y.'],
   },
   monkey: {
     name: 'Monkey', plural: 'Monkeys', hp: 8, dmg: 0, speed: 1.2, life: 20,
     breed: 0.006, cap: 900, flees: PREDATORS, habitat: ['jungle'],
-    colors: { m: '#7a4f2a', f: '#e0b48a' }, facesLeft: true,
-    art: ['.mm..', 'mfm..', '.mmm.', 'm.mmm', '.m.m.'],
   },
   unicorn: {
     name: 'Unicorn', plural: 'Unicorns', hp: 30, dmg: 6, speed: 1.3, life: 200,
     breed: 0.002, cap: 1500, flees: ['ghoul'], habitat: ['enchanted'],
-    colors: { w: '#fbf7ff', h: '#f0a0e0', k: '#ffd34d' }, facesLeft: true,
-    art: ['k......', 'wh.....', 'wwhwww.', '.wwwwww', '.wwwwww', '.w...w.'],
   },
   wolf: {
     name: 'Wolf', plural: 'Wolves', hp: 20, dmg: 4, speed: 1.35, life: 16,
     breed: 0.005, cap: 1500, prey: ['sheep', 'camel', 'monkey', 'rabbit', 'chicken', 'penguin', 'cow'], habitat: ['tundra', 'grassland'],
-    colors: { g: '#8e9196' }, facesLeft: true,
-    art: ['gg....', 'gggggg', '.ggggg', '.g..g.'],
   },
   bear: {
     name: 'Bear', plural: 'Bears', hp: 50, dmg: 9, speed: 0.9, life: 30,
     breed: 0.002, cap: 3000, prey: ['sheep', 'camel', 'cow', 'buffalo', 'rabbit', ...PEOPLE], habitat: ['grassland'],
-    colors: { b: '#6b4a2e' }, facesLeft: true,
-    art: ['.bb....', 'bbbbbb.', 'bbbbbbb', 'bbbbbbb', '.bb.bb.'],
   },
   polarbear: {
     name: 'Polar Bear', plural: 'Polar Bears', hp: 60, dmg: 10, speed: 0.9, life: 30,
     breed: 0.002, cap: 3000, prey: ['sheep', 'penguin', 'rabbit', ...PEOPLE], habitat: ['tundra'],
-    colors: { b: '#eceee6', d: '#2a2a2a' }, facesLeft: true,
-    art: ['.bb....', 'dbbbbb.', 'bbbbbbb', 'bbbbbbb', '.bb.bb.'],
   },
   crocodile: {
     name: 'Crocodile', plural: 'Crocodiles', hp: 40, dmg: 8, speed: 0.7, life: 50,
     breed: 0.002, cap: 2500, prey: ['sheep', 'monkey', 'camel', 'frog', 'buffalo', 'turtle', ...PEOPLE], habitat: ['swamp'],
-    colors: { g: '#4f6b2e', e: '#e0d040' }, facesLeft: true,
-    art: ['.e......', 'gggggggg', 'gggggggg', '.g.g.g.g'],
   },
   fox: {
     name: 'Fox', plural: 'Foxes', hp: 14, dmg: 3, speed: 1.4, life: 12,
     breed: 0.005, cap: 900, prey: ['rabbit', 'chicken', 'frog', 'rat'], flees: BIG_PREDATORS, habitat: ['grassland', 'tundra'],
-    colors: { o: '#d8702a', w: '#f2f2ea', d: '#2a2420' }, facesLeft: true,
-    art: ['o.....', 'wooooo', '.oooow', '.d..d.'],
   },
   // secret: born sapient, only appears after the easter egg (see gear.js)
   superfox: {
@@ -104,86 +86,58 @@ const RACES = {
   rabbit: {
     name: 'Rabbit', plural: 'Rabbits', hp: 5, dmg: 0, speed: 1.3, life: 8,
     breed: 0.01, cap: 800, flees: PREDATORS, habitat: ['grassland', 'tundra', 'enchanted'],
-    colors: { w: '#c9b8a0', p: '#f0b0b0' }, facesLeft: true,
-    art: ['w.w..', 'ww...', 'pwww.', '.wwww', '.w..w'],
   },
   chicken: {
     name: 'Chicken', plural: 'Chickens', hp: 4, dmg: 0, speed: 0.8, life: 8,
     breed: 0.008, cap: 800, flees: PREDATORS, habitat: ['grassland', 'savanna'],
-    colors: { w: '#f4f1e8', r: '#d83a2a', y: '#e8b83a' }, facesLeft: true,
-    art: ['r...', 'ww..', 'ywww', '.www', '.y.y'],
   },
   cow: {
     name: 'Cow', plural: 'Cows', hp: 25, dmg: 0, speed: 0.6, life: 20,
     breed: 0.004, cap: 800, flees: BIG_PREDATORS, habitat: ['grassland'],
-    colors: { w: '#f2f0ea', k: '#2a2622', p: '#f0b0b0' }, facesLeft: true,
-    art: ['kk......', 'kwwkwwkw', 'pwwwkwww', '.wwwwwww', '.w....w.'],
   },
   cat: {
     name: 'Cat', plural: 'Cats', hp: 8, dmg: 2, speed: 1.2, life: 15,
     breed: 0.004, cap: 1500, prey: ['rat', 'frog', 'chicken'], flees: BIG_PREDATORS, habitat: ['grassland'],
-    colors: { o: '#e09a4a' }, facesLeft: true,
-    art: ['o.o...', 'ooo..o', '.oooo.', '.o..o.'],
   },
   dog: {
     name: 'Dog', plural: 'Dogs', hp: 16, dmg: 4, speed: 1.3, life: 14,
     breed: 0.004, cap: 1500, prey: ['rabbit', 'rat', 'cat'], flees: ['bear', 'polarbear', 'crocodile', 'ghoul'], habitat: ['grassland'],
-    colors: { b: '#a07040', d: '#5a3a20' }, facesLeft: true,
-    art: ['bb....', 'dbbb.b', '.bbbbb', '.b..b.'],
   },
   rat: {
     name: 'Rat', plural: 'Rats', hp: 3, dmg: 0, speed: 1.1, life: 4,
     breed: 0.012, cap: 900, flees: PREDATORS, habitat: ['swamp', 'corrupt', 'grassland'],
-    colors: { g: '#7a7068', p: '#e8a0a0' }, facesLeft: true,
-    art: ['gg...', 'ggggp', '.g.g.'],
   },
   buffalo: {
     name: 'Buffalo', plural: 'Buffalo', hp: 45, dmg: 7, speed: 0.7, life: 25,
     breed: 0.003, cap: 1000, flees: ['crocodile', 'ghoul', 'darkmage'], habitat: ['savanna'],
-    colors: { b: '#4a3a2a', h: '#d8d0c0' }, facesLeft: true,
-    art: ['h......', 'bbbbbb.', 'bbbbbbb', 'bbbbbbb', '.b...b.'],
   },
   rhino: {
     name: 'Rhino', plural: 'Rhinos', hp: 70, dmg: 10, speed: 0.75, life: 40,
     breed: 0.002, cap: 1200, flees: ['ghoul', 'darkmage'], habitat: ['savanna'],
-    colors: { g: '#8a8a88', h: '#d8d0c0' }, facesLeft: true,
-    art: ['h.......', 'gg.ggg..', 'gggggggg', 'gggggggg', '.gg..gg.'],
   },
   hyena: {
     name: 'Hyena', plural: 'Hyenas', hp: 18, dmg: 5, speed: 1.3, life: 14,
     breed: 0.004, cap: 1200, prey: ['rabbit', 'chicken', 'camel', 'monkey', 'buffalo', 'rat'], habitat: ['savanna', 'desert'],
-    colors: { y: '#b89a5a', d: '#4a3a2a' }, facesLeft: true,
-    art: ['yy....', 'ydydyd', '.yyyyy', '.y..y.'],
   },
   penguin: {
     name: 'Penguin', plural: 'Penguins', hp: 8, dmg: 0, speed: 0.6, life: 15,
     breed: 0.006, cap: 900, flees: PREDATORS, habitat: ['tundra', 'ice'],
-    colors: { k: '#202428', w: '#f2f2ea', y: '#e8902a' }, facesLeft: true,
-    art: ['.kk', 'ykk', 'kwk', 'kwk', 'y.y'],
   },
   frog: {
     name: 'Frog', plural: 'Frogs', hp: 3, dmg: 0, speed: 0.9, life: 6,
     breed: 0.01, cap: 900, flees: PREDATORS, habitat: ['swamp', 'jungle'],
-    colors: { g: '#4aa03a', e: '#f0e060' }, facesLeft: true,
-    art: ['e.e.', 'gggg', 'g..g'],
   },
   snake: {
     name: 'Snake', plural: 'Snakes', hp: 12, dmg: 5, speed: 0.9, life: 15,
     breed: 0.003, cap: 1200, prey: ['rat', 'frog', 'rabbit', 'chicken', 'monkey'], flees: BIG_PREDATORS, habitat: ['jungle', 'desert', 'swamp'],
-    colors: { g: '#6a8a2a', r: '#d83a2a' }, facesLeft: true,
-    art: ['gg......', 'rgg..gg.', '..ggg..g'],
   },
   crab: {
     name: 'Crab', plural: 'Crabs', hp: 10, dmg: 2, speed: 0.6, life: 10,
     breed: 0.005, cap: 1000, flees: BIG_PREDATORS, habitat: ['beach'],
-    colors: { r: '#d8442a', k: '#202020' },
-    art: ['r.kk.r', '.rrrr.', 'rrrrrr', 'r.rr.r'],
   },
   turtle: {
     name: 'Turtle', plural: 'Turtles', hp: 30, dmg: 0, speed: 0.35, life: 100,
     breed: 0.002, cap: 1500, flees: [], habitat: ['beach', 'swamp'],
-    colors: { g: '#4a7a3a', s: '#7a5a2a' }, facesLeft: true,
-    art: ['..ssss.', 'gssssss', '.g...g.'],
   },
   zombie: {
     name: 'Zombie', plural: 'Zombies', hp: 25, dmg: 5, speed: 0.55, life: 60, monster: true,
@@ -303,15 +257,18 @@ function makeSapientRace(base) {
   }
   // a cloak in the kingdom's color across the body
   const art = b.art.slice();
-  let n = 0;
-  art[art.length - 2] = art[art.length - 2].replace(/[^.]/g, ch => (++n === 2 || n === 3 ? 'c' : ch));
+  const d = b.detail || 1;
+  for (let row = art.length - 2 * d; row < art.length - d; row++) {   // the body, just above the legs
+    let n = 0;
+    art[row] = art[row].replace(/[^.]/g, ch => (++n > d && n <= 3 * d ? 'c' : ch));
+  }
   const form = typeof SAPIENT_FORMS !== 'undefined' && SAPIENT_FORMS[base];
   RACES[key] = {
     name: form ? form[0] : `Sapient ${b.name}`, plural: form ? form[1] : `Sapient ${b.plural}`, civ: true, sapientOf: base,
     hp: Math.max(20, Math.round(b.hp * 1.3)), dmg: Math.max(4, b.dmg), speed: Math.max(0.8, b.speed),
     life: Math.max(60, b.life * 3), aggression: b.prey ? 1.6 : 0.7,
     home: [...new Set(home)], title: b.prey ? 'Pack' : 'Herd',
-    colors: b.colors, facesLeft: b.facesLeft, art,
+    colors: b.colors, facesLeft: b.facesLeft, detail: b.detail, art,
     roof: SAPIENT_ROOFS[Object.keys(RACES).indexOf(base) % SAPIENT_ROOFS.length], wall: '#cfc3a8',
   };
   NAME_PARTS[key] = SAPIENT_NAMES;
@@ -1556,8 +1513,14 @@ function unitSprite(race, cloth, gear, flip, flash) {
     const r = RACES[race];
     const pal = gearPalette({ ...r.colors, c: cloth, l: '#3a2f2a', m: '#c9ced6' }, gear);
     if (flash) for (const k in pal) pal[k] = '#ffffff';
-    return refineSprite(makeSprite(gearArt(r.art, gear), pal, flip));
+    return detailed(refineSprite(makeSprite(gearArt(r.art, gear), pal, flip)), r);
   });
+}
+
+// art drawn at higher detail (`detail` art pixels per old one) covers less screen per pixel
+function detailed(spr, r) {
+  spr.res *= r.detail || 1;
+  return spr;
 }
 
 // Creatures are drawn with pixels half the size: the sprite is doubled with

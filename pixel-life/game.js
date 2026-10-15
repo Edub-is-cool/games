@@ -525,10 +525,30 @@ function drawFineTile(x, y) {
           else if (sy === 1 && sx === 1) f *= 1.2;
           else if (sy === last) f *= 0.88;
         } else if (isWater(t) && hash2(fx >> 1, fy, seed + 29) > 0.92) f *= 1.08;   // ripples
+        else if (TILES[t].ore) { pix[fy * FW + fx] = orePixel(t, src === i, x, y, sx, sy, f); continue; }
         pix[fy * FW + fx] = shadeColor(base[src], f);
       }
     }
   }
+}
+
+// Ores have their own look: rock with nuggets of the ore (one of three layouts,
+// sometimes flipped), each with a bright glint (n = nugget, g = glint).
+const ORE_LAYOUTS = [
+  ['....', '.gn.', '.nn.', '....'],
+  ['g...', 'n..n', '..gn', '....'],
+  ['.n..', '....', 'n.g.', '..nn'],
+];
+const abgr = c => (0xff000000 | ((c & 255) << 16) | (c & 0xff00) | ((c >> 16) & 255)) >>> 0;
+function orePixel(t, own, x, y, sx, sy, f) {
+  const info = TILES[t], rock = shadeColor(abgr(info.color), f * 0.95);
+  if (!own) return rock;
+  const layout = ORE_LAYOUTS[(hash2(x, y, state.seed + 41) * 3) | 0];
+  const cx = hash2(x, y, state.seed + 43) > 0.5 ? 3 - sx : sx;
+  const ch = layout[sy][cx], nugget = abgr(info.dots ? info.dots[1] : info.color);
+  if (ch === 'g') return shadeColor(nugget, 1.45);
+  if (ch === 'n') return shadeColor(nugget, f);
+  return (sx + sy * 3 + x) % 7 === 0 ? shadeColor(rock, 0.8) : rock;   // a few dark cracks
 }
 
 function flushDirty() {

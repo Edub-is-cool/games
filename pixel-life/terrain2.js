@@ -83,7 +83,7 @@ for (const [key, name, gColor, tColor, gProps, tProps] of MORE_BIOMES) {
 // ---------- Ores ----------
 // Mined from hills and mountains; feed better gear (see cities.js).
 const ORES = {
-  STONE_ORE:  { name: 'Stone Deposit', color: 0x9a948a, dot: 0x6a665f, material: 'stone' },
+  STONE_ORE:  { name: 'Stone Deposit', color: 0xa8a296, dot: 0x4e4a44, material: 'stone' },
   IRON_ORE:   { name: 'Iron Ore',      color: 0x7a6a5a, dot: 0xb87a4a, material: 'iron' },
   SILVER_ORE: { name: 'Silver Ore',    color: 0x7a7a80, dot: 0xe0e4ec, material: 'silver' },
   GOLD_ORE:   { name: 'Gold Ore',      color: 0x7a705a, dot: 0xf8d040, material: 'gold' },

@@ -76,7 +76,7 @@ Loaded after powers.js; registers its own `POWERS` and `POWER_GROUPS` entries at
 Loaded right after game.js. `addTile(key, props)` appends tiles (ids stay stable) with optional `group` (Terrain tab heading), `wall`/`ore`/`plant`/`creep` flags, `burn` (fire spread) and `dots` (speckles drawn by `tileColor`).
 - **Walls** (`WALLS`): stone, wood, iron (spiked), evil, ancient, green (regrows), light. They block movement; each has hp (`hitWall`). Warriors marching on a city hack through walls in the way.
 - **16 more biomes** (`MORE_BIOMES`): birch, maple, mushroom, candy, garlic, lemon, crystal, rocklands, permafrost, flower meadow, clover, celestial, infernal, singularity swamp, paradox, arcane desert. Each has a biome brush; `biomeEffect` gives them effects (garlic hurts undead, celestial blesses, clover heals, infernal scorches, singularity teleports, paradox makes creatures younger, permafrost freezes).
-- **Ores** (stone, iron, silver, gold, mythril, adamantine) generated in veins on hills (`decorateWorld`). Miners prefer them; they give stone plus a metal (`v.metals`) used by the smithy.
+- **Ores** (stone, iron, silver, gold, mythril, adamantine) generated in veins on hills (`decorateWorld`). Each ore tile is drawn with its own look (`orePixel` in game.js): rock with nuggets in the ore's color and a bright glint, in one of three `ORE_LAYOUTS`, sometimes flipped. Miners prefer them; they give stone plus a metal (`v.metals`) used by the smithy.
 - **Plants:** fruit bushes (picked for food), flowers, mushrooms; they spread on fertile ground (`terrainExtraTick`). Fertilizer power grows trees and plants.
 - **Creep:** tumor, biomass, pumpkin and cybercore ground, grown by monster cores; it fades when its core is gone (unless Forever Creep).
 

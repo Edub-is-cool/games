@@ -836,6 +836,9 @@ document.getElementById('controlStop').addEventListener('click', () => stopContr
 const popEl = document.getElementById('pop');
 const infoEl = document.getElementById('info');
 const toolbarEl = document.getElementById('toolbar');
+let infoPressed = false;
+infoEl.addEventListener('pointerdown', () => { infoPressed = true; });
+for (const ev of ['pointerup', 'pointercancel']) addEventListener(ev, () => setTimeout(() => { infoPressed = false; }, 0));
 const infoBody = document.getElementById('infoBody');
 let hudFrame = 0;
 
@@ -1049,8 +1052,11 @@ function updateHud() {
   toolbarEl.classList.toggle('covered', docked);
   if (!deselectEl.hidden) deselectEl.style.bottom = (docked ? infoEl : toolbarEl).offsetHeight + 8 + 'px';
   // lists and charts don't need refreshing as often as a creature's health
-  if (sel && hudFrame++ % (sel.stats || sel.history || sel.favorites || sel.lists ? 30 : 6) === 0) {
-    infoBody.innerHTML = infoHtml();
+  // no refresh while a press is in progress inside the panel, or the link being
+  // clicked (a ✏️, a name) would be replaced before the click lands
+  if (sel && !infoPressed && hudFrame++ % (sel.stats || sel.history || sel.favorites || sel.lists ? 30 : 6) === 0) {
+    const html = infoHtml();
+    if (html !== infoBody.innerHTML) infoBody.innerHTML = html;
     if (sel.stats) drawStatsCharts();
   }
   refreshEditor();

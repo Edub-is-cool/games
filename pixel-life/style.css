@@ -568,3 +568,15 @@ button.active { border-color: var(--accent); background: #3d3a26; }
 #info .history li { border-bottom-color: rgba(58, 36, 16, 0.25); }
 #topbar, #info, #toast, #popup { border-width: 4px; }
 #toolbar, #info.dock { border-width: 4px 0 0; }
+
+/* every box shares one darker wood; the docked info is exactly the toolbar's height */
+#topbar, #toolbar, #info, #toast, #popup { --wood: #946a3c; color: #22140a; }
+#info { --text: #22140a; --muted: #3a240f; --accent: #3d2208; }
+#info h3, #info h4, #infoEdit h4 { color: #2e1806; }
+#topbar #date, #brush, #brushVal, #topbar #pop, #topbar #pop * { color: #22140a; }
+#toolbar .group-tab { color: #22140a; border-color: #5a3a1c; }
+#toolbar .group-tab:hover { background: #a67b49; }
+.groups { border-bottom-color: #6b4a26; }
+.panel-row { scrollbar-color: #4a2e17 #7d5630; }
+#info.dock { height: calc(172px + env(safe-area-inset-bottom, 0px)); padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+#info.dock #infoClose { top: 8px; }

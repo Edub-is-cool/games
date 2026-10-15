@@ -29,7 +29,7 @@ Games/
 ├── ore-bit/            # Static site — open index.html directly
 ├── drum-pro/           # Static site — open index.html directly
 ├── trim-forge/         # Minecraft armor trim previewer — open index.html directly
-├── pixel-life/         # WorldBox-style god simulator — open index.html directly
+├── pixel-life/         # God simulator — open index.html directly
 └── CLAUDE.md
 ```
 

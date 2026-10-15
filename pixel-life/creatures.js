@@ -79,9 +79,22 @@ const RACES = {
     name: 'Super Fox', plural: 'Super Foxes', civ: true, hp: 5000, dmg: 120, speed: 1.8, life: 500, aggression: 1,
     hero: true, hidden: true, maxPop: 30,
     home: [T.GRASS, T.FOREST, T.SAVANNA, T.TUNDRA, T.TAIGA, T.SAND], title: 'Den',
-    colors: { o: '#ff8c1a', w: '#fff4d6', d: '#2a2420', y: '#ffd700' }, facesLeft: true,
     roof: '#ff8c1a', wall: '#fff4d6',
-    art: ['y.....', 'o.....', 'woccoo', '.oooow', '.d..d.'],
+    // a crowned, caped fox with its Fang Blade in its jaws and a Foxyite band (x, gear.js);
+    // the gear is part of the drawing, so gearArt adds nothing (drawsGear)
+    colors: { r: '#ff8c1a', s: '#ffe8b8', w: '#fff4d6', d: '#2a2420', k: '#111111', y: '#ffd700', p: '#7a2ad8', q: '#5a1aa8' },
+    facesLeft: true, detail: 2, drawsGear: true,
+    art: [
+      '.....y.y.y........',
+      '.....yyyyy........',
+      '.....drrd.........',
+      '.....rkrr..pq.....',
+      'xssssyrrrxxppqprr.',
+      '.....wwrrxxpqpprrw',
+      '......wrrxxrrrr.ww',
+      '......d.d....d.d..',
+      '......d.d....d.d..',
+    ],
   },
   rabbit: {
     name: 'Rabbit', plural: 'Rabbits', hp: 5, dmg: 0, speed: 1.3, life: 8,
@@ -1513,7 +1526,7 @@ function unitSprite(race, cloth, gear, flip, flash) {
     const r = RACES[race];
     const pal = gearPalette({ ...r.colors, c: cloth, l: '#3a2f2a', m: '#c9ced6' }, gear);
     if (flash) for (const k in pal) pal[k] = '#ffffff';
-    return detailed(refineSprite(makeSprite(gearArt(r.art, gear), pal, flip)), r);
+    return detailed(refineSprite(makeSprite(r.drawsGear ? r.art : gearArt(r.art, gear), pal, flip)), r);
   });
 }
 

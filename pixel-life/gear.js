@@ -111,15 +111,15 @@ const gearKey = g => `${g.weapon}.${g.armor}.${g.tool}`;
 // ---------- Genetics ----------
 // Genes are inherited numbers (1 = average). Traits are named mutations on
 // top of them. A trait can only be edited in once it has been discovered:
-// natural traits by a creature being born with one, legendary ones through
+// other traits by opening the info of a creature that carries one, legendary ones through
 // achievements. Discoveries are kept across worlds.
 const GENES = {
-  strength:  { label: 'Strength' },
-  vitality:  { label: 'Vitality' },
-  speed:     { label: 'Speed' },
-  lifespan:  { label: 'Lifespan' },
-  fertility: { label: 'Fertility' },
-  intellect: { label: 'Intellect' },
+  strength:  { label: 'Strength',  icon: '💪' },
+  vitality:  { label: 'Vitality',  icon: '❤️' },
+  speed:     { label: 'Speed',     icon: '💨' },
+  lifespan:  { label: 'Lifespan',  icon: '⏳' },
+  fertility: { label: 'Fertility', icon: '🥚' },
+  intellect: { label: 'Intellect', icon: '🧠' },
 };
 const GENE_MIN = 0.4, GENE_MAX = 2.5;
 const clampGene = n => Math.min(GENE_MAX, Math.max(GENE_MIN, Math.round(n * 100) / 100));
@@ -166,11 +166,14 @@ function saveProgress() {
 const traitUnlocked = t => progress.traits.includes(t) ||
   (TRAITS[t].legendary && progress.achievements.includes(TRAITS[t].legendary));
 
-function discover(t) {
-  if (progress.traits.includes(t) || TRAITS[t].legendary) return;
-  progress.traits.push(t);
+// Traits are discovered by looking: opening a creature's info discovers the
+// traits it carries (titles and legendary traits aren't discovered this way).
+function discoverFrom(u) {
+  const found = (u.traits || []).filter(t => TRAITS[t] && !TRAITS[t].legendary && !TRAITS[t].title && !progress.traits.includes(t));
+  if (!found.length) return;
+  progress.traits.push(...found);
   saveProgress();
-  toast(`🧬 Trait discovered: ${TRAITS[t].name}! You can now edit it into creatures.`);
+  toast(`🧬 Trait${found.length > 1 ? 's' : ''} discovered: ${found.map(t => traitIcon(t) + ' ' + TRAITS[t].name).join(', ')}! You can now edit ${found.length > 1 ? 'them' : 'it'} into creatures.`);
 }
 
 function achieve(id) {
@@ -235,7 +238,6 @@ function inheritTraits(u, parents) {
   if (parents) for (const p of parents) for (const t of (p && p.traits) || []) if (rand() < 0.5) addTrait(u, t);
   if (rand() < (parents ? 0.03 : 0.06) * (laws.mutants ? 8 : 1)) addTrait(u, pick(NATURAL_TRAITS));
   for (const t of raceTraits(u.race)) addTrait(u, t);
-  for (const t of u.traits) discover(t);
 }
 
 const dnaOf = u => (u.dna ||= randomDna());
@@ -278,6 +280,7 @@ function refreshEditor(force) {
   editing = u && !u.dead ? u : null;
   infoEdit.textContent = '';
   if (!editing) return;
+  discoverFrom(editing);
 
   const head = text => {
     const h = document.createElement('h4');
@@ -335,7 +338,7 @@ function refreshEditor(force) {
   for (const [g, info] of Object.entries(GENES)) {
     const n = gene(editing, g);
     bars.insertAdjacentHTML('beforeend',
-      `<span>${info.label}</span><span class="bar"><i style="width:${Math.min(100, (n / 2.5) * 100)}%"></i></span><span>${n.toFixed(2)}</span>`);
+      `<span>${info.icon} ${info.label}</span><span class="bar"><i style="width:${Math.min(100, (n / 2.5) * 100)}%"></i></span><span>${n.toFixed(2)}</span>`);
   }
   infoEdit.append(bars);
 
@@ -355,10 +358,10 @@ function refreshEditor(force) {
     const open = traitUnlocked(t);
     const b = document.createElement('button');
     b.className = 'chip' + (has ? ' on' : '') + (info.legendary ? ' legendary' : '');
-    b.textContent = open ? info.name : '🔒 ???';
+    b.textContent = open ? `${traitIcon(t)} ${info.name}` : '🔒 ???';
     b.title = open ? (has ? 'Click to remove' : 'Click to add')
       : info.legendary ? `Locked: earn the "${ACHIEVEMENTS[info.legendary].name}" achievement`
-      : 'Locked: discover it by having a creature born with it';
+      : 'Locked: discover it by opening the info of a creature that has it';
     b.disabled = !open && !has;
     b.onclick = () => {
       if (!open) return;

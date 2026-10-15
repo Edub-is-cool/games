@@ -69,6 +69,21 @@ const NEW_TRAITS = {
   mageslayer:  { cat: 'Titles', name: 'Mageslayer', title: true },
 };
 for (const [k, t] of Object.entries(NEW_TRAITS)) TRAITS[k] = { mods: {}, ...t };
+
+// an icon for every trait (anything missing shows 🧬)
+const TRAIT_ICONS = {
+  strong: '💪', weak: '🥀', tough: '🛡️', frail: '🦴', swift: '💨', slow: '🐌', longLived: '⏳', shortLived: '⌛',
+  fertile: '🥚', barren: '🚫', clever: '💡', dim: '🌫️', titan: '🗿', immortal: '♾️', genius: '🧠', regenerates: '💚', lightning: '⚡',
+  ambitious: '🎯', content: '😌', greedy: '💰', honest: '🤝', deceitful: '🎭', paranoid: '👀', pacifist: '🕊️', bloodlust: '🩸',
+  peaceful: '☮️', psychopath: '🔪', hotheaded: '😡', thief: '🦝', wise: '🦉', strongMinded: '🧱', evil: '😈', gifted: '✨',
+  giant: '⛰️', tiny: '🐜', fat: '🍖', agile: '🤸', attractive: '😍', ugly: '👹', oneEyed: '🏴‍☠️', goldenTooth: '🦷',
+  eagleEyed: '🦅', shortSighted: '👓', hardSkin: '🐢', softSkin: '🧸',
+  fireBlood: '🔥', acidBlood: '🧪', fireProof: '🧯', frostProof: '🧣', acidProof: '🥽', poisonImmune: '💊', venomous: '🐍',
+  thorns: '🌵', coldAura: '❄️', burningFeet: '👣', healingAura: '💖', bubbleDefense: '🫧', sunblessed: '☀️', heliophobia: '🌑',
+  deathBomb: '💣', deathNuke: '☢️', energized: '🔋', megaHeartbeat: '💓', whirlwind: '🌪️', markOfDeath: '💀', pyromaniac: '🎇', bomberman: '🧨',
+  veteran: '🎖️', kingslayer: '👑', dragonslayer: '🐉', mageslayer: '🧙',
+};
+const traitIcon = t => TRAIT_ICONS[t] || '🧬';
 for (const t of Object.keys(TRAITS)) if (!TRAITS[t].cat) TRAITS[t].cat = TRAITS[t].legendary ? 'Legendary' : 'Genetic';
 for (const [k, t] of Object.entries(NEW_TRAITS)) if (!t.legendary && !t.title && !NATURAL_TRAITS.includes(k)) NATURAL_TRAITS.push(k);
 const has = (u, t) => !!u.traits && u.traits.includes(t);
@@ -416,7 +431,6 @@ function traitRain(set) {
       const oldLife = gene(u, 'lifespan');
       addTrait(u, t);
       u.maxAge = Math.round((u.maxAge * gene(u, 'lifespan')) / oldLife);
-      discover(t);
     });
     for (let k = 0; k < 6 + state.brush * 2; k++) addEffect('drop', x + (rand() - 0.5) * state.brush * 2, y + (rand() - 0.5) * state.brush * 2, 0.4, { color: set === 'gamma' ? '#7ee0b0' : set === 'omega' ? '#a050e0' : '#ffd34d' });
   };

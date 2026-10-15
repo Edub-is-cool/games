@@ -2022,7 +2022,7 @@ function infoHtml() {
       ['Health', `${Math.max(0, Math.ceil(u.hp))} / ${maxHp(u)}`],
       ['Doing', job],
       ...unitExtraRows(u),
-      u.traits && u.traits.length && ['Traits', u.traits.map(t => TRAITS[t].name).join(', ')],
+      u.traits && u.traits.length && ['Traits', u.traits.map(t => traitIcon(t) + ' ' + TRAITS[t].name).join(', ')],
       (u.sick || u.mad || u.blessed || u.cursed || u.shield || u.immune) && ['Status', [
         u.blessed && 'Blessed', u.cursed && 'Cursed', u.shield && 'Shielded', u.sick && 'Plague', u.immune && 'Immune', u.mad && 'Mad',
       ].filter(Boolean).join(', ')],

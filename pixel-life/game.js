@@ -89,7 +89,7 @@ const WORLD_SIZES = {
 };
 
 // Map shapes for new worlds. Earth is drawn from a tiny land/sea sketch.
-const WORLD_SHAPES = { island: 'Island', continents: 'Continents', pangaea: 'Pangaea', archipelago: 'Archipelago', earth: 'Earth' };
+const WORLD_SHAPES = { island: 'Island', continents: 'Continents', pangaea: 'Pangaea', archipelago: 'Archipelago', earth: 'Earth', blank: 'Blank Slate' };
 const EARTH = [
   '................................................................',
   '.........#####........#####..........######.....................',
@@ -174,6 +174,8 @@ const state = {
 // ---------- World generation ----------
 function generateWorld(W, H, seed, shape = 'island') {
   const tiles = new Uint8Array(W * H);
+  // Blank Slate: nothing but open ocean, ready to be shaped by hand
+  if (shape === 'blank') return tiles.fill(T.DEEP);
   // a few big landmasses for the Continents shape
   const blobs = Array.from({ length: 3 }, (_, i) => ({ x: hash2(i, 1, seed) * 1.2 - 0.6, y: hash2(i, 2, seed) * 1.0 - 0.5, r: 0.4 + hash2(i, 3, seed) * 0.2 }));
   const height = makeNoise(seed);

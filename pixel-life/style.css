@@ -334,3 +334,26 @@ button.active { border-color: var(--accent); background: #3d3a26; }
 #info .tab { padding: 1px 5px; border: 1px solid #3b4563; border-radius: 4px; text-decoration: none; color: var(--muted); }
 #info .tab.on { color: var(--accent); border-color: var(--accent); }
 .hint { color: var(--muted); font-size: 11px; }
+
+/* compact toolbar: smaller buttons, a lower panel, and it can fold away */
+#toolbar { gap: 6px; padding: 6px 8px; width: min(820px, calc(100vw - 16px)); }
+#toolbar button { padding: 3px 7px; font-size: 12px; gap: 4px; border-width: 1px; border-radius: 5px; }
+#tabs button { padding: 4px 9px; font-size: 12px; }
+#panel { max-height: 20vh; gap: 3px; }
+#panel[hidden] { display: none; }
+#panel .heading { margin-top: 2px; font-size: 10px; }
+#toolbar .sw { width: 10px; height: 10px; border-width: 1px; }
+#toolbar .icon { height: 12px; }
+#brush { font-size: 12px; }
+#topbar { gap: 6px; padding: 5px 10px; }
+#speeds button { padding: 2px 6px; font-size: 11px; }
+@media (max-width: 600px) {
+  #panel { max-height: 24vh; }
+}
+
+.groups { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px solid var(--border); }
+#toolbar .group-tab { padding: 1px 7px; font-size: 11px; color: var(--muted); background: transparent; border-color: #3b4563; }
+#toolbar .group-tab.active { color: var(--accent); border-color: var(--accent); background: #3d3a26; }
+
+#zoomBar { position: fixed; left: 10px; bottom: 50%; transform: translateY(50%); display: flex; flex-direction: column; gap: 4px; }
+#zoomBar button { width: 34px; height: 34px; justify-content: center; padding: 0; font-size: 18px; background: var(--panel); }

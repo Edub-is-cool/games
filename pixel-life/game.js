@@ -162,10 +162,11 @@ const state = {
   lastSpeed: 1,
   cam: { x: 0, y: 0, zoom: 4 },
   tab: 'terrain',
-  tool: 'paint:GRASS',
+  tool: 'hand',   // start out moving the camera, so a first drag doesn't paint over the world
   brush: 4,
   brushShape: 'circle',
   worldSize: 'medium',
+  panelOpen: true,
   worldShape: 'island',
   follow: 0,
 };
@@ -818,16 +819,43 @@ const PANELS = {
   },
 };
 
+// Long panels are split into groups at their headings; only the chosen group's
+// buttons show, under a row of small group tabs.
+state.groups = {};
+
 function renderPanel() {
   panelEl.textContent = '';
-  for (const item of PANELS[state.tab]()) {
-    if (item.heading) {
-      const h = document.createElement('div');
-      h.className = 'heading';
-      h.textContent = item.heading;
-      panelEl.append(h);
-      continue;
+  const items = PANELS[state.tab]();
+  const groups = [];
+  let loose = [];
+  for (const item of items) {
+    if (item.heading) groups.push({ title: item.heading, items: [] });
+    else if (groups.length) groups[groups.length - 1].items.push(item);
+    else loose.push(item);
+  }
+  let shown = loose;
+  if (groups.length) {
+    const open = groups.find(g => g.title === state.groups[state.tab]) ||
+      groups.find(g => g.items.some(i => i.tool && i.tool === state.tool)) || groups[0];
+    state.groups[state.tab] = open.title;
+    const bar = document.createElement('div');
+    bar.className = 'groups';
+    for (const g of groups) {
+      const chip = document.createElement('button');
+      chip.className = 'group-tab' + (g === open ? ' active' : '');
+      chip.textContent = g.title;
+      chip.onclick = () => { state.groups[state.tab] = g.title; renderPanel(); };
+      bar.append(chip);
     }
+    for (const item of loose) addPanelButton(item);
+    panelEl.append(bar);
+    shown = open.items;
+  }
+  for (const item of shown) addPanelButton(item);
+  finishPanel();
+}
+
+function addPanelButton(item) {
     const btn = document.createElement('button');
     if (item.swatch) {
       const sw = document.createElement('span');
@@ -852,10 +880,15 @@ function renderPanel() {
       btn.onclick = item.action;
     }
     panelEl.append(btn);
-  }
+}
+
+function finishPanel() {
   for (const b of document.querySelectorAll('#tabs button')) b.classList.toggle('active', b.dataset.tab === state.tab);
-  brushEl.hidden = state.tab === 'world' || state.tab === 'creatures';
+  brushEl.hidden = !state.panelOpen || ['world', 'creatures', 'layers'].includes(state.tab);
+  panelEl.hidden = !state.panelOpen;
+  document.getElementById('fold').textContent = state.panelOpen ? '▾' : '▴';
   view.classList.toggle('possess', state.tool === 'control');
+  view.classList.toggle('hand', state.tool === 'hand');
 }
 
 function selectTool(tool) {
@@ -925,9 +958,14 @@ function updateHud() {
 }
 
 document.getElementById('tabs').addEventListener('click', e => {
-  const tab = e.target.closest('button')?.dataset.tab;
-  if (!tab) return;
-  state.tab = tab;
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.id === 'fold') state.panelOpen = !state.panelOpen;
+  else if (b.dataset.tab) {
+    // clicking the open tab again folds the panel away
+    state.panelOpen = !(state.tab === b.dataset.tab && state.panelOpen);
+    state.tab = b.dataset.tab;
+  }
   renderPanel();
 });
 
@@ -968,7 +1006,7 @@ view.addEventListener('pointerdown', e => {
   }
   if (pointers.size > 2) return;
 
-  if (e.button === 1 || e.button === 2 || state.tool === 'hand') {
+  if (e.button === 1 || e.button === 2 || e.shiftKey || state.tool === 'hand') {
     pointer.mode = 'pan';
   } else {
     pointer.mode = 'tool';
@@ -1069,11 +1107,26 @@ view.addEventListener('pointercancel', endPointer);
 view.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') pointer.over = false; });
 view.addEventListener('contextmenu', e => e.preventDefault());
 
+// A mouse wheel (and a trackpad pinch, which arrives as ctrl+wheel) zooms.
+// Two-finger trackpad scrolling pans the map instead.
 view.addEventListener('wheel', e => {
   e.preventDefault();
   const p = eventPos(e);
-  zoomAt(p.x, p.y, Math.exp(-e.deltaY * 0.0015));
+  const trackpadScroll = !e.ctrlKey && e.deltaMode === 0 && (Math.abs(e.deltaX) > 0.5 || Math.abs(e.deltaY) % 1 !== 0 || Math.abs(e.deltaY) < 40);
+  if (trackpadScroll) {
+    state.follow = 0;
+    state.cam.x += (e.deltaX * dpr) / state.cam.zoom;
+    state.cam.y += (e.deltaY * dpr) / state.cam.zoom;
+    clampCamera();
+  } else {
+    zoomAt(p.x, p.y, Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)));
+  }
 }, { passive: false });
+
+// on-screen zoom buttons, for trackpads and touch screens
+document.getElementById('zoomIn').onclick = () => zoomAt(view.width / 2, view.height / 2, 1.4);
+document.getElementById('zoomOut').onclick = () => zoomAt(view.width / 2, view.height / 2, 1 / 1.4);
+document.getElementById('zoomFit').onclick = () => { state.follow = 0; fitCamera(); };
 
 const keys = new Set();
 addEventListener('keydown', e => {
@@ -1151,8 +1204,18 @@ let last = performance.now();
 let acc = 0;
 let simAlpha = 1;    // how far we are between sim ticks, for smooth movement
 
+// One error must never stop the game loop (that would freeze the camera too),
+// so each frame is guarded and the next one is always scheduled.
+let frameErrors = 0;
 function frame(now) {
-  const dt = Math.min(250, now - last);
+  requestAnimationFrame(frame);
+  try { frameBody(now); } catch (err) {
+    if (frameErrors++ < 3) { console.error(err); toast('⚠ Something went wrong, but the world keeps turning'); }
+  }
+}
+
+function frameBody(now) {
+  const dt = Math.max(0, Math.min(250, now - last));   // never backwards
   last = now;
 
   if (state.speed > 0) {
@@ -1171,5 +1234,4 @@ function frame(now) {
   holdTools(now);
   updateHud();
   render();
-  requestAnimationFrame(frame);
 }

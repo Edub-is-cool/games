@@ -146,7 +146,10 @@ Loaded after disasters.js (it registers powers).
 
 ## Controls
 - **Left click / drag:** use the selected tool (Terrain tab paints tiles, Shape tab raises/lowers)
-- **Right or middle drag**, or the **Move Camera** tool: pan. **WASD / arrows** also pan
+- **Move the camera:** the game starts on the **Move Camera** tool, so left-drag pans. With any tool: right/middle drag or **Shift + drag** pans, two-finger trackpad scrolling pans, **WASD / arrows** pan.
+- **Zoom:** mouse wheel, trackpad pinch, **+ / -**, or the **+ − ⌂** buttons on the left (⌂ shows the whole world).
+- **Toolbar:** tabs on top, then a row of group tabs (Destruction, Nature, ...) and only that group's buttons. **▾** folds the toolbar down to its tabs; clicking the open tab again does the same.
+- The game loop is guarded (`frame` → `frameBody`): an error shows one warning toast instead of freezing the game.
 - **Mouse wheel**, **+ / -**: zoom. Touch: two-finger pinch to pan and zoom
 - **[ / ]** or the slider: brush size (1–40). **B** or the shape buttons: brush shape (circle, square, diamond, spray). Brush powers use the shape too. **Space**: pause / resume
 - **Creatures tab:** click (or hold) to spawn a creature; **Inspect** shows details for a creature or village

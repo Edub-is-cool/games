@@ -565,7 +565,7 @@ function drawPowers(ox, oy, z) {
   }
 
   for (const e of powers.effects) {
-    const p = Math.min(1, e.t / e.dur);
+    const p = Math.max(0, Math.min(1, e.t / e.dur));
     const sx = ox + e.x * z, sy = oy + e.y * z;
     switch (e.kind) {
       case 'bolt': {

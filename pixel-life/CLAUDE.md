@@ -136,6 +136,10 @@ Loaded after disasters.js (it registers powers).
 - **Timeline:** World → 🕰 Timeline opens a strip of big moments from `life.history` (`TIMELINE_EVENT`); clicking one flies the camera to the city or kingdom it names (`placeOf`).
 - **Life stories:** every 20 ticks `storyTick` compares each person with their last snapshot (`u.bk`) and writes new happenings into `u.bio` (born/appeared, moved, founded, settled out, crowned, lost the throne, became lord, love/marriage, titles, fight milestones; 16 kept). Shown as 📖 Life story in their info (`infoHtml` wrapper).
 
+## Sound effects (sfx.js)
+- `sfx(kind, x, y)` synthesizes short sounds with Web Audio (`SOUNDS`: boom, bigboom, thunder, clash, twang, bite, cannon), rate-limited per kind (`SFX_GAP`), silent off screen and louder when zoomed in (`sfxLevel`). It plays only while `music.on` (the 🎵 button / M key from music.js).
+- Hooks: an `addEffect` wrapper (explosion, mushroom cloud, lightning bolt) and a `fight` wrapper (a swing: clash for people, twang for bows and staffs, bite for animals; only at 5× speed or slower); navy.js calls `sfx('cannon')`.
+
 ## World Generator (worldgen.js)
 - Opening the **World** tab (or its 🌍 New World button) opens a big panel over almost the whole screen (`#worldGen`, `openWorldGen`), with a live preview (`drawPreview`: the same world generated small, plus land % and top biomes) and ✨ Create World.
 - Options (`genState` → `genOptions` → `newWorld(sizeKey, gen)` → `generateWorld(W, H, seed, shape, options)`, defaults in `GEN_DEFAULTS` in game.js): template (Island, Continents, Pangaea, Archipelago, Earth, Blank Slate), size (presets or custom width/height), land amount (or let the template decide), landmass size (noise scale), number of continents, coastline roughness (warp), mountains (land relief), forests, bushes & flowers, ore veins, rivers, lakes, polar ice, temperature and moisture offsets, which climate biomes are allowed (`allowedBiome` swaps in the closest allowed one by `BIOME_CLIMATE`), number and kinds of rare biome patches (`RARE_BIOMES` in terrain2.js), enchanted grove, corruption patch, wildlife law, starting peoples (6 of each placed on their home terrain), and a seed (text or number; same seed + settings = same world).
@@ -224,6 +228,13 @@ pixel-life/
 ├── politics.js    (kings, armies, plots, rites, meta traits, subspecies, ages, invasions, more laws)
 ├── ui2.js         (map layers, lists, mind and family tree, thought bubbles, pop-ups, bookmarks)
 ├── worldgen.js    (the World Generator panel)
+├── music.js       (background music; the 🎵 button)
+├── rivers.js      (rivers, lakes, the River tile)
+├── seasons.js     (seasons, day and night)
+├── royals.js      (heirs, succession wars, royal marriages)
+├── navy.js        (warships and naval battles)
+├── ui3.js         (minimap, save slots, undo, timeline, life stories)
+├── sfx.js         (sound effects)
 ├── music.js       (background music, Web Audio)
 └── main.js        (startup, runs last)
 ```

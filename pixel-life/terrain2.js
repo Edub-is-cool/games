@@ -96,10 +96,99 @@ for (const [key, o] of Object.entries(ORES)) addTile(key, { name: o.name, color:
 addTile('BUSH',      { name: 'Fruit Bush',  color: 0x3f8a2e, plant: true, food: true, group: 'Plants', burn: 0.02, dots: [0.25, 0xd8302a] });
 addTile('FLOWERS',   { name: 'Flowers',     color: 0x5fa83a, plant: true, group: 'Plants', burn: 0.01, dots: [0.4, 0xf8a0d0] });
 addTile('MUSHROOMS', { name: 'Mushrooms',   color: 0x5a7a3a, plant: true, group: 'Plants', burn: 0.01, dots: [0.3, 0xe04a3a] });
-// how each plant is drawn (plantPixel in game.js): '.' is the ground, 'f' a flower of a random color
-plantArt('BUSH', ['.hb.', 'bbrb', 'rbbb', '.bb.'], { b: 0x2f6e22, h: 0x4f9a38, r: 0xe0302a });
-plantArt('FLOWERS', ['f..f', 's.fs', 's.s.', '..s.'], { s: 0x2f7a22 });
-plantArt('MUSHROOMS', ['.rr.', 'rwrr', '.ss.', '.ss.'], { r: 0xd8302a, w: 0xf8f4ec, s: 0xeadcc0 });
+// Plants are sprites that stand on their tile (drawPlants); the tile itself is
+// drawn as the ground around it. Art is at double detail like the animals.
+// 'f' petals take one of FLOWER_COLORS per plant.
+const FLOWER_COLORS = ['#f8a0d0', '#f8e050', '#f4f4f4', '#b07ae8', '#f06a5a'];
+function plantSprite(key, rows, pal) { PLANT_ART[T[key]] = { rows, pal }; }
+plantSprite('BUSH', [
+  '..hhbb..',
+  '.hbbbrb.',
+  'hbrbbbbb',
+  'bbbbbrbb',
+  'bbrbbbbb',
+  '.bbbbbb.',
+  '..dbbd..',
+  '...dd...',
+], { b: '#2f6e22', h: '#4f9a38', r: '#e0302a', d: '#5a3a1e' });
+plantSprite('FLOWERS', [
+  '.f....f.',
+  'fyf..fyf',
+  '.f.f..f.',
+  '.sfyf.s.',
+  '.s.f..s.',
+  '.sls.ls.',
+  '..ss.s..',
+  '..s..s..',
+], { s: '#2f7a22', l: '#4fa83a', y: '#f8d040' });
+plantSprite('MUSHROOMS', [
+  '..rrrr..',
+  '.rrwrrr.',
+  'rrrrrwrr',
+  'rwrrrrrr',
+  '..eeee..',
+  '...ee...',
+  '...ee...',
+  '..eeee..',
+], { r: '#d8302a', w: '#f8f4ec', e: '#eadcc0' });
+
+// ores: a boulder with nuggets of the ore, or a crystal cluster for the magic metals
+const BOULDER_ART = [
+  '........',
+  '..rrrr..',
+  '.rrkrrr.',
+  'rrgkrrkr',
+  'rkrrrkgr',
+  'rrrkrrrr',
+  '.srrrrs.',
+  '..ssss..',
+];
+const CRYSTAL_ART = [
+  '...g....',
+  '..gk..g.',
+  '..kk.gk.',
+  '.gkk.kk.',
+  '.kkkgkk.',
+  'rkkkkkkr',
+  'rrrrrrrr',
+  '.ssssss.',
+];
+const hexOf = c => '#' + c.toString(16).padStart(6, '0');
+const tintHex = (c, f) => hexOf((Math.min(255, ((c >> 16) & 255) * f) << 16) | (Math.min(255, ((c >> 8) & 255) * f) << 8) | Math.min(255, (c & 255) * f));
+for (const [key, o] of Object.entries(ORES)) {
+  const crystal = key === 'MYTHRIL' || key === 'ADAMANTINE';
+  PLANT_ART[T[key]] = {
+    rows: crystal ? CRYSTAL_ART : BOULDER_ART, ore: true,
+    pal: { r: tintHex(o.color, 1.05), s: tintHex(o.color, 0.7), k: hexOf(o.dot), g: tintHex(o.dot, 1.4) },
+  };
+}
+
+function plantSpriteFor(t, variant, flip) {
+  return cached(`plant|${t}|${variant}|${flip}`, () => {
+    const art = PLANT_ART[t];
+    const s = refineSprite(makeSprite(art.rows, { ...art.pal, f: FLOWER_COLORS[variant] }, flip));
+    s.res *= 2;   // double detail
+    return s;
+  });
+}
+
+// every plant and ore tile on screen gets its sprite, standing at the bottom of its tile
+function drawPlants(ox, oy, z) {
+  const { W, H, tiles, seed } = state;
+  const x0 = Math.max(0, Math.floor(-ox / z) - 1), y0 = Math.max(0, Math.floor(-oy / z) - 1);
+  const x1 = Math.min(W - 1, Math.ceil((view.width - ox) / z) + 1), y1 = Math.min(H - 1, Math.ceil((view.height - oy) / z) + 1);
+  const sc = Math.max(1, Math.round(z / 4));
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const t = tiles[y * W + x];
+      if (!PLANT_ART[t]) continue;
+      const h = hash2(x, y, seed + 61);
+      const spr = plantSpriteFor(t, (h * FLOWER_COLORS.length) | 0, hash2(x, y, seed + 67) > 0.5);
+      const w = (spr.width * sc) / spr.res, hh = (spr.height * sc) / spr.res;
+      ctx.drawImage(spr, Math.round(ox + (x + 0.5) * z - w / 2), Math.round(oy + (y + 1) * z - hh), w, hh);
+    }
+  }
+}
 
 // ---------- Creep ----------
 // Ground grown by monster cores (creatures2.js); it spreads while its core lives.

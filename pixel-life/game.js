@@ -525,51 +525,35 @@ function drawFineTile(x, y) {
           else if (sy === 1 && sx === 1) f *= 1.2;
           else if (sy === last) f *= 0.88;
         } else if (isWater(t) && hash2(fx >> 1, fy, seed + 29) > 0.92) f *= 1.08;   // ripples
-        else if (TILES[t].ore) { pix[fy * FW + fx] = orePixel(t, src === i, x, y, sx, sy, f); continue; }
-        else if (PLANT_ART[t]) { pix[fy * FW + fx] = plantPixel(t, src === i, x, y, sx, sy, f); continue; }
+        else if (TILES[t].ore) { pix[fy * FW + fx] = orePixel(t, src % W, (src / W) | 0, f); continue; }
+        else if (PLANT_ART[t]) { pix[fy * FW + fx] = plantPixel(t, src % W, (src / W) | 0, f); continue; }
         pix[fy * FW + fx] = shadeColor(base[src], f);
       }
     }
   }
 }
 
-// Ores have their own look: rock with nuggets of the ore (one of three layouts,
-// sometimes flipped), each with a bright glint (n = nugget, g = glint).
-const ORE_LAYOUTS = [
-  ['....', '.gn.', '.nn.', '....'],
-  ['g...', 'n..n', '..gn', '....'],
-  ['.n..', '....', 'n.g.', '..nn'],
-];
+// Ore tiles are drawn as the rock around them; the ore itself is a sprite on
+// top (a boulder with nuggets, or a crystal cluster; see drawPlants in terrain2.js).
 const abgr = c => (0xff000000 | ((c & 255) << 16) | (c & 0xff00) | ((c >> 16) & 255)) >>> 0;
-function orePixel(t, own, x, y, sx, sy, f) {
-  const info = TILES[t], rock = shadeColor(abgr(info.color), f * 0.95);
-  if (!own) return rock;
-  const layout = ORE_LAYOUTS[(hash2(x, y, state.seed + 41) * 3) | 0];
-  const cx = hash2(x, y, state.seed + 43) > 0.5 ? 3 - sx : sx;
-  const ch = layout[sy][cx], nugget = abgr(info.dots ? info.dots[1] : info.color);
-  if (ch === 'g') return shadeColor(nugget, 1.45);
-  if (ch === 'n') return shadeColor(nugget, f);
-  return (sx + sy * 3 + x) % 7 === 0 ? shadeColor(rock, 0.8) : rock;   // a few dark cracks
+function orePixel(t, x, y, f) {
+  const W = state.W, tiles = state.tiles;
+  for (const j of [y * W + x - 1, y * W + x + 1, (y - 1) * W + x, (y + 1) * W + x]) {
+    if (j >= 0 && j < tiles.length && (tiles[j] === T.HILLS || tiles[j] === T.MOUNTAIN || tiles[j] === T.SNOW)) return shadeColor(base[j], f);
+  }
+  return shadeColor(abgr(TILES[T.HILLS].color), f);
 }
 
-// Plants are drawn too, on the color of the ground around them:
-// a round berry bush, flowers on stems, red-capped mushrooms.
+// Plant tiles (PLANT_ART, filled in by terrain2.js) are drawn as plain ground
+// here; the plants themselves are sprites standing on top (drawPlants).
 const PLANT_ART = {};
-const FLOWER_COLORS = [0xf8a0d0, 0xf8e050, 0xf4f4f4, 0xb07ae8, 0xf06a5a];
-function plantPixel(t, own, x, y, sx, sy, f) {
+function plantPixel(t, x, y, f) {
   const W = state.W, tiles = state.tiles;
-  // the ground it grows on: a neighbouring ground tile, or its own color
-  let ground = abgr(TILES[t].color);
   for (const j of [y * W + x - 1, y * W + x + 1, (y - 1) * W + x, (y + 1) * W + x]) {
-    if (j >= 0 && j < tiles.length && isGround(tiles[j])) { ground = base[j]; break; }
+    if (j >= 0 && j < tiles.length && isGround(tiles[j])) return shadeColor(base[j], f);
   }
-  if (!own) return shadeColor(ground, f);
-  const art = PLANT_ART[t], ch = art.rows[sy][hash2(x, y, state.seed + 47) > 0.5 ? 3 - sx : sx];
-  if (ch === 'f') return abgr(FLOWER_COLORS[(hash2(x * 7 + sx, y * 5 + sy, state.seed + 53) * FLOWER_COLORS.length) | 0]);
-  const c = art.pal[ch];
-  return c === undefined ? shadeColor(ground, f) : shadeColor(abgr(c), f);
+  return shadeColor(abgr(TILES[t].color), f);
 }
-function plantArt(key, rows, pal) { if (T[key] !== undefined) PLANT_ART[T[key]] = { rows, pal }; }
 
 function flushDirty() {
   if (!dirty || !dirty.list.length) return;
@@ -602,6 +586,7 @@ function render() {
   const ox = Math.round(view.width / 2 - cam.x * cam.zoom + (Math.random() - 0.5) * shake);
   const oy = Math.round(view.height / 2 - cam.y * cam.zoom + (Math.random() - 0.5) * shake);
   ctx.drawImage(worldCanvas, ox, oy, W * cam.zoom, H * cam.zoom);
+  drawPlants(ox, oy, cam.zoom);   // terrain2.js
   drawCities(ox, oy, cam.zoom);
   drawStructures(ox, oy, cam.zoom);
   drawLife(ox, oy, cam.zoom);

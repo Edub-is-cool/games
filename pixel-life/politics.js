@@ -110,20 +110,6 @@ function kingOf(k) {
   return king || null;
 }
 
-// before the capital falls, the king flees to another city
-function kingFlees(v) {
-  const k = life.kingdoms.get(v.kingdom);
-  const king = k && kingOf(k);
-  const hall = life.buildings.get(v.hall);
-  if (!king || king.village !== v.id || !hall || hall.hp > hall.maxHp * 0.3) return;
-  const refuge = villagesOf(k.id).find(o => o !== v);
-  if (!refuge) return;
-  joinVillage(king, refuge);
-  king.x = king.px = refuge.x; king.y = king.py = refuge.y + 1;
-  k.capital = refuge.id;
-  chronicle(`🏃 ${king.name} fled ${v.name} for ${refuge.name}`);
-}
-
 // how a king's personality tilts war and peace
 function kingMood(k) {
   const king = kingOf(k);
@@ -511,7 +497,8 @@ onKill = function (killer, victim) {
   const cap = life.villages.get(k.capital);
   chronicle(`🗡 ${killer.name} of the ${mine.name} slew ${victim.name}, ruler of the ${k.name}, and took the realm`);
   mine.renown = (mine.renown || 0) + 25;
-  for (const v of villagesOf(k.id)) _captureVillage(v, mine.id);   // taking the last city ends the old kingdom
+  if (cap) _captureVillage(cap, mine.id);   // taking the capital takes every city and ends the old kingdom
+  for (const v of villagesOf(k.id)) _captureVillage(v, mine.id);   // (only if it somehow had no capital)
   if (cap && life.villages.has(cap.id)) {
     joinVillage(killer, cap);
     killer.role = 'worker';

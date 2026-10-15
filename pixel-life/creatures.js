@@ -1180,21 +1180,27 @@ function destroyVillage(v, reason) {
   else if (k.capital === v.id) k.capital = rest[0].id;
 }
 
+// Taking a kingdom's capital takes the whole kingdom: every one of its cities
+// changes hands and the old kingdom ends. Any other city changes hands alone.
 function captureVillage(v, kid) {
   const oldK = life.kingdoms.get(v.kingdom), newK = life.kingdoms.get(kid);
-  const hall = life.buildings.get(v.hall);
-  if (hall) hall.hp = hall.maxHp / 2;
-  v.kingdom = kid;
-  for (const u of life.units) {
-    if (u.village !== v.id) continue;
-    u.role = 'worker'; u.task = null; u.warTarget = 0; u.lastHitBy = 0;
+  const wasCapital = oldK && oldK.capital === v.id;
+  const taken = wasCapital ? villagesOf(oldK.id) : [v];
+  for (const c of taken) {
+    const hall = life.buildings.get(c.hall);
+    if (hall && c === v) hall.hp = hall.maxHp / 2;
+    c.kingdom = kid;
+    for (const u of life.units) {
+      if (u.village !== c.id) continue;
+      u.role = 'worker'; u.task = null; u.warTarget = 0; u.lastHitBy = 0;
+    }
   }
   life.territoryDirty = true;
-  chronicle(`${newK.name} captured ${v.name}`);
+  chronicle(wasCapital && taken.length > 1
+    ? `${newK.name} took the capital ${v.name}, and all ${taken.length} cities of the ${oldK.name} with it`
+    : `${newK.name} captured ${v.name}`);
   if (!oldK) return;
-  const rest = villagesOf(oldK.id);
-  if (!rest.length) destroyKingdom(oldK);
-  else if (oldK.capital === v.id) oldK.capital = rest[0].id;
+  if (!villagesOf(oldK.id).length) destroyKingdom(oldK);
 }
 
 function updateVillage(v) {
@@ -1486,7 +1492,6 @@ function warMarch(u, k) {
   if (u.cd === 0) {
     u.cd = 8;
     hall.hp -= RACES[u.race].dmg;
-    kingFlees(target);
     hall.flash = 3;
     if (hall.hp <= 0) captureVillage(target, k);
   }

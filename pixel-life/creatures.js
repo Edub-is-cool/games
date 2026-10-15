@@ -1041,7 +1041,9 @@ function homeless(u, r) {
     u.settleTravel = false;
   }
   if (!u.kingdom) {
-    const v = nearestVillage(u.x, u.y, 14, o => o.race === u.race);
+    // anyone standing inside a city joins it, whatever its people; otherwise look for their own kind
+    const here = life.villages.get(life.owner[Math.floor(u.y) * state.W + Math.floor(u.x)]);
+    const v = here || nearestVillage(u.x, u.y, 14, o => o.race === u.race);
     if (v) { joinVillage(u, v); return; }
   }
   if (u.settleTravel) {
@@ -1221,8 +1223,10 @@ function updateVillage(v) {
   const capacity = Math.min(6 + v.houses * 4, laws.hundredPeople ? 100 : Infinity);
   const birthRate = laws.births * (life.kingdoms.get(v.kingdom)?.goldenUntil > state.tick ? 2 : 1);
   if (laws.civBabies && v.pop < capacity && v.adults >= 2 && v.food > 3 && rand() < Math.min(0.5, 0.05 * v.adults * birthRate)) {
-    const mom = pickResident(v, isAdult), dad = pickResident(v, o => isAdult(o) && o !== mom);
-    const baby = spawnUnit(v.race, v.x, v.y + 1.5, 0, [mom, dad]);
+    // in mixed cities babies take after their mother, and she looks for a father of her own kind
+    const mom = pickResident(v, isAdult);
+    const dad = mom && (pickResident(v, o => isAdult(o) && o !== mom && o.race === mom.race) || pickResident(v, o => isAdult(o) && o !== mom));
+    const baby = spawnUnit(mom ? mom.race : v.race, v.x, v.y + 1.5, 0, [mom, dad]);
     if (baby) {
       joinVillage(baby, v);
       baby.role = 'worker';

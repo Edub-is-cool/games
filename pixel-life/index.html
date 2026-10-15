@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Pixel Life</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="view"></canvas>
+
+  <header id="topbar">
+    <div class="brand">Pixel Life</div>
+    <div id="date">Year 1 · Month 1</div>
+    <div id="pop"></div>
+    <div id="speeds" class="group">
+      <button data-speed="0" title="Pause (Space)">❚❚</button>
+      <button data-speed="0.5" title="Slow">½×</button>
+      <button data-speed="1" title="Normal speed">1×</button>
+      <button data-speed="2" title="Fast">2×</button>
+      <button data-speed="4" title="Faster">4×</button>
+      <button data-speed="5" title="Faster">5×</button>
+      <button data-speed="10" title="Fastest">10×</button>
+      <button data-speed="50" title="Timelapse">50×</button>
+      <button data-speed="100" title="Fast timelapse">100×</button>
+    </div>
+  </header>
+
+  <div id="hover"></div>
+  <div id="toast"></div>
+  <div id="popup" hidden></div>
+
+  <div id="controlBar" hidden>
+    🎮 <b id="controlName"></b>
+    <span class="hint">WASD / arrows move · click a creature to attack · click ground to walk · Esc to let go</span>
+    <button id="controlStop">Let go</button>
+  </div>
+
+  <aside id="info" hidden>
+    <button id="infoClose" title="Close">✕</button>
+    <div id="infoBody"></div>
+    <div id="infoEdit"></div>
+  </aside>
+
+  <footer id="toolbar">
+    <div id="tabs" class="group">
+      <button data-tab="terrain">Terrain</button>
+      <button data-tab="shape">Shape</button>
+      <button data-tab="biomes">Biomes</button>
+      <button data-tab="creatures">Creatures</button>
+      <button data-tab="powers">Powers</button>
+      <button data-tab="layers">Layers</button>
+      <button data-tab="world">World</button>
+    </div>
+    <div id="panel"></div>
+    <div id="brush">
+      <span>Brush</span>
+      <div id="shapes" class="group"></div>
+      <input type="range" id="brushSize" min="1" max="40" value="4" aria-label="Brush size">
+      <span id="brushVal">4</span>
+    </div>
+  </footer>
+
+  <script src="game.js"></script>
+  <script src="terrain2.js"></script>
+  <script src="creatures.js"></script>
+  <script src="society.js"></script>
+  <script src="gear.js"></script>
+  <script src="world.js"></script>
+  <script src="powers.js"></script>
+  <script src="disasters.js"></script>
+  <script src="creatures2.js"></script>
+  <script src="traits2.js"></script>
+  <script src="cities.js"></script>
+  <script src="politics.js"></script>
+  <script src="ui2.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

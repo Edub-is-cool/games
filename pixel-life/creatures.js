@@ -2006,6 +2006,7 @@ function infoHtml() {
     ['Gold', Math.floor(v.gold || 0)],
     k && ['Treasury', Math.floor(k.gold || 0)],
     k && kingOf(k) && ['Ruler', '👑 ' + unitLink(kingOf(k).id)],
+    lordOf(v) && ['Lord', '🗡 ' + unitLink(v.lord)],
     k && ['Renown', Math.floor(k.renown || 0)],
     k && k.traits && k.traits.length && ['Kingdom traits', k.traits.map(t => META_TRAITS.kingdom[t].split(' (')[0]).join(', ')],
     k && k.army && ['Army', `${k.army.size || 0} warriors, ${k.army.state === 'march' ? 'marching on ' + (life.villages.get(k.army.target)?.name || '?') : 'gathering'}`],

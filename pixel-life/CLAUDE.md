@@ -102,7 +102,7 @@ Loaded after disasters.js (it registers powers).
 - **City walls:** big stone-rich cities at war ring themselves with walls and gates (`buildWalls`); their own people pass through (`ownWall`), enemies must break them.
 
 ## Politics (politics.js)
-- **Kings:** each kingdom crowns its most renowned adult (`kingOf`, crown drawn above them); kings flee before the capital falls (`kingFlees`); their traits tilt war and alliance odds (`kingMood`). **Renown** grows with size and conquest. Xenophobic cultures raze foreign cities instead of capturing them.
+- **Kings:** each kingdom crowns its most renowned adult (`kingOf`, crown drawn above them); kings flee before the capital falls (`kingFlees`); **regicide:** whoever slays a reigning ruler from another kingdom takes every city of that realm for their own kingdom (the old kingdom ends) and becomes Lord of its old capital (`v.lord`, `lordOf`, shown in both inspectors; xenophobes don't raze here); their traits tilt war and alliance odds (`kingMood`). **Renown** grows with size and conquest. Xenophobic cultures raze foreign cities instead of capturing them.
 - **Armies** (law): at war, warriors gather at the capital under a captain, then march together (`armyTick`, `armyOrders`); a dashed line shows the march.
 - **Plots** (law): kings with renown and gold scheme alliances, wars, peace or rebellions abroad (`PLOTS`). **Magic rites** (law): religions with temples cast madness, vines, rebellion, quakes, hellfire or ascension.
 - **Meta traits** (`META_TRAITS`) on languages (doomed glyphs, beautiful script...), religions (zealous, pacifist, blood cult, healing, crusader), clans (warrior, long-lived...), kingdoms (expansionist, isolationist, mercantile, militarist) and more culture traits (xenophobic, xenophile, join-or-die).
@@ -129,6 +129,7 @@ Loaded after disasters.js (it registers powers).
 - Effects (`powers.effects`) and screen shake run in real time, even when paused. Sim effects (fire) run on sim ticks. Fires aren't saved.
 
 ## Creatures (creatures.js)
+- **Breeding needs two:** an animal only has young with another adult of its kind within 10 tiles (a lone animal never breeds).
 - **Animals:** grazers (sheep, cows, camels, rabbits, chickens, buffalo, rhinos, penguins, frogs, crabs, turtles, monkeys, rats) breed and flee predators; hunters (wolves, bears, polar bears, foxes, cats, dogs, hyenas, snakes, crocodiles) chase their `prey` and starve if they can't eat. Each species is capped by world size (one per `cap * ANIMAL_SPREAD` tiles), and all animals together by `MAX_ANIMALS` (650), so people always have room for children.
 - **Mythical:** unicorns and faeries (fly; spread enchanted land) live in enchanted biomes. Ghouls and zombies (whose victims rise as zombies) haunt corruption. Skeletons are raised by evil wizards. Dragons nest in the mountains (at most one at a time), fly, and breathe fire. `monster`/`undead` creatures never starve and always hunt.
 - **Crabzilla** (spawn only): a giant crab that wades through water (`swims`) and fires eye lasers (`fireLaser`). Best played with 🎮 Control.

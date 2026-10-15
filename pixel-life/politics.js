@@ -499,6 +499,32 @@ captureVillage = function (v, kid) {
   _captureVillage(v, kid);
 };
 
+// regicide: whoever slays a ruler from another kingdom takes the whole realm for
+// their own kingdom and becomes lord of its old capital (v.lord)
+const _onKillRegicide = onKill;
+onKill = function (killer, victim) {
+  _onKillRegicide(killer, victim);
+  const k = victim.king && life.kingdoms.get(victim.king);
+  if (!k || k.king !== victim.id || !killer || killer.dead || !RACES[killer.race].civ) return;
+  const mine = life.kingdoms.get(kingdomOf(killer));
+  if (!mine || mine.id === k.id) return;
+  const cap = life.villages.get(k.capital);
+  chronicle(`🗡 ${killer.name} of the ${mine.name} slew ${victim.name}, ruler of the ${k.name}, and took the realm`);
+  mine.renown = (mine.renown || 0) + 25;
+  for (const v of villagesOf(k.id)) _captureVillage(v, mine.id);   // taking the last city ends the old kingdom
+  if (cap && life.villages.has(cap.id)) {
+    joinVillage(killer, cap);
+    killer.role = 'worker';
+    cap.lord = killer.id;
+  }
+};
+
+// a village's lord, if they're still alive and living there
+function lordOf(v) {
+  const u = v.lord && life.byId.get(v.lord);
+  return u && !u.dead && u.village === v.id ? u : null;
+}
+
 const _statusTick = statusTick;
 statusTick = function (u, r) {
   if (_statusTick(u, r)) return true;
@@ -550,6 +576,7 @@ unitExtraRows = function (u) {
   const sub = subOf(u);
   if (sub) rows.unshift(['Subspecies', sub.name]);
   if (u.king && life.kingdoms.get(u.king)?.king === u.id) rows.unshift(['Title', `👑 Ruler of the ${life.kingdoms.get(u.king).name}`]);
+  else if (u.village && lordOf(life.villages.get(u.village) || {}) === u) rows.unshift(['Title', `🗡 Lord of ${life.villages.get(u.village).name}`]);
   if (u.clan && clanTraits(u.clan).length) rows.push(['Clan traits', clanTraits(u.clan).map(t => META_TRAITS.clan[t].split(' (')[0]).join(', ')]);
   return rows;
 };

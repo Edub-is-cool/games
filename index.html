@@ -92,33 +92,21 @@
       overflow: hidden;
     }
 
-    .card:nth-child(1) .card-banner {
-      background: linear-gradient(135deg, #1a0a00 0%, #2d1200 50%, #1a0a00 100%);
+    /* each banner is a slow rainbow in the same color order as its card's Play button */
+    .card-banner {
+      background-size: 200% 200%;
+      animation: rainbow-drift 12s linear infinite;
     }
-    .card:nth-child(2) .card-banner {
-      background: linear-gradient(135deg, #0a0014 0%, #1a0033 50%, #0a0014 100%);
-    }
-    .card:nth-child(3) .card-banner {
-      background: linear-gradient(135deg, #001a0f 0%, #003322 50%, #001a0f 100%);
-    }
-    .card:nth-child(4) .card-banner {
-      background: linear-gradient(135deg, #1a1200 0%, #332800 50%, #1a1200 100%);
-    }
-    .card:nth-child(5) .card-banner {
-      background: linear-gradient(135deg, #1a0010 0%, #330020 50%, #1a0010 100%);
-    }
-    .card:nth-child(6) .card-banner {
-      background: linear-gradient(135deg, #001020 0%, #002040 50%, #001020 100%);
-    }
-    .card:nth-child(7) .card-banner {
-      background: linear-gradient(135deg, #02060f 0%, #0a1a2e 50%, #02060f 100%);
-    }
-    .card:nth-child(8) .card-banner {
-      background: linear-gradient(135deg, #140d02 0%, #33220a 50%, #140d02 100%);
-    }
-    .card:nth-child(9) .card-banner {
-      background: linear-gradient(135deg, #0b0f16 0%, #1c2534 50%, #0b0f16 100%);
-    }
+    .card:nth-child(1) .card-banner { background-image: linear-gradient(120deg, #40a0ff, #ff4fa8, #ffd23f, #00e5a0, #ff8a1f, #ff3b3b, #7cff4a, #c04dff, #3be8ff, #40a0ff); }
+    .card:nth-child(2) .card-banner { background-image: linear-gradient(120deg, #00e5a0, #c04dff, #ff8a1f, #3be8ff, #ffd23f, #ff4fa8, #40a0ff, #7cff4a, #ff3b3b, #00e5a0); }
+    .card:nth-child(3) .card-banner { background-image: linear-gradient(120deg, #ffd23f, #40a0ff, #ff3b3b, #7cff4a, #ff4fa8, #3be8ff, #ff8a1f, #00e5a0, #c04dff, #ffd23f); }
+    .card:nth-child(4) .card-banner { background-image: linear-gradient(120deg, #c04dff, #7cff4a, #3be8ff, #ff3b3b, #ff8a1f, #40a0ff, #00e5a0, #ffd23f, #ff4fa8, #c04dff); }
+    .card:nth-child(5) .card-banner { background-image: linear-gradient(120deg, #ff4fa8, #00e5a0, #40a0ff, #ffd23f, #c04dff, #7cff4a, #ff3b3b, #3be8ff, #ff8a1f, #ff4fa8); }
+    .card:nth-child(6) .card-banner { background-image: linear-gradient(120deg, #ff8a1f, #3be8ff, #ff4fa8, #40a0ff, #7cff4a, #ffd23f, #c04dff, #ff3b3b, #00e5a0, #ff8a1f); }
+    .card:nth-child(7) .card-banner { background-image: linear-gradient(120deg, #7cff4a, #ff3b3b, #c04dff, #ff4fa8, #00e5a0, #ff8a1f, #3be8ff, #40a0ff, #ffd23f, #7cff4a); }
+    .card:nth-child(8) .card-banner { background-image: linear-gradient(120deg, #3be8ff, #ffd23f, #00e5a0, #c04dff, #ff3b3b, #40a0ff, #ff4fa8, #ff8a1f, #7cff4a, #3be8ff); }
+    .card:nth-child(9) .card-banner { background-image: linear-gradient(120deg, #ff3b3b, #ffd23f, #ff8a1f, #3be8ff, #7cff4a, #ff4fa8, #00e5a0, #40a0ff, #c04dff, #ff3b3b); }
+    @media (prefers-reduced-motion: reduce) { .card-banner { animation: none; } }
 
     /* Pixel Life: a mixed-up rainbow that slowly drifts */
     .card:nth-child(10) .card-banner,

@@ -500,3 +500,12 @@ button.active { border-color: var(--accent); background: #3d3a26; }
 #info .chart { background: #4a2e17; border: 1px solid #d4a63a; border-radius: 4px; }
 #info .law input { accent-color: #4a2e17; }
 #deselect[hidden] { display: none; }
+
+/* toasts and event pop-ups match the wooden bars */
+#toast, #popup {
+  z-index: 20;
+  color: #3a2410;
+  background: #c9a46e;
+  border: 3px solid #c0c4cc;
+  box-shadow: 0 0 0 1px #6f747c, inset 0 0 0 1px #eef0f4, 0 4px 12px rgba(0, 0, 0, 0.35);
+}

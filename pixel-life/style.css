@@ -514,3 +514,34 @@ button.active { border-color: var(--accent); background: #3d3a26; }
 #deselect .x { width: 40px; height: 40px; font-size: 26px; border-radius: 6px; line-height: 1; border: 2px solid #7a1010; }
 #deselectName { font-size: 11px; max-width: 120px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #deselectName:empty { display: none; }
+
+/* a creature's or village's info replaces the toolbar at the bottom */
+#toolbar.covered { display: none; }
+#info.dock {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  width: 100%;
+  max-width: none;
+  height: clamp(172px, 40vh, 320px);
+  max-height: none;
+  border-width: 3px 0 0;
+  border-radius: 0;
+  box-shadow: 0 -1px 0 #6f747c, inset 0 1px 0 #eef0f4;
+  padding: 10px 56px calc(10px + env(safe-area-inset-bottom, 0px)) 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 24px;
+  overflow: hidden;
+}
+#info.dock[hidden] { display: none; }
+#info.dock #infoBody, #info.dock #infoEdit { min-height: 0; overflow-y: auto; padding-right: 6px; }
+#info.dock #infoEdit:empty { display: none; }
+#info.dock:has(#infoEdit:empty) { grid-template-columns: 1fr; }
+#info.dock #infoClose { top: 10px; right: 12px; width: 34px; height: 34px; justify-content: center; font-size: 18px; padding: 0; }
+@media (max-width: 600px) {
+  #info.dock { grid-template-columns: 1fr; overflow-y: auto; padding-right: 52px; }
+  #info.dock #infoBody, #info.dock #infoEdit { overflow: visible; }
+}
+#info.dock #infoEdit > * { max-width: 560px; }

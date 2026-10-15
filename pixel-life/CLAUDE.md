@@ -158,7 +158,7 @@ Loaded after disasters.js (it registers powers).
 - **Mouse wheel**, **+ / -**: zoom. Touch: two-finger pinch to pan and zoom
 - **[ / ]** or the slider: brush size (1–40). **B** or the shape buttons: brush shape (circle, square, diamond, spray). Brush powers use the shape too. **Space**: pause / resume
 - **Creatures tab:** click (or hold) to spawn a creature.
-- **Inspecting:** with nothing selected (the Move Camera tool), tap a creature or village without dragging to open its details (`pointer.tap` in `endPointer`). There is no Inspect button.
+- **Inspecting:** with nothing selected (the Move Camera tool), tap a creature or village without dragging to open its details (`pointer.tap` in `endPointer`). There is no Inspect button. The creature/village info takes the toolbar's place at the bottom (`#info.dock`, toolbar gets `.covered`, set in `updateHud`); tapping another creature or village switches to it, tapping empty ground does nothing, and only its ✕ closes it and brings the toolbar back. World panels (History, Statistics, Laws, Lists...) still open on the right.
 - **Unselect:** whenever a tool is selected, a button sits on the left just above the toolbar (`#deselect`, placed in `finishPanel`); the tool name sits on top with a big red ✕ under it. It, or **Esc**, goes back to Move Camera.
 - **Renaming:** in the Inspect panel, the ✏️ next to a name renames it: a creature, village, kingdom, language, culture, religion, family clan, or a whole species (`pen`, `RENAMABLE`, `renameRace`). Species names are saved in `raceNames` and reset on a new world.
 - **Powers tab:** click to use; the outline shows the area it hits

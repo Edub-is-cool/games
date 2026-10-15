@@ -835,6 +835,7 @@ const controlName = document.getElementById('controlName');
 document.getElementById('controlStop').addEventListener('click', () => stopControl('You let go'));
 const popEl = document.getElementById('pop');
 const infoEl = document.getElementById('info');
+const toolbarEl = document.getElementById('toolbar');
 const infoBody = document.getElementById('infoBody');
 let hudFrame = 0;
 
@@ -1042,6 +1043,11 @@ function updateHud() {
   infoEl.hidden = !life.selected;
   const sel = life.selected;
   infoEl.classList.toggle('wide', !!sel && !!(sel.history || sel.stats || sel.laws || sel.share || sel.lists));
+  // a creature's or village's info takes the toolbar's place until its ✕ is pressed
+  const docked = !!sel && !!(sel.unit || sel.village);
+  infoEl.classList.toggle('dock', docked);
+  toolbarEl.classList.toggle('covered', docked);
+  if (!deselectEl.hidden) deselectEl.style.bottom = (docked ? infoEl : toolbarEl).offsetHeight + 8 + 'px';
   // lists and charts don't need refreshing as often as a creature's health
   if (sel && hudFrame++ % (sel.stats || sel.history || sel.favorites || sel.lists ? 30 : 6) === 0) {
     infoBody.innerHTML = infoHtml();

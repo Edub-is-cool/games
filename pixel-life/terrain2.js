@@ -172,15 +172,60 @@ function plantSpriteFor(t, variant, flip) {
   });
 }
 
+// ---------- Trees ----------
+// When you're zoomed in, every tree tile gets a tree sprite in its biome's
+// style (zoomed out, the canopy pattern on the tile is enough). L/D/H are the
+// leaves (tile color, darker, lighter), T/t the trunk, A an accent (fruit,
+// blossom, cap), W white, k bark marks.
+const TREE_SHAPES = {
+  round: ['...HHLL...', '.HHLLLLDD.', 'HLLLLALLLD', 'HLLLLLLLLD', 'LLALLLLLAD', 'LLLLLLLDDD', '.DLLLLDDD.', '..DDTDDD..', '....TT....', '....Tt....', '....Tt....', '...tTTt...'],
+  pine: ['....HL....', '...HLLD...', '...LLLD...', '..HLLLLD..', '..LLLLDD..', '.HLLLLLLD.', '.LLLLLLDD.', 'HLLLLLLLLD', 'LLLLLLLDDD', '....Tt....', '....Tt....', '...tTTt...'],
+  palm: ['.LL....LL.', 'LLLL..LLLL', 'L..LLLL..L', '..LLHLLL..', '.L..LL..L.', 'L...Tt...L', '....Tt....', '....tT....', '....Tt....', '...tT.....', '...Tt.....', '..tTTt....'],
+  acacia: ['..........', '..........', '.HHLLLLLL.', 'HLLLLLLLLD', 'LLLDDDDDDD', '.DD.TT.DD.', '....TT....', '....tT....', '...T.T....', '..T..tT...', '.....Tt...', '....tTTt..'],
+  mangrove: ['...HHLL...', '.HHLLLLDD.', 'HLLLLLLLLD', 'LLLLLLLLLD', 'LLLLLLLDDD', '.DLLLLDDD.', '...TTTT...', '..T.TT.T..', '.T..TT..T.', '.T..Tt..T.', 'T..T..T..T', '..........'],
+  dead: ['..T....T..', '...T..T...', 'T..T.T..T.', '.T.TTT.T..', '..TTTTT...', '....TT....', '....TT....', '....Tt....', '....Tt....', '....Tt....', '....Tt....', '...tTTt...'],
+  mushroom: ['...AAAA...', '.AAWAAAAA.', 'AAAAAAWAAA', 'AWAAAAAAAA', 'AAAAAWAAAA', '.DDDDDDDD.', '....WW....', '....WW....', '....WW....', '....WW....', '...WWWW...', '..........'],
+  lollipop: ['...AAAA...', '..AWWAAA..', '.AAWAAWAA.', '.AWWAAWAA.', '.AAAWWAAA.', '..AAAAAA..', '...AAAA...', '....WW....', '....WW....', '....WW....', '....WW....', '...WWWW...'],
+  crystal: ['....H.....', '...HL.....', '...LLD..H.', '..HLLD.HL.', '..LLLD.LD.', '.HLLLDDLD.', '.LLLLLDLD.', '.LLLLLLLD.', 'HLLLLLLLLD', 'LLLLLLLLDD', '.DDDDDDDD.', '..........'],
+};
+// biome -> shape and colour overrides (anything not listed is a round tree)
+const TREE_LOOKS = {
+  grassland: { shape: 'round' }, savanna: { shape: 'acacia' }, jungle: { shape: 'palm' }, swamp: { shape: 'mangrove' },
+  tundra: { shape: 'pine' }, corrupt: { shape: 'dead', T: '#3e2c4a', t: '#2a1c34' }, enchanted: { A: '#f5b0e8' },
+  birch: { T: '#ece8dc', t: '#2a2a2a', L: '#8ac04a', D: '#5e8f30', H: '#b0dc6a', A: '#9ccc58' }, maple: { A: '#f0a030' }, mushroom: { shape: 'mushroom', D: '#d8c8a8' },
+  candy: { shape: 'lollipop', A: '#f070b0' }, lemon: { A: '#f8e040' }, crystal: { shape: 'crystal' }, meadow: { A: '#f8a0d0' },
+  celestial: { A: '#ffffff' }, infernal: { shape: 'dead', T: '#a83a1a', t: '#ff8a2a' }, singularity: { shape: 'dead', T: '#5a3a8a', t: '#b06cff' },
+  paradox: { A: '#f8f040' },
+};
+const TREE_ZOOM = 8;   // screen pixels per tile (per dpr) before trees become sprites
+function treeSpriteFor(t, variant, flip) {
+  return cached(`tree|${t}|${variant}|${flip}`, () => {
+    const look = TREE_LOOKS[TILES[t].biome] || {};
+    const c = TILES[t].color * 1, shade = [0.9, 1, 1.1][variant];
+    const pal = { L: tintHex(c, shade), D: tintHex(c, shade * 0.68), H: tintHex(c, shade * 1.3), A: tintHex(c, 1.15), T: '#6b4a2e', t: '#4a3020', W: '#f4f0e8', k: '#2a2a2a', ...look };
+    const s = refineSprite(makeSprite(TREE_SHAPES[look.shape || 'round'], pal, flip));
+    s.res *= 2;
+    return s;
+  });
+}
+
 // every plant and ore tile on screen gets its sprite, standing at the bottom of its tile
 function drawPlants(ox, oy, z) {
   const { W, H, tiles, seed } = state;
   const x0 = Math.max(0, Math.floor(-ox / z) - 1), y0 = Math.max(0, Math.floor(-oy / z) - 1);
   const x1 = Math.min(W - 1, Math.ceil((view.width - ox) / z) + 1), y1 = Math.min(H - 1, Math.ceil((view.height - oy) / z) + 1);
-  const sc = Math.max(1, Math.round(z / 4));
+  const sc = Math.max(1, Math.round(z / 4)), trees = z / dpr >= TREE_ZOOM;
   for (let y = y0; y <= y1; y++) {
     for (let x = x0; x <= x1; x++) {
       const t = tiles[y * W + x];
+      if (trees && TILES[t].kind === 'tree') {
+        const h = hash2(x, y, seed + 71);
+        const spr = treeSpriteFor(t, (h * 3) | 0, h > 0.5);
+        const k = 0.9 + hash2(x, y, seed + 73) * 0.3, w = (spr.width * sc * k) / spr.res, hh = (spr.height * sc * k) / spr.res;
+        const jx = (hash2(x, y, seed + 79) - 0.5) * 0.35 * z;
+        ctx.drawImage(spr, Math.round(ox + (x + 0.5) * z - w / 2 + jx), Math.round(oy + (y + 1) * z - hh), w, hh);
+        continue;
+      }
       if (!PLANT_ART[t]) continue;
       const h = hash2(x, y, seed + 61);
       const spr = plantSpriteFor(t, (h * FLOWER_COLORS.length) | 0, hash2(x, y, seed + 67) > 0.5);

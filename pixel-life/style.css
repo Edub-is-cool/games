@@ -545,3 +545,26 @@ button.active { border-color: var(--accent); background: #3d3a26; }
   #info.dock #infoBody, #info.dock #infoEdit { overflow: visible; }
 }
 #info.dock #infoEdit > * { max-width: 560px; }
+
+/* boxes: a deeper wood (still lighter than the buttons) with a polished
+   silver edge that catches the light */
+#topbar, #toolbar, #info, #toast, #popup {
+  --wood: #a97f4b;
+  background:
+    linear-gradient(var(--wood), var(--wood)) padding-box,
+    linear-gradient(120deg, #7d838c 0%, #f4f6f9 14%, #a9afb8 28%, #ffffff 42%, #8d939c 58%, #e6e9ee 74%, #ffffff 84%, #7d838c 100%) border-box;
+  border-color: transparent;
+  box-shadow: 0 0 0 1px #5a5f66, inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 3px 10px rgba(0, 0, 0, 0.3);
+}
+#toolbar, #info.dock { box-shadow: 0 -1px 0 #5a5f66, inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 -3px 10px rgba(0, 0, 0, 0.25); }
+#info { --muted: #4f3218; }
+#topbar #date { color: #3a2410; }
+#brush { color: #3a2410; }
+.groups { border-bottom-color: #7d5a30; }
+#toolbar .group-tab { color: #3a2410; border-color: #6b4a26; }
+#toolbar .group-tab:hover { background: #b98f58; }
+.panel-row { scrollbar-color: #4a2e17 #93693a; }
+#info .tab { border-color: #6b4a26; }
+#info .history li { border-bottom-color: rgba(58, 36, 16, 0.25); }
+#topbar, #info, #toast, #popup { border-width: 4px; }
+#toolbar, #info.dock { border-width: 4px 0 0; }
